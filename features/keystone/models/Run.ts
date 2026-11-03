@@ -3,6 +3,8 @@ import { domainList, money, currency, lifecycle, choice, unique, secret } from '
 
 export const Run = domainList({
   headliner: relationship({ref:'Comedian.runs'}),
+  status: lifecycle(['scheduled','in_progress','closed']),
+  closedAt: timestamp({ access: { create: () => false, update: () => false } }),
   startAt: timestamp(),
   endAt: timestamp(),
   runFeeCents: money(),

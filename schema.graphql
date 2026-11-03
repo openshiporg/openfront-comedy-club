@@ -3397,6 +3397,8 @@ input ShowRelateToManyForCreateInput {
 type Run {
   id: ID!
   headliner: Comedian
+  status: RunStatusType
+  closedAt: DateTime
   startAt: DateTime
   endAt: DateTime
   runFeeCents: Int
@@ -3409,6 +3411,12 @@ type Run {
   updatedAt: DateTime
 }
 
+enum RunStatusType {
+  scheduled
+  in_progress
+  closed
+}
+
 input RunWhereUniqueInput {
   id: ID
 }
@@ -3419,6 +3427,8 @@ input RunWhereInput {
   NOT: [RunWhereInput!]
   id: IDFilter
   headliner: ComedianWhereInput
+  status: RunStatusTypeNullableFilter
+  closedAt: DateTimeNullableFilter
   startAt: DateTimeNullableFilter
   endAt: DateTimeNullableFilter
   runFeeCents: IntNullableFilter
@@ -3429,8 +3439,17 @@ input RunWhereInput {
   updatedAt: DateTimeFilter
 }
 
+input RunStatusTypeNullableFilter {
+  equals: RunStatusType
+  in: [RunStatusType!]
+  notIn: [RunStatusType!]
+  not: RunStatusTypeNullableFilter
+}
+
 input RunOrderByInput {
   id: OrderDirection
+  status: OrderDirection
+  closedAt: OrderDirection
   startAt: OrderDirection
   endAt: OrderDirection
   runFeeCents: OrderDirection
@@ -3441,6 +3460,8 @@ input RunOrderByInput {
 
 input RunUpdateInput {
   headliner: ComedianRelateToOneForUpdateInput
+  status: RunStatusType
+  closedAt: DateTime
   startAt: DateTime
   endAt: DateTime
   runFeeCents: Int
@@ -3458,6 +3479,8 @@ input RunUpdateArgs {
 
 input RunCreateInput {
   headliner: ComedianRelateToOneForCreateInput
+  status: RunStatusType
+  closedAt: DateTime
   startAt: DateTime
   endAt: DateTime
   runFeeCents: Int
@@ -5430,6 +5453,7 @@ type Mutation {
   closeCheck(checkId: ID!, tipCents: Int, waive: Boolean, reason: String, approvalId: ID, idempotencyKey: String!): JSON
   runOpenMicLottery(showId: ID!, idempotencyKey: String!): JSON
   closeShow(showId: ID!, idempotencyKey: String!): JSON
+  closeRun(runId: ID!, idempotencyKey: String!): JSON
   refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
   requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
   approveRequest(approvalId: ID!): JSON

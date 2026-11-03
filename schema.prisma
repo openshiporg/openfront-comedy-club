@@ -608,6 +608,8 @@ model Run {
   id          String           @id @default(cuid())
   headliner   Comedian?        @relation("Run_headliner", fields: [headlinerId], references: [id])
   headlinerId String?          @map("headliner")
+  status      RunStatusType?   @default(scheduled)
+  closedAt    DateTime?
   startAt     DateTime?
   endAt       DateTime?
   runFeeCents Int?             @default(0)
@@ -1040,6 +1042,12 @@ enum PromoRedemptionStatusType {
 enum RoomSeatingModeType {
   tables
   ga
+}
+
+enum RunStatusType {
+  scheduled
+  in_progress
+  closed
 }
 
 enum SeatingAssignmentStatusType {

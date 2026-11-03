@@ -20,3 +20,20 @@ export function settlement(input:{ticketGrossCents:number;feesCents:number;disco
   return input.ticketGrossCents+input.feesCents-input.discountsCents-input.refundsCents+input.foodBeverageGrossCents+input.minimumShortfallRevenueCents-input.talentCostCents;
 }
 export function selfRefundAllowed(startsAt:Date,windowHours:number,now=new Date()) { cents(windowHours); return startsAt.getTime()-now.getTime() >= windowHours*3600000; }
+
+export type RunClosePlan =
+  | { ok: false; reason: string }
+  | { ok: true; createPayout: boolean; payoutCents: number; note: string };
+
+/** Decides whether a headliner run can close and what the one run-level payout is. Pure: no I/O. */
+export function runClosePlan(input: { runStatus: string; runFeeCents: number; showStatuses: string[]; headlinerPerformedShows: number }): RunClosePlan {
+  cents(input.runFeeCents);
+  if (input.runStatus === 'closed') return { ok: false, reason: 'Run already closed' };
+  if (!input.showStatuses.length) return { ok: false, reason: 'Run has no shows' };
+  const open = input.showStatuses.filter((s) => !['settled', 'cancelled'].includes(s)).length;
+  if (open) return { ok: false, reason: `${open} show${open === 1 ? '' : 's'} in the run not settled or cancelled yet` };
+  if (!Number.isInteger(input.headlinerPerformedShows) || input.headlinerPerformedShows < 0) throw new Error('Invalid performed count');
+  if (input.headlinerPerformedShows === 0) return { ok: true, createPayout: false, payoutCents: 0, note: 'Headliner performed none of the run shows; no run payout' };
+  if (input.runFeeCents === 0) return { ok: true, createPayout: false, payoutCents: 0, note: 'Run fee is zero; no run payout' };
+  return { ok: true, createPayout: true, payoutCents: input.runFeeCents, note: 'Run fee for the headliner' };
+}

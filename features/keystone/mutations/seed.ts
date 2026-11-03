@@ -1,6 +1,6 @@
 import { audit, code, hash } from '../lib/commands';
 import { requirePermission } from '../lib/commands';
-import { generateShowsFromTemplate } from './night';
+import { generateShowsFromTemplate, closeShow } from './night';
 import { ticketToken } from './checkout';
 import { zonedTime } from '../lib/time';
 import seedData from '../../platform/onboarding/lib/seed.json';
@@ -73,22 +73,48 @@ export async function seedClubOperations(_: any, { template }: { template: strin
   const slot = (showId: string, c: any, role: string, position: number, minutes: number, status = 'confirmed') =>
     db.lineupSlot.create({ data: { showId, comedianId: c.id, role, position, setMinutes: minutes, feeCents: c.defaultFeeCents, bonusCents: 0, status, confirmedAt: status === 'confirmed' || status === 'performed' ? new Date() : null } });
 
-  // Weekend headliner run: Thu 1, Fri 2, Sat 2, Sun 2 = 7 shows in the next free Thu–Sun.
+  // Weekend headliner runs (Thu 1, Fri 2, Sat 2, Sun 2 = 7 shows). One just finished its first nights; one is coming up.
   const main = venue.rooms.find((r: any) => r.name === 'Main Room')!;
   const mainTiers = (await db.showTemplate.findFirst({ where: { title: 'Friday Late Show' }, include: { defaultPriceTiers: true } }))!.defaultPriceTiers;
   const headliner = comic(seedData.run.headliner)!;
-  let cursor = new Date(from.getTime() + 8 * DAY_MS);
-  while (new Intl.DateTimeFormat('en-US', { timeZone: venue.timezone, weekday: 'short' }).format(cursor) !== 'Thu') cursor = new Date(cursor.getTime() + DAY_MS);
   const runDays = [[0, ['20:00']], [1, ['19:30', '21:45']], [2, ['19:30', '21:45']], [3, ['18:00', '20:00']]] as const;
-  const run = await db.run.create({ data: { headlinerId: headliner.id, startAt: cursor, endAt: new Date(cursor.getTime() + 3 * DAY_MS), runFeeCents: seedData.run.runFeeCents, notes: seedData.run.title } });
-  for (const [offset, times] of runDays) for (const hhmm of times) {
-    const day = dayOf(new Date(cursor.getTime() + offset * DAY_MS + 12 * 3600000), venue.timezone);
-    const startsAt = localTime(day, hhmm, venue.timezone);
-    const show = await db.show.create({ data: { roomId: main.id, runId: run.id, title: seedData.run.title, occurrenceKey: `run:${run.id}:${day}:${hhmm}`, startsAt, doorsAt: new Date(startsAt.getTime() - 3600000), endsAt: new Date(startsAt.getTime() + 5400000), ageRestriction: '21', capacity: main.capacity, status: 'on_sale', isOpenMic: false } });
-    for (const t of mainTiers) await db.priceTier.create({ data: { showId: show.id, name: t.name, priceCents: t.priceCents + 1000, feeCents: t.feeCents, capacity: t.capacity, isTableTier: t.isTableTier, seatsPerUnit: 1, status: 'on_sale' } });
-    await slot(show.id, comic('Dex Ramirez')!, 'host', 1, 8); await slot(show.id, comic('Priya Venkataraman')!, 'opener', 2, 15); await slot(show.id, headliner, 'headliner', 3, 50);
-    out.run++;
-  }
+  const thursdayOn = (start: Date, step: number) => { let d = start; while (new Intl.DateTimeFormat('en-US', { timeZone: venue.timezone, weekday: 'short' }).format(d) !== 'Thu') d = new Date(d.getTime() + step * DAY_MS); return d; };
+  const manualTender = await db.paymentProvider.findFirst({ where: { code: 'pp_manual' } });
+  const makeRun = async (cursor: Date, past: boolean) => {
+    const run = await db.run.create({ data: { headlinerId: headliner.id, status: 'scheduled', startAt: cursor, endAt: new Date(cursor.getTime() + 3 * DAY_MS), runFeeCents: seedData.run.runFeeCents, notes: seedData.run.title } });
+    const shows: any[] = [];
+    for (const [offset, times] of runDays) for (const hhmm of times) {
+      const day = dayOf(new Date(cursor.getTime() + offset * DAY_MS + 12 * 3600000), venue.timezone);
+      const startsAt = localTime(day, hhmm, venue.timezone);
+      const show = await db.show.create({ data: { roomId: main.id, runId: run.id, title: seedData.run.title, occurrenceKey: `run:${run.id}:${day}:${hhmm}`, startsAt, doorsAt: new Date(startsAt.getTime() - 3600000), endsAt: new Date(startsAt.getTime() + 5400000), ageRestriction: '21', capacity: main.capacity, status: past ? 'completed' : 'on_sale', isOpenMic: false } });
+      const tiers: any[] = [];
+      for (const t of mainTiers) tiers.push(await db.priceTier.create({ data: { showId: show.id, name: t.name, priceCents: t.priceCents + 1000, feeCents: t.feeCents, capacity: t.capacity, isTableTier: t.isTableTier, seatsPerUnit: 1, status: 'on_sale' } }));
+      await slot(show.id, comic('Dex Ramirez')!, 'host', 1, 8, past ? 'performed' : 'confirmed'); await slot(show.id, comic('Priya Venkataraman')!, 'opener', 2, 15, past ? 'performed' : 'confirmed');
+      const head = await slot(show.id, headliner, 'headliner', 3, 50, past ? 'performed' : 'confirmed');
+      if (past && shows.length === 0) await db.lineupSlot.update({ where: { id: head.id }, data: { bonusCents: 5000 } }); // Thursday sell-out bonus
+      if (past) { // paid parties, all through the door, so the night can be settled
+        for (let p = 0; p < 4; p++) {
+          const size = [2, 4, 3, 5][p], tier = tiers[p % tiers.length];
+          const subtotal = tier.priceCents * size, fee = tier.feeCents * size, tax = Math.floor((subtotal * venue.taxBps + 5000) / 10000), total = subtotal + fee + tax;
+          const order = await db.ticketOrder.create({ data: { orderNumber: code('CC'), email: `run${shows.length}${p}@example.invalid`, name: `Guest R${shows.length + 1}-${p + 1}`, showId: show.id, status: 'paid', subtotalCents: subtotal, feesCents: fee, taxCents: tax, totalCents: total, source: 'online', partySize: size, ageAttested: true, secretKey: hash(code()), lines: { create: [{ tierName: tier.name, unitPriceCents: tier.priceCents, unitFeeCents: tier.feeCents, quantity: size, lineTotalCents: subtotal, taxCents: tax, priceTierId: tier.id }] } }, include: { lines: true } });
+          await db.payment.create({ data: { idempotencyKey: `seed-pay:${order.id}`, amount: total, currencyCode: 'USD', status: 'succeeded', paymentMethod: 'credit_card', providerPaymentId: `manual_${order.orderNumber}`, processedAt: startsAt, orderId: order.id, paymentProviderId: manualTender?.id } });
+          for (let k = 0; k < size; k++) {
+            const tc = code('T');
+            const ticket = await db.ticket.create({ data: { orderId: order.id, showId: show.id, lineId: order.lines[0].id, ticketCode: tc, tokenHash: hash(ticketToken(tc)), holderName: order.name, status: 'checked_in' } });
+            await db.checkIn.create({ data: { ticketId: ticket.id, showId: show.id, at: new Date(startsAt.getTime() - 1800000), method: 'scan', result: 'admitted' } });
+          }
+          await db.priceTier.update({ where: { id: tier.id }, data: { sold: { increment: size } } });
+        }
+      }
+      shows.push(show); out.run++;
+    }
+    return { run, shows };
+  };
+  // Past run: Thu to Sun just ended. Its first four nights are settled through the real closeShow; the rest await it.
+  const past = await makeRun(thursdayOn(new Date(from.getTime() - 4 * DAY_MS), -1), true); // latest Thursday at least 4 days ago, so its Sunday has passed
+  for (const show of past.shows) await closeShow(null, { showId: show.id, idempotencyKey: `seed:close:${show.id}` }, context);
+  out.settledRunShows = past.shows.length;
+  await makeRun(thursdayOn(new Date(from.getTime() + 8 * DAY_MS), 1), false);
   // Publish generated shows and give every one a lineup.
   const hosts = ['Dex Ramirez', 'Walt Hollis', 'Jun Tanaka'].map(comic); const openers = ['Bridget Salazar', 'Omar Haddad', 'Lena Kowalski', 'Theo Banks'].map(comic); const features = ['Rosa Delgado', 'Gus Pemberton', 'Nia Fontaine', 'Priya Venkataraman'].map(comic);
   let i = 0;

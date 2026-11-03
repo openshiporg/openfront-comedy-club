@@ -1,14 +1,16 @@
 import { q, venueTimezone } from '../../lib/server';
 import { money, when } from '../../lib/format';
 import { Page, Tabs, Section, Row, Empty, Stat, Status, Meta } from '../../components/ui';
+import { CloseRun } from '../components/CloseRun';
 
 const TABS = ['draft', 'approved', 'paid', 'void'];
 export default async function PayoutsPage({ searchParams }: { searchParams?: Promise<{ tab?: string }> }) {
   const tz = await venueTimezone();
   const tab = ((await searchParams) || {}).tab || 'draft';
-  const [{ comedianPayouts }, { showSettlements }] = await Promise.all([
-    q<any>(`query($s: ComedianPayoutStatusType!) { comedianPayouts(where: { status: { equals: $s } }, orderBy: { createdAt: desc }, take: 60) { id amountCents method reference comedian { stageName } show { title startsAt } } }`, { s: tab }),
+  const [{ comedianPayouts }, { showSettlements }, { runs }] = await Promise.all([
+    q<any>(`query($s: ComedianPayoutStatusType!) { comedianPayouts(where: { status: { equals: $s } }, orderBy: { createdAt: desc }, take: 60) { id amountCents method reference comedian { stageName } show { title startsAt } run { notes startAt } } }`, { s: tab }),
     q<any>(`{ showSettlements(orderBy: { createdAt: desc }, take: 20) { id status netCents ticketGrossCents feesCents refundsCents foodBeverageGrossCents minimumShortfallRevenueCents tipsCents talentCostCents show { title startsAt } } }`),
+    q<any>(`{ runs(orderBy: { startAt: desc }, take: 10) { id status runFeeCents startAt notes headliner { stageName } shows { status } } }`),
   ]);
   return (
     <Page title="Payouts">
@@ -16,11 +18,22 @@ export default async function PayoutsPage({ searchParams }: { searchParams?: Pro
       <div>
         {comedianPayouts.length ? comedianPayouts.map((p: any) => (
           <Row key={p.id}>
-            <span className="min-w-0"><span className="font-medium">{p.comedian?.stageName}</span> <Meta>{p.show?.title} · {when(p.show?.startsAt, tz, 'day')} · {p.method}{p.reference ? ` ${p.reference}` : ''}</Meta></span>
+            <span className="min-w-0"><span className="font-medium">{p.comedian?.stageName}</span> <Meta>{p.show ? `${p.show.title} · ${when(p.show.startsAt, tz, 'day')}` : `Run fee · ${p.run?.notes || ''} · ${when(p.run?.startAt, tz, 'day')}`} · {p.method}{p.reference ? ` ${p.reference}` : ''}</Meta></span>
             <span className="font-mono text-xs">{money(p.amountCents)}</span>
           </Row>
         )) : <Empty>No payouts here.</Empty>}
       </div>
+      <Section title="Headliner runs">
+        {runs.length ? runs.map((r: any) => {
+          const open = r.shows.filter((x: any) => !['settled', 'cancelled'].includes(x.status)).length;
+          return (
+            <Row key={r.id}>
+              <span className="min-w-0"><span className="font-medium">{r.headliner?.stageName}</span> <Meta>{r.notes} · {when(r.startAt, tz, 'day')} · {money(r.runFeeCents)} run fee · {r.shows.length} shows{open ? ` · ${open} to settle` : ''}</Meta></span>
+              <span className="inline-flex items-center gap-3"><Status value={r.status} />{r.status !== 'closed' && !open ? <CloseRun runId={r.id} /> : null}</span>
+            </Row>
+          );
+        }) : <Empty>No runs.</Empty>}
+      </Section>
       <Section title="Nightly settlements">
         {showSettlements.length ? showSettlements.map((s: any) => (
           <div key={s.id} className="space-y-3 border-b py-4 last:border-b-0">

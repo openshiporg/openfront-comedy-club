@@ -68,6 +68,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         closeCheck(checkId: ID!, tipCents: Int, waive: Boolean, reason: String, approvalId: ID, idempotencyKey: String!): JSON
         runOpenMicLottery(showId: ID!, idempotencyKey: String!): JSON
         closeShow(showId: ID!, idempotencyKey: String!): JSON
+        closeRun(runId: ID!, idempotencyKey: String!): JSON
         refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
         requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
         approveRequest(approvalId: ID!): JSON
@@ -111,6 +112,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         closeCheck: op(night.closeCheck),
         runOpenMicLottery: op(ops.runOpenMicLottery),
         closeShow: op(night.closeShow),
+        closeRun: op(night.closeRun),
         refundTicketOrder: op(checkout.refundTicketOrder),
         requestApproval: op(night.requestApproval),
         approveRequest: op(night.approveRequest),

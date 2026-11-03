@@ -1,5 +1,5 @@
 import { audit, code, command, hash, lockTransactionKey, requirePermission } from '../lib/commands';
-import { minimum, payout, settlement } from '../lib/money';
+import { minimum, payout, settlement, runClosePlan } from '../lib/money';
 import { consumeManagerApproval, requestManagerApproval, approveManagerApproval } from '../utils/managerApproval';
 import { refundOrderInternal, ticketToken } from './checkout';
 import { expireUnderLock } from './tickets';
@@ -155,7 +155,34 @@ export async function closeShow(_: any, a: any, c: any) {
     const data = { ...figures, netCents, currencyCode: 'USD', status: 'closed', closedById: c.session.itemId };
     const row = show.settlement ? await tx.showSettlement.update({ where: { id: show.settlement.id }, data }) : await tx.showSettlement.create({ data: { ...data, show: { connect: { id: show.id } } } });
     await tx.show.update({ where: { id: show.id }, data: { status: 'settled' } });
+    if (show.runId) await tx.run.updateMany({ where: { id: show.runId, status: 'scheduled' }, data: { status: 'in_progress' } });
     await audit(tx, c, 'settled', 'Show', show.id, null, { netCents });
     return { settlementId: row.id, netCents, talentCostCents: talent };
   }, 'show:' + a.showId);
+}
+
+/** Closes a headliner run once: one run-fee payout for the headliner, per-show bonus payouts stay as closeShow made them. */
+export async function closeRun(_: any, a: any, c: any) {
+  requirePermission(c, 'canManagePayouts');
+  return command(c, 'closeRun', a, async tx => {
+    const run = await tx.run.findUnique({ where: { id: a.runId }, include: { shows: { select: { id: true, status: true } } } });
+    if (!run) throw new Error('Run not found');
+    const showsPerformed = run.headlinerId ? (await tx.lineupSlot.findMany({ where: { comedianId: run.headlinerId, status: 'performed', show: { runId: run.id } }, select: { showId: true }, distinct: ['showId'] })).length : 0;
+    const plan = runClosePlan({ runStatus: run.status, runFeeCents: run.runFeeCents, showStatuses: run.shows.map((s: any) => s.status), headlinerPerformedShows: showsPerformed });
+    if (!plan.ok) throw new Error(plan.reason);
+    // Compare-and-set: only one caller moves the run to closed.
+    const moved = await tx.run.updateMany({ where: { id: run.id, status: { not: 'closed' } }, data: { status: 'closed', closedAt: new Date() } });
+    if (moved.count !== 1) throw new Error('Run already closed');
+    let payoutId: string | null = null;
+    if (plan.createPayout) {
+      const key = `run:${run.id}:${run.headlinerId}`;
+      const p = await tx.comedianPayout.upsert({
+        where: { payoutKey: key }, update: {},
+        create: { payoutKey: key, comedianId: run.headlinerId, runId: run.id, amountCents: plan.payoutCents, currencyCode: 'USD', status: 'draft', method: 'check' },
+      });
+      payoutId = p.id;
+    }
+    await audit(tx, c, 'run_closed', 'Run', run.id, { status: run.status }, { status: 'closed', payoutId, amountCents: plan.payoutCents, showsPerformed }, plan.note);
+    return { runId: run.id, payoutId, amountCents: plan.payoutCents, note: plan.note };
+  }, 'run:' + a.runId);
 }
