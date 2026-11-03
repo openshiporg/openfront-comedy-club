@@ -11,73 +11,274 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id                      String       @id @default(cuid())
-  name                    String       @default("")
-  email                   String       @unique @default("")
-  password                String
-  role                    Role?        @relation("User_role", fields: [roleId], references: [id])
-  roleId                  String?      @map("role")
-  tasks                   Todo[]       @relation("Todo_assignedTo")
-  passwordResetToken      String?
-  passwordResetIssuedAt   DateTime?
-  passwordResetRedeemedAt DateTime?
-  from_OAuthToken_user    OAuthToken[] @relation("OAuthToken_user")
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actor      User?    @relation("AuditEvent_actor", fields: [actorId], references: [id])
+  actorId    String?  @map("actor")
+  action     String   @default("")
+  targetList String   @default("")
+  targetId   String   @default("")
+  before     Json?
+  after      Json?
+  reason     String   @default("")
+  requestId  String   @default("")
+  eventKey   String   @unique @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 
-  @@index([roleId])
+  @@index([actorId])
 }
 
-model Role {
-  id                 String  @id @default(cuid())
-  name               String  @default("")
-  canCreateTodos     Boolean @default(false)
-  canManageAllTodos  Boolean @default(false)
-  canSeeOtherPeople  Boolean @default(false)
-  canEditOtherPeople Boolean @default(false)
-  canManagePeople    Boolean @default(false)
-  canManageRoles     Boolean @default(false)
-  canAccessDashboard Boolean @default(false)
-  assignedTo         User[]  @relation("User_role")
+model Check {
+  id                    String             @id @default(cuid())
+  show                  Show?              @relation("Check_show", fields: [showId], references: [id])
+  showId                String?            @map("show")
+  seatingAssignment     SeatingAssignment? @relation("Check_seatingAssignment", fields: [seatingAssignmentId], references: [id])
+  seatingAssignmentId   String?            @map("seatingAssignment")
+  server                User?              @relation("Check_server", fields: [serverId], references: [id])
+  serverId              String?            @map("server")
+  status                CheckStatusType?   @default(open)
+  guestCount            Int?               @default(1)
+  minimumItemsRequired  Int?               @default(2)
+  minimumShortfallCents Int?               @default(0)
+  minimumUnitPriceCents Int?               @default(0)
+  minimumCentsFloor     Int?               @default(0)
+  subtotalCents         Int?               @default(0)
+  taxBps                Int?               @default(0)
+  taxCents              Int?               @default(0)
+  tipCents              Int?               @default(0)
+  totalCents            Int?               @default(0)
+  currencyCode          String             @default("USD")
+  items                 CheckItem[]        @relation("CheckItem_check")
+  payments              Payment[]          @relation("Payment_check")
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @default(now()) @updatedAt
+
+  @@index([showId])
+  @@index([seatingAssignmentId])
+  @@index([serverId])
 }
 
-model Todo {
-  id                   String      @id @default(cuid())
-  label                String      @default("")
-  description          Json        @default("[{\"type\":\"paragraph\",\"children\":[{\"text\":\"\"}]}]")
-  isComplete           Boolean     @default(false)
-  status               String?     @default("todo")
-  priority             Int?        @default(1)
-  tags                 Json        @default("[]")
-  dueDate              DateTime?
-  weight               Float?      @default(1)
-  budget               Decimal?    @default("0.00") @postgresql.Decimal(10, 2)
-  isPrivate            Boolean     @default(false)
-  largeNumber          BigInt?
-  metadata             Json?
-  secretNote           String?
-  coverImage_id        String?
-  coverImage_filesize  Int?
-  coverImage_width     Int?
-  coverImage_height    Int?
-  coverImage_extension String?
-  todoImages           TodoImage[] @relation("Todo_todoImages")
-  assignedTo           User?       @relation("Todo_assignedTo", fields: [assignedToId], references: [id])
-  assignedToId         String?     @map("assignedTo")
+model CheckIn {
+  id          String             @id @default(cuid())
+  ticket      Ticket?            @relation("CheckIn_ticket", fields: [ticketId], references: [id])
+  ticketId    String?            @map("ticket")
+  show        Show?              @relation("CheckIn_show", fields: [showId], references: [id])
+  showId      String?            @map("show")
+  scannedBy   User?              @relation("CheckIn_scannedBy", fields: [scannedById], references: [id])
+  scannedById String?            @map("scannedBy")
+  at          DateTime?
+  method      CheckInMethodType? @default(scan)
+  result      CheckInResultType? @default(admitted)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @default(now()) @updatedAt
 
-  @@index([assignedToId])
+  @@index([ticketId])
+  @@index([showId])
+  @@index([scannedById])
 }
 
-model TodoImage {
-  id              String  @id @default(cuid())
-  image_id        String?
-  image_filesize  Int?
-  image_width     Int?
-  image_height    Int?
-  image_extension String?
-  imagePath       String  @default("")
-  altText         String  @default("")
-  todos           Todo[]  @relation("Todo_todoImages")
-  metadata        Json?
+model CheckItem {
+  id                  String           @id @default(cuid())
+  check               Check?           @relation("CheckItem_check", fields: [checkId], references: [id])
+  checkId             String?          @map("check")
+  menuItem            MenuItem?        @relation("CheckItem_menuItem", fields: [menuItemId], references: [id])
+  menuItemId          String?          @map("menuItem")
+  name                String           @default("")
+  priceCents          Int?             @default(0)
+  qty                 Int?             @default(1)
+  countsTowardMinimum Boolean          @default(false)
+  voided              Boolean          @default(false)
+  voidReason          String           @default("")
+  approval            ManagerApproval? @relation("CheckItem_approval", fields: [approvalId], references: [id])
+  approvalId          String?          @map("approval")
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @default(now()) @updatedAt
+
+  @@index([checkId])
+  @@index([menuItemId])
+  @@index([approvalId])
+}
+
+model Comedian {
+  id                 String              @id @default(cuid())
+  stageName          String              @default("")
+  legalName          String              @default("")
+  email              String              @default("")
+  phone              String              @default("")
+  bio                String              @default("")
+  headshot_id        String?
+  headshot_filesize  Int?
+  headshot_width     Int?
+  headshot_height    Int?
+  headshot_extension String?
+  socials            Json?
+  homeCity           String              @default("")
+  defaultFeeCents    Int?                @default(0)
+  notes              String              @default("")
+  payeeDetailsOnFile Boolean             @default(false)
+  status             ComedianStatusType? @default(active)
+  slots              LineupSlot[]        @relation("LineupSlot_comedian")
+  runs               Run[]               @relation("Run_headliner")
+  signups            OpenMicSignup[]     @relation("OpenMicSignup_comedian")
+  payouts            ComedianPayout[]    @relation("ComedianPayout_comedian")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @default(now()) @updatedAt
+}
+
+model ComedianPayout {
+  id           String                    @id @default(cuid())
+  comedian     Comedian?                 @relation("ComedianPayout_comedian", fields: [comedianId], references: [id])
+  comedianId   String?                   @map("comedian")
+  show         Show?                     @relation("ComedianPayout_show", fields: [showId], references: [id])
+  showId       String?                   @map("show")
+  run          Run?                      @relation("ComedianPayout_run", fields: [runId], references: [id])
+  runId        String?                   @map("run")
+  lineupSlots  LineupSlot[]              @relation("ComedianPayout_lineupSlots")
+  amountCents  Int?                      @default(0)
+  currencyCode String                    @default("USD")
+  status       ComedianPayoutStatusType? @default(draft)
+  paidAt       DateTime?
+  method       ComedianPayoutMethodType? @default(check)
+  reference    String                    @default("")
+  payoutKey    String                    @unique @default("")
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @default(now()) @updatedAt
+
+  @@index([comedianId])
+  @@index([showId])
+  @@index([runId])
+}
+
+model Comp {
+  id             String           @id @default(cuid())
+  show           Show?            @relation("Comp_show", fields: [showId], references: [id])
+  showId         String?          @map("show")
+  issuedBy       User?            @relation("Comp_issuedBy", fields: [issuedById], references: [id])
+  issuedById     String?          @map("issuedBy")
+  recipientName  String           @default("")
+  recipientEmail String           @default("")
+  quantity       Int?             @default(1)
+  reason         CompReasonType?  @default(industry)
+  approval       ManagerApproval? @relation("Comp_approval", fields: [approvalId], references: [id])
+  approvalId     String?          @map("approval")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now()) @updatedAt
+
+  @@index([showId])
+  @@index([issuedById])
+  @@index([approvalId])
+}
+
+model IdempotencyKey {
+  id             String    @id @default(cuid())
+  idempotencyKey String    @unique @default("")
+  requestMethod  String    @default("")
+  requestParams  Json?
+  requestPath    String    @default("")
+  responseCode   Int?
+  responseBody   Json?
+  recoveryPoint  String    @default("started")
+  lockedAt       DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+}
+
+model InventoryHold {
+  id          String                   @id @default(cuid())
+  holdKey     String                   @unique @default("")
+  show        Show?                    @relation("InventoryHold_show", fields: [showId], references: [id])
+  showId      String?                  @map("show")
+  priceTier   PriceTier?               @relation("InventoryHold_priceTier", fields: [priceTierId], references: [id])
+  priceTierId String?                  @map("priceTier")
+  quantity    Int?                     @default(1)
+  tables      Table[]                  @relation("InventoryHold_tables")
+  status      InventoryHoldStatusType? @default(active)
+  expiresAt   DateTime?
+  cartToken   String                   @default("")
+  quote       Json?
+  promo       PromoCode?               @relation("InventoryHold_promo", fields: [promoId], references: [id])
+  promoId     String?                  @map("promo")
+  order       TicketOrder?             @relation("InventoryHold_order", fields: [orderId], references: [id])
+  orderId     String?                  @unique @map("order")
+  occupancies TableOccupancy[]         @relation("TableOccupancy_hold")
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @default(now()) @updatedAt
+
+  @@index([showId])
+  @@index([priceTierId])
+  @@index([promoId])
+}
+
+model LineupSlot {
+  id          String                @id @default(cuid())
+  show        Show?                 @relation("LineupSlot_show", fields: [showId], references: [id])
+  showId      String?               @map("show")
+  comedian    Comedian?             @relation("LineupSlot_comedian", fields: [comedianId], references: [id])
+  comedianId  String?               @map("comedian")
+  role        LineupSlotRoleType?   @default(host)
+  position    Int?                  @default(0)
+  setMinutes  Int?                  @default(10)
+  feeCents    Int?                  @default(0)
+  bonusCents  Int?                  @default(0)
+  status      LineupSlotStatusType? @default(offered)
+  confirmedAt DateTime?
+  payouts     ComedianPayout[]      @relation("ComedianPayout_lineupSlots")
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @default(now()) @updatedAt
+
+  @@index([showId])
+  @@index([comedianId])
+}
+
+model ManagerApproval {
+  id                 String      @id @default(cuid())
+  actionType         String
+  targetId           String      @default("")
+  reason             String      @default("")
+  amount             Int?
+  requestFingerprint String      @default("")
+  requestPayload     Json?
+  status             String      @default("pending")
+  requestedAt        DateTime?   @default(now())
+  approvedAt         DateTime?
+  consumedAt         DateTime?
+  expiresAt          DateTime
+  consumedEntityType String      @default("")
+  consumedEntityId   String      @default("")
+  requestedBy        User?       @relation("ManagerApproval_requestedBy", fields: [requestedById], references: [id])
+  requestedById      String?     @map("requestedBy")
+  approvedBy         User?       @relation("ManagerApproval_approvedBy", fields: [approvedById], references: [id])
+  approvedById       String?     @map("approvedBy")
+  comps              Comp[]      @relation("Comp_approval")
+  items              CheckItem[] @relation("CheckItem_approval")
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @default(now()) @updatedAt
+
+  @@index([actionType])
+  @@index([targetId])
+  @@index([status])
+  @@index([requestedAt])
+  @@index([expiresAt])
+  @@index([requestedById])
+  @@index([approvedById])
+}
+
+model MenuItem {
+  id                  String                @id @default(cuid())
+  name                String                @default("")
+  category            MenuItemCategoryType? @default(drink)
+  priceCents          Int?                  @default(0)
+  countsTowardMinimum Boolean               @default(false)
+  active              Boolean               @default(false)
+  image_id            String?
+  image_filesize      Int?
+  image_width         Int?
+  image_height        Int?
+  image_extension     String?
+  checkItems          CheckItem[]           @relation("CheckItem_menuItem")
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @default(now()) @updatedAt
 }
 
 model OAuthApp {
@@ -125,4 +326,736 @@ model OAuthToken {
 
   @@index([clientId])
   @@index([userId])
+}
+
+model OpenMicSignup {
+  id                    String                   @id @default(cuid())
+  signupKey             String                   @unique @default("")
+  show                  Show?                    @relation("OpenMicSignup_show", fields: [showId], references: [id])
+  showId                String?                  @map("show")
+  comedian              Comedian?                @relation("OpenMicSignup_comedian", fields: [comedianId], references: [id])
+  comedianId            String?                  @map("comedian")
+  name                  String                   @default("")
+  email                 String                   @default("")
+  method                OpenMicSignupMethodType? @default(online_list)
+  lotteryNumber         Int?                     @default(0)
+  status                OpenMicSignupStatusType? @default(waiting)
+  bringerGuestsRequired Int?                     @default(0)
+  bringerGuestsArrived  Int?                     @default(0)
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @default(now()) @updatedAt
+
+  @@index([showId])
+  @@index([comedianId])
+}
+
+model Payment {
+  id                               String                @id @default(cuid())
+  idempotencyKey                   String                @unique @default("")
+  reservedAt                       DateTime?
+  refundedAmount                   Int?                  @default(0)
+  amount                           Int
+  data                             Json?
+  currencyCode                     String                @default("USD")
+  status                           String                @default("pending")
+  paymentMethod                    String?               @default("credit_card")
+  paymentProvider                  PaymentProvider?      @relation("Payment_paymentProvider", fields: [paymentProviderId], references: [id])
+  paymentProviderId                String?               @map("paymentProvider")
+  providerPaymentId                String                @default("")
+  cardLast4                        String                @default("")
+  cardBrand                        String                @default("")
+  tipAmount                        Int?                  @default(0)
+  isSplitPayment                   Boolean               @default(false)
+  splitPaymentIndex                Int?
+  splitTotal                       Int?
+  processedAt                      DateTime?
+  errorMessage                     String                @default("")
+  notes                            String                @default("")
+  order                            TicketOrder?          @relation("Payment_order", fields: [orderId], references: [id])
+  orderId                          String?               @map("order")
+  paymentCollection                PaymentCollection?    @relation("Payment_paymentCollection", fields: [paymentCollectionId], references: [id])
+  paymentCollectionId              String?               @map("paymentCollection")
+  check                            Check?                @relation("Payment_check", fields: [checkId], references: [id])
+  checkId                          String?               @map("check")
+  processedBy                      User?                 @relation("Payment_processedBy", fields: [processedById], references: [id])
+  processedById                    String?               @map("processedBy")
+  createdAt                        DateTime              @default(now())
+  updatedAt                        DateTime              @default(now()) @updatedAt
+  from_PaymentWebhookEvent_payment PaymentWebhookEvent[] @relation("PaymentWebhookEvent_payment")
+  from_Refund_payment              Refund[]              @relation("Refund_payment")
+
+  @@index([paymentProviderId])
+  @@index([orderId])
+  @@index([paymentCollectionId])
+  @@index([checkId])
+  @@index([processedById])
+}
+
+model PaymentCollection {
+  id               String                            @id @default(cuid())
+  description      PaymentCollectionDescriptionType? @default(default)
+  amount           Int
+  authorizedAmount Int?                              @default(0)
+  refundedAmount   Int?                              @default(0)
+  metadata         Json?
+  paymentSessions  PaymentSession[]                  @relation("PaymentSession_paymentCollection")
+  payments         Payment[]                         @relation("Payment_paymentCollection")
+  order            TicketOrder?                      @relation("PaymentCollection_order", fields: [orderId], references: [id])
+  orderId          String?                           @unique @map("order")
+  createdAt        DateTime                          @default(now())
+  updatedAt        DateTime                          @default(now()) @updatedAt
+}
+
+model PaymentProvider {
+  id                           String           @id @default(cuid())
+  name                         String           @default("")
+  code                         String           @unique @default("")
+  isInstalled                  Boolean          @default(true)
+  credentials                  Json?            @default("{}")
+  metadata                     Json?            @default("{}")
+  createPaymentFunction        String           @default("")
+  capturePaymentFunction       String           @default("")
+  refundPaymentFunction        String           @default("")
+  getPaymentStatusFunction     String           @default("")
+  generatePaymentLinkFunction  String           @default("")
+  handleWebhookFunction        String           @default("")
+  sessions                     PaymentSession[] @relation("PaymentSession_paymentProvider")
+  createdAt                    DateTime         @default(now())
+  updatedAt                    DateTime         @default(now()) @updatedAt
+  from_Payment_paymentProvider Payment[]        @relation("Payment_paymentProvider")
+}
+
+model PaymentSession {
+  id                  String             @id @default(cuid())
+  isSelected          Boolean            @default(false)
+  isInitiated         Boolean            @default(false)
+  amount              Int
+  data                Json?              @default("{}")
+  idempotencyKey      String             @unique @default("")
+  paymentCollection   PaymentCollection? @relation("PaymentSession_paymentCollection", fields: [paymentCollectionId], references: [id])
+  paymentCollectionId String?            @map("paymentCollection")
+  paymentProvider     PaymentProvider?   @relation("PaymentSession_paymentProvider", fields: [paymentProviderId], references: [id])
+  paymentProviderId   String?            @map("paymentProvider")
+  paymentAuthorizedAt DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @default(now()) @updatedAt
+
+  @@index([paymentCollectionId])
+  @@index([paymentProviderId])
+}
+
+model PaymentWebhookEvent {
+  id              String    @id @default(cuid())
+  eventKey        String    @unique @default("")
+  providerCode    String    @default("")
+  providerEventId String    @default("")
+  eventType       String    @default("")
+  status          String?   @default("received")
+  payload         Json?
+  rawBody         String    @default("")
+  error           String    @default("")
+  attempts        Int?      @default(0)
+  receivedAt      DateTime? @default(now())
+  processedAt     DateTime?
+  payment         Payment?  @relation("PaymentWebhookEvent_payment", fields: [paymentId], references: [id])
+  paymentId       String?   @map("payment")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  @@index([providerCode])
+  @@index([providerEventId])
+  @@index([eventType])
+  @@index([receivedAt])
+  @@index([paymentId])
+}
+
+model PriceTier {
+  id           String               @id @default(cuid())
+  show         Show?                @relation("PriceTier_show", fields: [showId], references: [id])
+  showId       String?              @map("show")
+  name         String               @default("")
+  priceCents   Int?                 @default(0)
+  feeCents     Int?                 @default(0)
+  capacity     Int?                 @default(180)
+  sold         Int?                 @default(0)
+  held         Int?                 @default(0)
+  isTableTier  Boolean              @default(false)
+  seatsPerUnit Int?                 @default(1)
+  salesStartAt DateTime?
+  salesEndAt   DateTime?
+  status       PriceTierStatusType? @default(on_sale)
+  sections     Section[]            @relation("Section_priceTier")
+  templates    ShowTemplate[]       @relation("PriceTier_templates")
+  holds        InventoryHold[]      @relation("InventoryHold_priceTier")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @default(now()) @updatedAt
+
+  @@index([showId])
+}
+
+model PromoCode {
+  id            String                     @id @default(cuid())
+  code          String                     @unique @default("")
+  discountType  PromoCodeDiscountTypeType? @default(percent_bps)
+  value         Int?                       @default(0)
+  maxUses       Int?                       @default(100)
+  usedCount     Int?                       @default(0)
+  reservedCount Int?                       @default(0)
+  show          Show?                      @relation("PromoCode_show", fields: [showId], references: [id])
+  showId        String?                    @map("show")
+  template      ShowTemplate?              @relation("PromoCode_template", fields: [templateId], references: [id])
+  templateId    String?                    @map("template")
+  validFrom     DateTime?
+  validUntil    DateTime?
+  holds         InventoryHold[]            @relation("InventoryHold_promo")
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @default(now()) @updatedAt
+
+  @@index([showId])
+  @@index([templateId])
+}
+
+model Refund {
+  id               String       @id @default(cuid())
+  idempotencyKey   String       @unique @default("")
+  amount           Int
+  currencyCode     String       @default("")
+  status           String       @default("processing")
+  reason           String       @default("")
+  providerRefundId String       @default("")
+  providerData     Json?
+  processedAt      DateTime?
+  payment          Payment?     @relation("Refund_payment", fields: [paymentId], references: [id])
+  paymentId        String?      @map("payment")
+  order            TicketOrder? @relation("Refund_order", fields: [orderId], references: [id])
+  orderId          String?      @map("order")
+  requestedBy      User?        @relation("Refund_requestedBy", fields: [requestedById], references: [id])
+  requestedById    String?      @map("requestedBy")
+  approvedBy       User?        @relation("Refund_approvedBy", fields: [approvedById], references: [id])
+  approvedById     String?      @map("approvedBy")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @default(now()) @updatedAt
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([requestedById])
+  @@index([approvedById])
+}
+
+model Role {
+  id                  String   @id @default(cuid())
+  name                String   @default("")
+  canSeeOtherPeople   Boolean  @default(false)
+  canEditOtherPeople  Boolean  @default(false)
+  canManagePeople     Boolean  @default(false)
+  canManageRoles      Boolean  @default(false)
+  canAccessDashboard  Boolean  @default(false)
+  canManageOnboarding Boolean  @default(false)
+  canManagePayments   Boolean  @default(false)
+  canReadPayments     Boolean  @default(false)
+  canIssueRefunds     Boolean  @default(false)
+  canReadAudit        Boolean  @default(false)
+  canManageShows      Boolean  @default(false)
+  canManageTalent     Boolean  @default(false)
+  canManageDoor       Boolean  @default(false)
+  canManageChecks     Boolean  @default(false)
+  canManagePayouts    Boolean  @default(false)
+  canManageSettings   Boolean  @default(false)
+  canManageOrders     Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
+  assignedTo          User[]   @relation("User_role")
+}
+
+model Room {
+  id          String               @id @default(cuid())
+  venue       Venue?               @relation("Room_venue", fields: [venueId], references: [id])
+  venueId     String?              @map("venue")
+  name        String               @default("")
+  capacity    Int?                 @default(180)
+  seatingMode RoomSeatingModeType? @default(tables)
+  active      Boolean              @default(false)
+  sections    Section[]            @relation("Section_room")
+  shows       Show[]               @relation("Show_room")
+  templates   ShowTemplate[]       @relation("ShowTemplate_room")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @default(now()) @updatedAt
+
+  @@index([venueId])
+}
+
+model Run {
+  id          String           @id @default(cuid())
+  headliner   Comedian?        @relation("Run_headliner", fields: [headlinerId], references: [id])
+  headlinerId String?          @map("headliner")
+  startAt     DateTime?
+  endAt       DateTime?
+  runFeeCents Int?             @default(0)
+  notes       String           @default("")
+  shows       Show[]           @relation("Show_run")
+  payouts     ComedianPayout[] @relation("ComedianPayout_run")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @default(now()) @updatedAt
+
+  @@index([headlinerId])
+}
+
+model SeatingAssignment {
+  id            String                       @id @default(cuid())
+  show          Show?                        @relation("SeatingAssignment_show", fields: [showId], references: [id])
+  showId        String?                      @map("show")
+  ticketOrder   TicketOrder?                 @relation("SeatingAssignment_ticketOrder", fields: [ticketOrderId], references: [id])
+  ticketOrderId String?                      @unique @map("ticketOrder")
+  tables        Table[]                      @relation("SeatingAssignment_tables")
+  partySize     Int?                         @default(1)
+  status        SeatingAssignmentStatusType? @default(unseated)
+  seatedAt      DateTime?
+  server        User?                        @relation("SeatingAssignment_server", fields: [serverId], references: [id])
+  serverId      String?                      @map("server")
+  checks        Check[]                      @relation("Check_seatingAssignment")
+  occupancies   TableOccupancy[]             @relation("TableOccupancy_assignment")
+  createdAt     DateTime                     @default(now())
+  updatedAt     DateTime                     @default(now()) @updatedAt
+
+  @@index([showId])
+  @@index([serverId])
+}
+
+model Section {
+  id          String     @id @default(cuid())
+  room        Room?      @relation("Section_room", fields: [roomId], references: [id])
+  roomId      String?    @map("room")
+  name        String     @default("")
+  priceTier   PriceTier? @relation("Section_priceTier", fields: [priceTierId], references: [id])
+  priceTierId String?    @map("priceTier")
+  sort        Int?       @default(0)
+  tables      Table[]    @relation("Table_section")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+
+  @@index([roomId])
+  @@index([priceTierId])
+}
+
+model Show {
+  id             String              @id @default(cuid())
+  room           Room?               @relation("Show_room", fields: [roomId], references: [id])
+  roomId         String?             @map("room")
+  template       ShowTemplate?       @relation("Show_template", fields: [templateId], references: [id])
+  templateId     String?             @map("template")
+  run            Run?                @relation("Show_run", fields: [runId], references: [id])
+  runId          String?             @map("run")
+  title          String              @default("")
+  occurrenceKey  String              @unique @default("")
+  startsAt       DateTime?
+  doorsAt        DateTime?
+  endsAt         DateTime?
+  signupOpensAt  DateTime?
+  ageRestriction String?             @default("all")
+  capacity       Int?                @default(180)
+  status         ShowStatusType?     @default(draft)
+  isOpenMic      Boolean             @default(false)
+  publicNote     String              @default("")
+  lineup         LineupSlot[]        @relation("LineupSlot_show")
+  signups        OpenMicSignup[]     @relation("OpenMicSignup_show")
+  tiers          PriceTier[]         @relation("PriceTier_show")
+  holds          InventoryHold[]     @relation("InventoryHold_show")
+  orders         TicketOrder[]       @relation("TicketOrder_show")
+  tickets        Ticket[]            @relation("Ticket_show")
+  comps          Comp[]              @relation("Comp_show")
+  assignments    SeatingAssignment[] @relation("SeatingAssignment_show")
+  checks         Check[]             @relation("Check_show")
+  checkIns       CheckIn[]           @relation("CheckIn_show")
+  payouts        ComedianPayout[]    @relation("ComedianPayout_show")
+  settlement     ShowSettlement?     @relation("Show_settlement", fields: [settlementId], references: [id])
+  settlementId   String?             @unique @map("settlement")
+  promos         PromoCode[]         @relation("PromoCode_show")
+  occupancies    TableOccupancy[]    @relation("TableOccupancy_show")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @default(now()) @updatedAt
+
+  @@index([roomId])
+  @@index([templateId])
+  @@index([runId])
+}
+
+model ShowSettlement {
+  id                           String                    @id @default(cuid())
+  show                         Show?                     @relation("Show_settlement")
+  ticketGrossCents             Int?                      @default(0)
+  feesCents                    Int?                      @default(0)
+  discountsCents               Int?                      @default(0)
+  refundsCents                 Int?                      @default(0)
+  compsCount                   Int?                      @default(0)
+  foodBeverageGrossCents       Int?                      @default(0)
+  minimumShortfallRevenueCents Int?                      @default(0)
+  tipsCents                    Int?                      @default(0)
+  talentCostCents              Int?                      @default(0)
+  netCents                     Int?                      @default(0)
+  currencyCode                 String                    @default("USD")
+  status                       ShowSettlementStatusType? @default(open)
+  closedBy                     User?                     @relation("ShowSettlement_closedBy", fields: [closedById], references: [id])
+  closedById                   String?                   @map("closedBy")
+  createdAt                    DateTime                  @default(now())
+  updatedAt                    DateTime                  @default(now()) @updatedAt
+
+  @@index([closedById])
+}
+
+model ShowTemplate {
+  id                    String      @id @default(cuid())
+  room                  Room?       @relation("ShowTemplate_room", fields: [roomId], references: [id])
+  roomId                String?     @map("room")
+  title                 String      @default("")
+  recurrenceRule        String      @default("")
+  startTime             String      @default("")
+  duration              Int?        @default(90)
+  defaultPriceTiers     PriceTier[] @relation("PriceTier_templates")
+  defaultAgeRestriction String?     @default("all")
+  isOpenMic             Boolean     @default(false)
+  shows                 Show[]      @relation("Show_template")
+  promos                PromoCode[] @relation("PromoCode_template")
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @default(now()) @updatedAt
+
+  @@index([roomId])
+}
+
+model Table {
+  id             String              @id @default(cuid())
+  section        Section?            @relation("Table_section", fields: [sectionId], references: [id])
+  sectionId      String?             @map("section")
+  label          String              @default("")
+  seats          Int?                @default(4)
+  combinableWith Table[]             @relation("Table_combinableWith")
+  combinedBy     Table[]             @relation("Table_combinableWith")
+  x              Int?                @default(0)
+  y              Int?                @default(0)
+  shape          TableShapeType?     @default(round)
+  holds          InventoryHold[]     @relation("InventoryHold_tables")
+  assignments    SeatingAssignment[] @relation("SeatingAssignment_tables")
+  occupancies    TableOccupancy[]    @relation("TableOccupancy_table")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @default(now()) @updatedAt
+
+  @@index([sectionId])
+}
+
+model TableOccupancy {
+  id           String             @id @default(cuid())
+  occupancyKey String?            @unique
+  show         Show?              @relation("TableOccupancy_show", fields: [showId], references: [id])
+  showId       String?            @map("show")
+  table        Table?             @relation("TableOccupancy_table", fields: [tableId], references: [id])
+  tableId      String?            @map("table")
+  hold         InventoryHold?     @relation("TableOccupancy_hold", fields: [holdId], references: [id])
+  holdId       String?            @map("hold")
+  assignment   SeatingAssignment? @relation("TableOccupancy_assignment", fields: [assignmentId], references: [id])
+  assignmentId String?            @map("assignment")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @default(now()) @updatedAt
+
+  @@index([showId])
+  @@index([tableId])
+  @@index([holdId])
+  @@index([assignmentId])
+}
+
+model Ticket {
+  id         String            @id @default(cuid())
+  order      TicketOrder?      @relation("Ticket_order", fields: [orderId], references: [id])
+  orderId    String?           @map("order")
+  show       Show?             @relation("Ticket_show", fields: [showId], references: [id])
+  showId     String?           @map("show")
+  line       TicketOrderLine?  @relation("Ticket_line", fields: [lineId], references: [id])
+  lineId     String?           @map("line")
+  ticketCode String            @unique @default("")
+  tokenHash  String            @default("")
+  holderName String            @default("")
+  status     TicketStatusType? @default(valid)
+  checkIns   CheckIn[]         @relation("CheckIn_ticket")
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @default(now()) @updatedAt
+
+  @@index([orderId])
+  @@index([showId])
+  @@index([lineId])
+}
+
+model TicketOrder {
+  id                 String                 @id @default(cuid())
+  orderNumber        String                 @unique @default("")
+  customer           User?                  @relation("TicketOrder_customer", fields: [customerId], references: [id])
+  customerId         String?                @map("customer")
+  email              String                 @default("")
+  name               String                 @default("")
+  phone              String                 @default("")
+  show               Show?                  @relation("TicketOrder_show", fields: [showId], references: [id])
+  showId             String?                @map("show")
+  status             TicketOrderStatusType? @default(pending_payment)
+  subtotalCents      Int?                   @default(0)
+  feesCents          Int?                   @default(0)
+  discountCents      Int?                   @default(0)
+  taxCents           Int?                   @default(0)
+  totalCents         Int?                   @default(0)
+  currencyCode       String                 @default("USD")
+  source             TicketOrderSourceType? @default(online)
+  partySize          Int?                   @default(1)
+  seatingRequest     String                 @default("")
+  birthdayOrOccasion String                 @default("")
+  ageAttested        Boolean                @default(false)
+  paymentCollection  PaymentCollection?     @relation("PaymentCollection_order")
+  secretKey          String                 @default("")
+  lines              TicketOrderLine[]      @relation("TicketOrderLine_order")
+  tickets            Ticket[]               @relation("Ticket_order")
+  tableAssignment    SeatingAssignment?     @relation("SeatingAssignment_ticketOrder")
+  hold               InventoryHold?         @relation("InventoryHold_order")
+  payments           Payment[]              @relation("Payment_order")
+  refunds            Refund[]               @relation("Refund_order")
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @default(now()) @updatedAt
+
+  @@index([customerId])
+  @@index([showId])
+}
+
+model TicketOrderLine {
+  id             String       @id @default(cuid())
+  order          TicketOrder? @relation("TicketOrderLine_order", fields: [orderId], references: [id])
+  orderId        String?      @map("order")
+  tierName       String       @default("")
+  unitPriceCents Int?         @default(0)
+  unitFeeCents   Int?         @default(0)
+  quantity       Int?         @default(1)
+  lineTotalCents Int?         @default(0)
+  discountCents  Int?         @default(0)
+  taxCents       Int?         @default(0)
+  currencyCode   String       @default("USD")
+  priceTierId    String       @default("")
+  tickets        Ticket[]     @relation("Ticket_line")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+
+  @@index([orderId])
+}
+
+model User {
+  id                               String              @id @default(cuid())
+  name                             String              @default("")
+  email                            String              @unique @default("")
+  password                         String
+  role                             Role?               @relation("User_role", fields: [roleId], references: [id])
+  roleId                           String?             @map("role")
+  onboardingStatus                 String?             @default("not_started")
+  notificationPreference           Boolean             @default(false)
+  ticketOrders                     TicketOrder[]       @relation("TicketOrder_customer")
+  issuedComps                      Comp[]              @relation("Comp_issuedBy")
+  seatings                         SeatingAssignment[] @relation("SeatingAssignment_server")
+  checks                           Check[]             @relation("Check_server")
+  checkIns                         CheckIn[]           @relation("CheckIn_scannedBy")
+  settlements                      ShowSettlement[]    @relation("ShowSettlement_closedBy")
+  auditEvents                      AuditEvent[]        @relation("AuditEvent_actor")
+  createdAt                        DateTime            @default(now())
+  updatedAt                        DateTime            @default(now()) @updatedAt
+  passwordResetToken               String?
+  passwordResetIssuedAt            DateTime?
+  passwordResetRedeemedAt          DateTime?
+  from_ManagerApproval_requestedBy ManagerApproval[]   @relation("ManagerApproval_requestedBy")
+  from_ManagerApproval_approvedBy  ManagerApproval[]   @relation("ManagerApproval_approvedBy")
+  from_OAuthToken_user             OAuthToken[]        @relation("OAuthToken_user")
+  from_Payment_processedBy         Payment[]           @relation("Payment_processedBy")
+  from_Refund_requestedBy          Refund[]            @relation("Refund_requestedBy")
+  from_Refund_approvedBy           Refund[]            @relation("Refund_approvedBy")
+
+  @@index([roleId])
+}
+
+model Venue {
+  id                     String   @id @default(cuid())
+  name                   String   @default("")
+  timezone               String   @default("")
+  address                String   @default("")
+  defaultAgeRestriction  String?  @default("all")
+  drinkMinimumItems      Int?     @default(2)
+  drinkMinimumCentsFloor Int?     @default(0)
+  serviceFeeBps          Int?     @default(0)
+  taxBps                 Int?     @default(0)
+  policies               String   @default("")
+  rooms                  Room[]   @relation("Room_venue")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @default(now()) @updatedAt
+}
+
+model VenueSettings {
+  id                     Int      @id
+  refundWindowHours      Int?     @default(24)
+  holdMinutes            Int?     @default(10)
+  approvalThresholdCents Int?     @default(10000)
+  compApprovalQuantity   Int?     @default(4)
+  currencyCode           String   @default("USD")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @default(now()) @updatedAt
+}
+
+enum CheckStatusType {
+  open
+  presented
+  paid
+  voided
+}
+
+enum CheckInMethodType {
+  scan
+  manual
+}
+
+enum CheckInResultType {
+  admitted
+  duplicate
+  wrong_show
+  void
+}
+
+enum ComedianStatusType {
+  active
+  inactive
+}
+
+enum ComedianPayoutStatusType {
+  draft
+  approved
+  paid
+  void
+}
+
+enum ComedianPayoutMethodType {
+  check
+  ach
+  venmo
+}
+
+enum CompReasonType {
+  industry
+  comic_guest
+  press
+  service_recovery
+}
+
+enum InventoryHoldStatusType {
+  active
+  converted
+  released
+  expired
+}
+
+enum LineupSlotRoleType {
+  host
+  opener
+  guest_set
+  feature
+  headliner
+  bringer
+}
+
+enum LineupSlotStatusType {
+  offered
+  confirmed
+  declined
+  cancelled
+  performed
+  no_show
+}
+
+enum MenuItemCategoryType {
+  drink
+  food
+  na
+}
+
+enum OpenMicSignupMethodType {
+  online_list
+  bucket
+  bringer
+}
+
+enum OpenMicSignupStatusType {
+  waiting
+  called
+  performed
+  skipped
+  withdrawn
+}
+
+enum PaymentCollectionDescriptionType {
+  default
+  refund
+}
+
+enum PriceTierStatusType {
+  on_sale
+  paused
+  sold_out
+  closed
+}
+
+enum PromoCodeDiscountTypeType {
+  percent_bps
+  amount_cents
+  comp
+}
+
+enum RoomSeatingModeType {
+  tables
+  ga
+}
+
+enum SeatingAssignmentStatusType {
+  unseated
+  seated
+  closed
+}
+
+enum ShowStatusType {
+  draft
+  on_sale
+  sold_out
+  doors_open
+  in_progress
+  completed
+  settled
+  cancelled
+}
+
+enum ShowSettlementStatusType {
+  open
+  closed
+}
+
+enum TableShapeType {
+  round
+  square
+  rectangle
+}
+
+enum TicketStatusType {
+  valid
+  checked_in
+  void
+  refunded
+}
+
+enum TicketOrderStatusType {
+  pending_payment
+  paid
+  partially_refunded
+  refunded
+  cancelled
+  comp
+}
+
+enum TicketOrderSourceType {
+  online
+  box_office
+  comp
+  bringer
 }

@@ -1,6 +1,7 @@
 import { list } from '@keystone-6/core'
 import { allOperations, denyAll } from '@keystone-6/core/access'
-import { checkbox, password, relationship, text } from '@keystone-6/core/fields'
+import { checkbox, password, relationship, text, select } from '@keystone-6/core/fields'
+import { trackingFields } from './trackingFields'
 
 import { isSignedIn, permissions, rules } from '../access'
 import type { Session } from '../access'
@@ -28,7 +29,7 @@ export const User = list({
     hideCreate: args => !permissions.canManagePeople(args),
     hideDelete: args => !permissions.canManagePeople(args),
     listView: {
-      initialColumns: ['name', 'email', 'role', 'tasks'],
+      initialColumns: ['name', 'email', 'role'],
     },
     itemView: {
       defaultFieldMode: ({ session, item }) => {
@@ -77,20 +78,15 @@ export const User = list({
         },
       },
     }),
-    tasks: relationship({
-      ref: 'Todo.assignedTo',
-      many: true,
-      access: {
-        create: permissions.canManageAllTodos,
-        update: ({ session, item }) =>
-          permissions.canManageAllTodos({ session }) || session?.itemId === item.id,
-      },
-      ui: {
-        createView: {
-          fieldMode: args => (permissions.canManageAllTodos(args) ? 'edit' : 'hidden'),
-        },
-        // itemView: { fieldMode: 'read' },
-      },
-    }),
+    onboardingStatus: select({ options: ['not_started', 'in_progress', 'completed', 'dismissed'], defaultValue: 'not_started' }),
+    notificationPreference: checkbox({defaultValue: false}),
+    ticketOrders: relationship({ref: 'TicketOrder.customer', many: true, access: {create: () => false, update: () => false}}),
+    issuedComps: relationship({ref: 'Comp.issuedBy', many: true, access: {create: () => false, update: () => false}}),
+    seatings: relationship({ref: 'SeatingAssignment.server', many: true, access: {create: () => false, update: () => false}}),
+    checks: relationship({ref: 'Check.server', many: true, access: {create: () => false, update: () => false}}),
+    checkIns: relationship({ref: 'CheckIn.scannedBy', many: true, access: {create: () => false, update: () => false}}),
+    settlements: relationship({ref: 'ShowSettlement.closedBy', many: true, access: {create: () => false, update: () => false}}),
+    auditEvents: relationship({ref: 'AuditEvent.actor', many: true, access: {create: () => false, update: () => false}}),
+    ...trackingFields,
   },
 });

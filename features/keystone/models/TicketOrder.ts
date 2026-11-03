@@ -1,0 +1,31 @@
+import { text, integer, checkbox, timestamp, json, relationship, image } from '@keystone-6/core/fields';
+import { domainList, money, currency, lifecycle, choice, unique, secret } from './domainFields';
+
+export const TicketOrder = domainList({
+  orderNumber: unique(),
+  customer: relationship({ref:'User.ticketOrders'}),
+  email: text(),
+  name: text(),
+  phone: text(),
+  show: relationship({ref:'Show.orders'}),
+  status: lifecycle(['pending_payment', 'paid', 'partially_refunded', 'refunded', 'cancelled', 'comp']),
+  subtotalCents: money(),
+  feesCents: money(),
+  discountCents: money(),
+  taxCents: money(),
+  totalCents: money(),
+  currencyCode: currency(),
+  source: choice(['online', 'box_office', 'comp', 'bringer']),
+  partySize: integer({defaultValue:1}),
+  seatingRequest: text(),
+  birthdayOrOccasion: text(),
+  ageAttested: checkbox({defaultValue:false}),
+  paymentCollection: relationship({ref:'PaymentCollection.order'}),
+  secretKey: secret(),
+  lines: relationship({ref:'TicketOrderLine.order',many:true}),
+  tickets: relationship({ref:'Ticket.order',many:true}),
+  tableAssignment: relationship({ref:'SeatingAssignment.ticketOrder'}),
+  hold: relationship({ref:'InventoryHold.order'}),
+  payments: relationship({ref:'Payment.order',many:true}),
+  refunds: relationship({ref:'Refund.order',many:true}),
+}, 'canManageOrders', true);

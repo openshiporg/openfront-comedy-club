@@ -1,0 +1,38 @@
+import { graphql } from '@keystone-6/core';
+import { virtual, text, integer, checkbox, timestamp, json, relationship, image } from '@keystone-6/core/fields';
+import { domainList, money, currency, lifecycle, choice, unique, secret } from './domainFields';
+
+export const Show = domainList({
+  soldCount: virtual({field: graphql.field({type: graphql.Int, async resolve(item, _args, context) { return (context.prisma as any).ticket.count({where:{showId:item.id,status:{in:['valid','checked_in']}}}); }})}),
+  heldCount: virtual({field: graphql.field({type: graphql.Int, async resolve(item, _args, context) { const result = await (context.prisma as any).inventoryHold.aggregate({where:{showId:item.id,status:'active'},_sum:{quantity:true}}); return result._sum.quantity || 0; }})}),
+  checkedInCount: virtual({field: graphql.field({type: graphql.Int, async resolve(item, _args, context) { return (context.prisma as any).ticket.count({where:{showId:item.id,status:'checked_in'}}); }})}),
+  remaining: virtual({field: graphql.field({type: graphql.Int, async resolve(item, _args, context) { const tiers = await (context.prisma as any).priceTier.findMany({where:{showId:item.id},select:{sold:true,held:true}}); return Math.max(0, Number(item.capacity) - tiers.reduce((n:number,t:any)=>n+t.sold+t.held,0)); }})}),
+  room: relationship({ref:'Room.shows'}),
+  template: relationship({ref:'ShowTemplate.shows'}),
+  run: relationship({ref:'Run.shows'}),
+  title: text(),
+  occurrenceKey: unique(),
+  startsAt: timestamp(),
+  doorsAt: timestamp(),
+  endsAt: timestamp(),
+  signupOpensAt: timestamp(),
+  ageRestriction: choice(['all', '18', '21']),
+  capacity: integer({defaultValue:180}),
+  status: lifecycle(['draft', 'on_sale', 'sold_out', 'doors_open', 'in_progress', 'completed', 'settled', 'cancelled']),
+  isOpenMic: checkbox({defaultValue:false}),
+  publicNote: text(),
+  lineup: relationship({ref:'LineupSlot.show',many:true}),
+  signups: relationship({ref:'OpenMicSignup.show',many:true}),
+  tiers: relationship({ref:'PriceTier.show',many:true}),
+  holds: relationship({ref:'InventoryHold.show',many:true}),
+  orders: relationship({ref:'TicketOrder.show',many:true}),
+  tickets: relationship({ref:'Ticket.show',many:true}),
+  comps: relationship({ref:'Comp.show',many:true}),
+  assignments: relationship({ref:'SeatingAssignment.show',many:true}),
+  checks: relationship({ref:'Check.show',many:true}),
+  checkIns: relationship({ref:'CheckIn.show',many:true}),
+  payouts: relationship({ref:'ComedianPayout.show',many:true}),
+  settlement: relationship({ref:'ShowSettlement.show'}),
+  promos: relationship({ref:'PromoCode.show',many:true}),
+  occupancies: relationship({ref:'TableOccupancy.show',many:true}),
+}, 'canManageShows', false);
