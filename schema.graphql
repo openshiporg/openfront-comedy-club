@@ -1138,6 +1138,7 @@ type InventoryHold {
   cartToken: String
   quote: JSON
   promo: PromoCode
+  redemption: PromoRedemption
   order: TicketOrder
   occupancies(where: TableOccupancyWhereInput! = {}, orderBy: [TableOccupancyOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TableOccupancyWhereUniqueInput): [TableOccupancy!]
   occupanciesCount(where: TableOccupancyWhereInput! = {}): Int
@@ -1155,6 +1156,7 @@ enum InventoryHoldStatusType {
 input InventoryHoldWhereUniqueInput {
   id: ID
   holdKey: String
+  redemption: PromoRedemptionWhereUniqueInput
   order: TicketOrderWhereUniqueInput
 }
 
@@ -1172,6 +1174,7 @@ input InventoryHoldWhereInput {
   expiresAt: DateTimeNullableFilter
   cartToken: StringFilter
   promo: PromoCodeWhereInput
+  redemption: PromoRedemptionWhereInput
   order: TicketOrderWhereInput
   occupancies: TableOccupancyManyRelationFilter
   createdAt: DateTimeFilter
@@ -1219,6 +1222,7 @@ input InventoryHoldUpdateInput {
   cartToken: String
   quote: JSON
   promo: PromoCodeRelateToOneForUpdateInput
+  redemption: PromoRedemptionRelateToOneForUpdateInput
   order: TicketOrderRelateToOneForUpdateInput
   occupancies: TableOccupancyRelateToManyForUpdateInput
   createdAt: DateTime
@@ -1241,6 +1245,12 @@ input TableRelateToManyForUpdateInput {
 input PromoCodeRelateToOneForUpdateInput {
   create: PromoCodeCreateInput
   connect: PromoCodeWhereUniqueInput
+  disconnect: Boolean
+}
+
+input PromoRedemptionRelateToOneForUpdateInput {
+  create: PromoRedemptionCreateInput
+  connect: PromoRedemptionWhereUniqueInput
   disconnect: Boolean
 }
 
@@ -1273,6 +1283,7 @@ input InventoryHoldCreateInput {
   cartToken: String
   quote: JSON
   promo: PromoCodeRelateToOneForCreateInput
+  redemption: PromoRedemptionRelateToOneForCreateInput
   order: TicketOrderRelateToOneForCreateInput
   occupancies: TableOccupancyRelateToManyForCreateInput
   createdAt: DateTime
@@ -1292,6 +1303,11 @@ input TableRelateToManyForCreateInput {
 input PromoCodeRelateToOneForCreateInput {
   create: PromoCodeCreateInput
   connect: PromoCodeWhereUniqueInput
+}
+
+input PromoRedemptionRelateToOneForCreateInput {
+  create: PromoRedemptionCreateInput
+  connect: PromoRedemptionWhereUniqueInput
 }
 
 input TicketOrderRelateToOneForCreateInput {
@@ -2771,13 +2787,16 @@ type PromoCode {
   value: Int
   maxUses: Int
   usedCount: Int
-  reservedCount: Int
+  perOrderLimit: Int
+  startsAt: DateTime
+  endsAt: DateTime
+  status: PromoCodeStatusType
   show: Show
   template: ShowTemplate
-  validFrom: DateTime
-  validUntil: DateTime
   holds(where: InventoryHoldWhereInput! = {}, orderBy: [InventoryHoldOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InventoryHoldWhereUniqueInput): [InventoryHold!]
   holdsCount(where: InventoryHoldWhereInput! = {}): Int
+  redemptions(where: PromoRedemptionWhereInput! = {}, orderBy: [PromoRedemptionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PromoRedemptionWhereUniqueInput): [PromoRedemption!]
+  redemptionsCount(where: PromoRedemptionWhereInput! = {}): Int
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -2786,6 +2805,12 @@ enum PromoCodeDiscountTypeType {
   percent_bps
   amount_cents
   comp
+}
+
+enum PromoCodeStatusType {
+  active
+  paused
+  expired
 }
 
 input PromoCodeWhereUniqueInput {
@@ -2803,12 +2828,14 @@ input PromoCodeWhereInput {
   value: IntNullableFilter
   maxUses: IntNullableFilter
   usedCount: IntNullableFilter
-  reservedCount: IntNullableFilter
+  perOrderLimit: IntNullableFilter
+  startsAt: DateTimeNullableFilter
+  endsAt: DateTimeNullableFilter
+  status: PromoCodeStatusTypeNullableFilter
   show: ShowWhereInput
   template: ShowTemplateWhereInput
-  validFrom: DateTimeNullableFilter
-  validUntil: DateTimeNullableFilter
   holds: InventoryHoldManyRelationFilter
+  redemptions: PromoRedemptionManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
@@ -2820,6 +2847,19 @@ input PromoCodeDiscountTypeTypeNullableFilter {
   not: PromoCodeDiscountTypeTypeNullableFilter
 }
 
+input PromoCodeStatusTypeNullableFilter {
+  equals: PromoCodeStatusType
+  in: [PromoCodeStatusType!]
+  notIn: [PromoCodeStatusType!]
+  not: PromoCodeStatusTypeNullableFilter
+}
+
+input PromoRedemptionManyRelationFilter {
+  every: PromoRedemptionWhereInput
+  some: PromoRedemptionWhereInput
+  none: PromoRedemptionWhereInput
+}
+
 input PromoCodeOrderByInput {
   id: OrderDirection
   code: OrderDirection
@@ -2827,9 +2867,10 @@ input PromoCodeOrderByInput {
   value: OrderDirection
   maxUses: OrderDirection
   usedCount: OrderDirection
-  reservedCount: OrderDirection
-  validFrom: OrderDirection
-  validUntil: OrderDirection
+  perOrderLimit: OrderDirection
+  startsAt: OrderDirection
+  endsAt: OrderDirection
+  status: OrderDirection
   createdAt: OrderDirection
   updatedAt: OrderDirection
 }
@@ -2840,12 +2881,14 @@ input PromoCodeUpdateInput {
   value: Int
   maxUses: Int
   usedCount: Int
-  reservedCount: Int
+  perOrderLimit: Int
+  startsAt: DateTime
+  endsAt: DateTime
+  status: PromoCodeStatusType
   show: ShowRelateToOneForUpdateInput
   template: ShowTemplateRelateToOneForUpdateInput
-  validFrom: DateTime
-  validUntil: DateTime
   holds: InventoryHoldRelateToManyForUpdateInput
+  redemptions: PromoRedemptionRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -2854,6 +2897,13 @@ input ShowTemplateRelateToOneForUpdateInput {
   create: ShowTemplateCreateInput
   connect: ShowTemplateWhereUniqueInput
   disconnect: Boolean
+}
+
+input PromoRedemptionRelateToManyForUpdateInput {
+  disconnect: [PromoRedemptionWhereUniqueInput!]
+  set: [PromoRedemptionWhereUniqueInput!]
+  create: [PromoRedemptionCreateInput!]
+  connect: [PromoRedemptionWhereUniqueInput!]
 }
 
 input PromoCodeUpdateArgs {
@@ -2867,12 +2917,14 @@ input PromoCodeCreateInput {
   value: Int
   maxUses: Int
   usedCount: Int
-  reservedCount: Int
+  perOrderLimit: Int
+  startsAt: DateTime
+  endsAt: DateTime
+  status: PromoCodeStatusType
   show: ShowRelateToOneForCreateInput
   template: ShowTemplateRelateToOneForCreateInput
-  validFrom: DateTime
-  validUntil: DateTime
   holds: InventoryHoldRelateToManyForCreateInput
+  redemptions: PromoRedemptionRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -2880,6 +2932,98 @@ input PromoCodeCreateInput {
 input ShowTemplateRelateToOneForCreateInput {
   create: ShowTemplateCreateInput
   connect: ShowTemplateWhereUniqueInput
+}
+
+input PromoRedemptionRelateToManyForCreateInput {
+  create: [PromoRedemptionCreateInput!]
+  connect: [PromoRedemptionWhereUniqueInput!]
+}
+
+type PromoRedemption {
+  id: ID!
+  promoCode: PromoCode
+  hold: InventoryHold
+  order: TicketOrder
+  amountCents: Int
+  status: PromoRedemptionStatusType
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+enum PromoRedemptionStatusType {
+  reserved
+  committed
+  released
+}
+
+input PromoRedemptionWhereUniqueInput {
+  id: ID
+  hold: InventoryHoldWhereUniqueInput
+}
+
+input PromoRedemptionWhereInput {
+  AND: [PromoRedemptionWhereInput!]
+  OR: [PromoRedemptionWhereInput!]
+  NOT: [PromoRedemptionWhereInput!]
+  id: IDFilter
+  promoCode: PromoCodeWhereInput
+  hold: InventoryHoldWhereInput
+  order: TicketOrderWhereInput
+  amountCents: IntNullableFilter
+  status: PromoRedemptionStatusTypeNullableFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input PromoRedemptionStatusTypeNullableFilter {
+  equals: PromoRedemptionStatusType
+  in: [PromoRedemptionStatusType!]
+  notIn: [PromoRedemptionStatusType!]
+  not: PromoRedemptionStatusTypeNullableFilter
+}
+
+input PromoRedemptionOrderByInput {
+  id: OrderDirection
+  amountCents: OrderDirection
+  status: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input PromoRedemptionUpdateInput {
+  promoCode: PromoCodeRelateToOneForUpdateInput
+  hold: InventoryHoldRelateToOneForUpdateInput
+  order: TicketOrderRelateToOneForUpdateInput
+  amountCents: Int
+  status: PromoRedemptionStatusType
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input InventoryHoldRelateToOneForUpdateInput {
+  create: InventoryHoldCreateInput
+  connect: InventoryHoldWhereUniqueInput
+  disconnect: Boolean
+}
+
+input PromoRedemptionUpdateArgs {
+  where: PromoRedemptionWhereUniqueInput!
+  data: PromoRedemptionUpdateInput!
+}
+
+input PromoRedemptionCreateInput {
+  promoCode: PromoCodeRelateToOneForCreateInput
+  hold: InventoryHoldRelateToOneForCreateInput
+  order: TicketOrderRelateToOneForCreateInput
+  amountCents: Int
+  status: PromoRedemptionStatusType
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input InventoryHoldRelateToOneForCreateInput {
+  create: InventoryHoldCreateInput
+  connect: InventoryHoldWhereUniqueInput
 }
 
 type Refund {
@@ -4212,12 +4356,6 @@ input TableRelateToOneForUpdateInput {
   disconnect: Boolean
 }
 
-input InventoryHoldRelateToOneForUpdateInput {
-  create: InventoryHoldCreateInput
-  connect: InventoryHoldWhereUniqueInput
-  disconnect: Boolean
-}
-
 input TableOccupancyUpdateArgs {
   where: TableOccupancyWhereUniqueInput!
   data: TableOccupancyUpdateInput!
@@ -4236,11 +4374,6 @@ input TableOccupancyCreateInput {
 input TableRelateToOneForCreateInput {
   create: TableCreateInput
   connect: TableWhereUniqueInput
-}
-
-input InventoryHoldRelateToOneForCreateInput {
-  create: InventoryHoldCreateInput
-  connect: InventoryHoldWhereUniqueInput
 }
 
 type Ticket {
@@ -4376,6 +4509,8 @@ type TicketOrder {
   hold: InventoryHold
   payments(where: PaymentWhereInput! = {}, orderBy: [PaymentOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PaymentWhereUniqueInput): [Payment!]
   paymentsCount(where: PaymentWhereInput! = {}): Int
+  redemptions(where: PromoRedemptionWhereInput! = {}, orderBy: [PromoRedemptionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PromoRedemptionWhereUniqueInput): [PromoRedemption!]
+  redemptionsCount(where: PromoRedemptionWhereInput! = {}): Int
   refunds(where: RefundWhereInput! = {}, orderBy: [RefundOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: RefundWhereUniqueInput): [Refund!]
   refundsCount(where: RefundWhereInput! = {}): Int
   createdAt: DateTime
@@ -4436,6 +4571,7 @@ input TicketOrderWhereInput {
   tableAssignment: SeatingAssignmentWhereInput
   hold: InventoryHoldWhereInput
   payments: PaymentManyRelationFilter
+  redemptions: PromoRedemptionManyRelationFilter
   refunds: RefundManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
@@ -4516,6 +4652,7 @@ input TicketOrderUpdateInput {
   tableAssignment: SeatingAssignmentRelateToOneForUpdateInput
   hold: InventoryHoldRelateToOneForUpdateInput
   payments: PaymentRelateToManyForUpdateInput
+  redemptions: PromoRedemptionRelateToManyForUpdateInput
   refunds: RefundRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
@@ -4566,6 +4703,7 @@ input TicketOrderCreateInput {
   tableAssignment: SeatingAssignmentRelateToOneForCreateInput
   hold: InventoryHoldRelateToOneForCreateInput
   payments: PaymentRelateToManyForCreateInput
+  redemptions: PromoRedemptionRelateToManyForCreateInput
   refunds: RefundRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
@@ -5155,6 +5293,12 @@ type Mutation {
   updatePromoCodes(data: [PromoCodeUpdateArgs!]!): [PromoCode]
   deletePromoCode(where: PromoCodeWhereUniqueInput!): PromoCode
   deletePromoCodes(where: [PromoCodeWhereUniqueInput!]!): [PromoCode]
+  createPromoRedemption(data: PromoRedemptionCreateInput!): PromoRedemption
+  createPromoRedemptions(data: [PromoRedemptionCreateInput!]!): [PromoRedemption]
+  updatePromoRedemption(where: PromoRedemptionWhereUniqueInput!, data: PromoRedemptionUpdateInput!): PromoRedemption
+  updatePromoRedemptions(data: [PromoRedemptionUpdateArgs!]!): [PromoRedemption]
+  deletePromoRedemption(where: PromoRedemptionWhereUniqueInput!): PromoRedemption
+  deletePromoRedemptions(where: [PromoRedemptionWhereUniqueInput!]!): [PromoRedemption]
   createRefund(data: RefundCreateInput!): Refund
   createRefunds(data: [RefundCreateInput!]!): [Refund]
   updateRefund(where: RefundWhereUniqueInput!, data: RefundUpdateInput!): Refund
@@ -5262,6 +5406,33 @@ type Mutation {
   createInitialUser(data: CreateInitialUserInput!): UserAuthenticationWithPasswordSuccess!
   sendUserPasswordResetLink(email: String!): Boolean!
   redeemUserPasswordResetToken(email: String!, token: String!, password: String!): RedeemUserPasswordResetTokenResult
+  expireHolds(showId: ID): JSON
+  createTicketHold(showId: ID!, tierId: ID!, quantity: Int!, tableIds: [ID!], idempotencyKey: String!): JSON
+  applyPromoToHold(holdKey: String!, cartToken: String!, code: String!, idempotencyKey: String!): JSON
+  startTicketCheckout(holdKey: String!, cartToken: String!, customer: CustomerInput!, ageAttested: Boolean, seatingRequest: String, occasion: String, idempotencyKey: String!): JSON
+  completeTicketCheckout(orderNumber: String!, orderSecret: String!): JSON
+  abandonTicketCheckout(orderNumber: String!, orderSecret: String!): JSON
+  cancelMyTicketOrder(orderNumber: String!, email: String!, idempotencyKey: String!): JSON
+  openMicSignup(showId: ID!, name: String!, email: String!, comedianId: ID, idempotencyKey: String!): JSON
+  generateShowsFromTemplate(templateId: ID!, from: String, idempotencyKey: String!): JSON
+  publishShow(showId: ID!, nextStatus: String, idempotencyKey: String!): JSON
+  pauseSales(showId: ID!, idempotencyKey: String!): JSON
+  cancelShow(showId: ID!, reason: String!, idempotencyKey: String!): JSON
+  setLineup(showId: ID!, slots: [SlotOrderInput!]!, idempotencyKey: String!): JSON
+  offerSlot(showId: ID!, comedianId: ID!, role: String!, position: Int, setMinutes: Int, feeCents: Int, idempotencyKey: String!): JSON
+  confirmSlot(slotId: ID!, idempotencyKey: String!): JSON
+  issueComp(showId: ID!, tierId: ID!, quantity: Int!, recipientName: String!, recipientEmail: String, reason: String!, approvalId: ID, idempotencyKey: String!): JSON
+  checkInTicket(tokenOrCode: String!, showId: ID!, method: String, idempotencyKey: String!): JSON
+  seatParty(orderId: ID!, tableIds: [ID!]!, showId: ID!, serverId: ID, idempotencyKey: String!): JSON
+  openCheck(seatingAssignmentId: ID!, idempotencyKey: String!): JSON
+  addCheckItem(checkId: ID!, menuItemId: ID!, qty: Int!, idempotencyKey: String!): JSON
+  voidCheckItem(itemId: ID!, checkId: ID!, reason: String!, approvalId: ID!, idempotencyKey: String!): JSON
+  closeCheck(checkId: ID!, tipCents: Int, waive: Boolean, reason: String, approvalId: ID, idempotencyKey: String!): JSON
+  runOpenMicLottery(showId: ID!, idempotencyKey: String!): JSON
+  closeShow(showId: ID!, idempotencyKey: String!): JSON
+  refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
+  requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
+  approveRequest(approvalId: ID!): JSON
 }
 
 union UserAuthenticationWithPasswordResult = UserAuthenticationWithPasswordSuccess | UserAuthenticationWithPasswordFailure
@@ -5359,6 +5530,9 @@ type Query {
   promoCode(where: PromoCodeWhereUniqueInput!): PromoCode
   promoCodes(where: PromoCodeWhereInput! = {}, orderBy: [PromoCodeOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PromoCodeWhereUniqueInput): [PromoCode!]
   promoCodesCount(where: PromoCodeWhereInput! = {}): Int
+  promoRedemption(where: PromoRedemptionWhereUniqueInput!): PromoRedemption
+  promoRedemptions(where: PromoRedemptionWhereInput! = {}, orderBy: [PromoRedemptionOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PromoRedemptionWhereUniqueInput): [PromoRedemption!]
+  promoRedemptionsCount(where: PromoRedemptionWhereInput! = {}): Int
   refund(where: RefundWhereUniqueInput!): Refund
   refunds(where: RefundWhereInput! = {}, orderBy: [RefundOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: RefundWhereUniqueInput): [Refund!]
   refundsCount(where: RefundWhereInput! = {}): Int
@@ -5414,6 +5588,9 @@ type Query {
   authenticatedItem: AuthenticatedItem
   validateUserPasswordResetToken(email: String!, token: String!): ValidateUserPasswordResetTokenResult
   redirectToInit: Boolean
+  showsOnSale: JSON
+  showAvailability(showId: ID!): JSON
+  lookupTicketOrder(email: String!, orderNumber: String!): JSON
 }
 
 union AuthenticatedItem = User
@@ -5552,4 +5729,16 @@ type KeystoneAdminUISort {
 enum KeystoneAdminUISortDirection {
   ASC
   DESC
+}
+
+input CustomerInput {
+  name: String!
+  email: String!
+  phone: String
+}
+
+input SlotOrderInput {
+  id: ID!
+  position: Int!
+  setMinutes: Int!
 }

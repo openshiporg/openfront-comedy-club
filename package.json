@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@ai-sdk/mcp": "^1.0.13",
-    "@openrouter/ai-sdk-provider": "^2.0.2",
     "@ai-sdk/react": "^3.0.51",
     "@graphql-tools/schema": "^10.0.23",
     "@keystone-6/auth": "^8.1.0",
@@ -21,6 +20,7 @@
     "@keystone-6/document-renderer": "^1.1.2",
     "@keystone-6/fields-document": "^9.1.1",
     "@modelcontextprotocol/sdk": "^1.15.1",
+    "@openrouter/ai-sdk-provider": "^2.0.2",
     "@prisma/client": "6.5.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -87,6 +87,7 @@
     "remark-gfm": "^4.0.1",
     "shiki": "^3.8.1",
     "sonner": "^2.0.3",
+    "stripe": "^18.2.1",
     "swr": "^2.3.3",
     "tailwind-merge": "^3.3.0",
     "tailwindcss-animate": "^1.0.7",

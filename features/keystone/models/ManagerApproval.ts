@@ -7,7 +7,7 @@ export const ManagerApproval = list({
   access: {
     operation: {
       query: ({ session }) =>
-        permissions.canManageOrders({ session }) || permissions.canManagePayments({ session }),
+        permissions.canManageOrders({ session }) || permissions.canManageChecks({ session }) || permissions.canIssueRefunds({ session }),
       create: () => false,
       update: () => false,
       delete: () => false,
@@ -17,9 +17,9 @@ export const ManagerApproval = list({
     actionType: select({
       type: "string",
       options: [
-        { label: "Void order item", value: "void_item" },
-        { label: "Comp order item", value: "comp_item" },
-        { label: "Void order", value: "void_order" },
+        { label: "Void check item", value: "void_item" },
+        { label: "Comp tickets", value: "comp_tickets" },
+        { label: "Waive minimum", value: "waive_minimum" },
         { label: "Refund payment", value: "refund_payment" },
       ],
       validation: { isRequired: true },

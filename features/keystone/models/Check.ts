@@ -3,7 +3,7 @@ import { virtual, text, integer, checkbox, timestamp, json, relationship, image 
 import { domainList, money, currency, lifecycle, choice, unique, secret } from './domainFields';
 
 export const Check = domainList({
-  minimumItemsMet: virtual({field: graphql.field({type: graphql.Boolean, async resolve(item, _args, context) { const items = await (context.prisma as any).checkItem.findMany({where:{checkId:item.id,voided:false,countsTowardMinimum:true},select:{qty:true}}); return items.reduce((n:number,i:any)=>n+i.qty,0) >= Number(item.minimumItemsRequired); }})}),
+  minimumItemsMet: virtual({field: graphql.field({type: graphql.Boolean, async resolve(item: any, _args: any, context: any) { const items = await (context.prisma as any).checkItem.findMany({where:{checkId:item.id,voided:false,countsTowardMinimum:true},select:{qty:true}}); return items.reduce((n:number,i:any)=>n+i.qty,0) >= Number(item.minimumItemsRequired); }})}),
   show: relationship({ref:'Show.checks'}),
   seatingAssignment: relationship({ref:'SeatingAssignment.checks'}),
   server: relationship({ref:'User.checks'}),

@@ -13,6 +13,7 @@ export const VIEW_ORDER = [
   "text",
   "json",
   "timestamp",
+  "virtual",
   "select",
   "integer",
   "checkbox",

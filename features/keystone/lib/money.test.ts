@@ -1,0 +1,12 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { basisPoints,quote,minimum,payout,settlement,selfRefundAllowed } from './money';
+test('basis point rounding uses integer arithmetic',()=>{assert.equal(basisPoints(101,500),5);assert.equal(basisPoints(1,5000),1);});
+test('quote snapshots all charges',()=>{assert.deepEqual(quote({priceCents:2500,feeCents:200,quantity:2,serviceFeeBps:100,taxBps:825,discountType:'percent_bps',discountValue:1000}),{subtotalCents:5000,feesCents:450,discountCents:500,taxCents:371,totalCents:5321});});
+test('discount cannot make subtotal negative',()=>{assert.equal(quote({priceCents:100,feeCents:0,quantity:1,serviceFeeBps:0,taxBps:0,discountType:'amount_cents',discountValue:200}).totalCents,0);});
+test('two item minimum and independent waiver',()=>{assert.equal(minimum({requiredItems:6,qualifyingItems:3,cheapestCents:500}),1500);assert.equal(minimum({requiredItems:6,qualifyingItems:7,cheapestCents:500}),0);assert.equal(minimum({requiredItems:6,qualifyingItems:0,cheapestCents:500,waived:true}),0);});
+test('minimum floor alternative',()=>assert.equal(minimum({requiredItems:0,qualifyingItems:0,cheapestCents:0,floorCents:2000,qualifyingCents:1200}),800));
+test('payout freezes fees and run fee replaces base only',()=>{assert.equal(payout([{feeCents:5000,bonusCents:500}]),5500);assert.equal(payout([{feeCents:5000,bonusCents:500}],10000),10500);});
+test('settlement excludes tips and tax',()=>assert.equal(settlement({ticketGrossCents:10000,feesCents:1000,discountsCents:500,refundsCents:2000,foodBeverageGrossCents:6000,minimumShortfallRevenueCents:500,talentCostCents:8000}),7000));
+test('self-refund window boundary',()=>{const now=new Date('2026-11-01T00:00:00Z');assert.equal(selfRefundAllowed(new Date('2026-11-02T00:00:00Z'),24,now),true);assert.equal(selfRefundAllowed(new Date('2026-11-01T23:59:59Z'),24,now),false);});
+test('invalid money rejected',()=>{assert.throws(()=>basisPoints(1.5,100));assert.throws(()=>minimum({requiredItems:-1,qualifyingItems:0,cheapestCents:1}));});

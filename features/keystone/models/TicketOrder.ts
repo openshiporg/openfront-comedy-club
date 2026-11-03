@@ -27,5 +27,6 @@ export const TicketOrder = domainList({
   tableAssignment: relationship({ref:'SeatingAssignment.ticketOrder'}),
   hold: relationship({ref:'InventoryHold.order'}),
   payments: relationship({ref:'Payment.order',many:true}),
+  redemptions: relationship({ ref: 'PromoRedemption.order', many: true }),
   refunds: relationship({ref:'Refund.order',many:true}),
 }, 'canManageOrders', true);

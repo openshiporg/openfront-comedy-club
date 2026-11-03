@@ -20,6 +20,7 @@ import { PaymentSession } from './PaymentSession';
 import { PaymentWebhookEvent } from './PaymentWebhookEvent';
 import { PriceTier } from './PriceTier';
 import { PromoCode } from './PromoCode';
+import { PromoRedemption } from './PromoRedemption';
 import { Refund } from './Refund';
 import { Role } from './Role';
 import { Room } from './Room';
@@ -61,6 +62,7 @@ export const models = {
   PaymentWebhookEvent,
   PriceTier,
   PromoCode,
+  PromoRedemption,
   Refund,
   Role,
   Room,

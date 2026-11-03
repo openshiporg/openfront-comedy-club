@@ -185,25 +185,27 @@ model IdempotencyKey {
 }
 
 model InventoryHold {
-  id          String                   @id @default(cuid())
-  holdKey     String                   @unique @default("")
-  show        Show?                    @relation("InventoryHold_show", fields: [showId], references: [id])
-  showId      String?                  @map("show")
-  priceTier   PriceTier?               @relation("InventoryHold_priceTier", fields: [priceTierId], references: [id])
-  priceTierId String?                  @map("priceTier")
-  quantity    Int?                     @default(1)
-  tables      Table[]                  @relation("InventoryHold_tables")
-  status      InventoryHoldStatusType? @default(active)
-  expiresAt   DateTime?
-  cartToken   String                   @default("")
-  quote       Json?
-  promo       PromoCode?               @relation("InventoryHold_promo", fields: [promoId], references: [id])
-  promoId     String?                  @map("promo")
-  order       TicketOrder?             @relation("InventoryHold_order", fields: [orderId], references: [id])
-  orderId     String?                  @unique @map("order")
-  occupancies TableOccupancy[]         @relation("TableOccupancy_hold")
-  createdAt   DateTime                 @default(now())
-  updatedAt   DateTime                 @default(now()) @updatedAt
+  id           String                   @id @default(cuid())
+  holdKey      String                   @unique @default("")
+  show         Show?                    @relation("InventoryHold_show", fields: [showId], references: [id])
+  showId       String?                  @map("show")
+  priceTier    PriceTier?               @relation("InventoryHold_priceTier", fields: [priceTierId], references: [id])
+  priceTierId  String?                  @map("priceTier")
+  quantity     Int?                     @default(1)
+  tables       Table[]                  @relation("InventoryHold_tables")
+  status       InventoryHoldStatusType? @default(active)
+  expiresAt    DateTime?
+  cartToken    String                   @default("")
+  quote        Json?
+  promo        PromoCode?               @relation("InventoryHold_promo", fields: [promoId], references: [id])
+  promoId      String?                  @map("promo")
+  redemption   PromoRedemption?         @relation("InventoryHold_redemption", fields: [redemptionId], references: [id])
+  redemptionId String?                  @unique @map("redemption")
+  order        TicketOrder?             @relation("InventoryHold_order", fields: [orderId], references: [id])
+  orderId      String?                  @unique @map("order")
+  occupancies  TableOccupancy[]         @relation("TableOccupancy_hold")
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @default(now()) @updatedAt
 
   @@index([showId])
   @@index([priceTierId])
@@ -498,21 +500,39 @@ model PromoCode {
   code          String                     @unique @default("")
   discountType  PromoCodeDiscountTypeType? @default(percent_bps)
   value         Int?                       @default(0)
-  maxUses       Int?                       @default(100)
+  maxUses       Int?
   usedCount     Int?                       @default(0)
-  reservedCount Int?                       @default(0)
+  perOrderLimit Int?                       @default(1)
+  startsAt      DateTime?
+  endsAt        DateTime?
+  status        PromoCodeStatusType?       @default(active)
   show          Show?                      @relation("PromoCode_show", fields: [showId], references: [id])
   showId        String?                    @map("show")
   template      ShowTemplate?              @relation("PromoCode_template", fields: [templateId], references: [id])
   templateId    String?                    @map("template")
-  validFrom     DateTime?
-  validUntil    DateTime?
   holds         InventoryHold[]            @relation("InventoryHold_promo")
+  redemptions   PromoRedemption[]          @relation("PromoRedemption_promoCode")
   createdAt     DateTime                   @default(now())
   updatedAt     DateTime                   @default(now()) @updatedAt
 
   @@index([showId])
   @@index([templateId])
+}
+
+model PromoRedemption {
+  id          String                     @id @default(cuid())
+  promoCode   PromoCode?                 @relation("PromoRedemption_promoCode", fields: [promoCodeId], references: [id])
+  promoCodeId String?                    @map("promoCode")
+  hold        InventoryHold?             @relation("InventoryHold_redemption")
+  order       TicketOrder?               @relation("PromoRedemption_order", fields: [orderId], references: [id])
+  orderId     String?                    @map("order")
+  amountCents Int?                       @default(0)
+  status      PromoRedemptionStatusType? @default(reserved)
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @default(now()) @updatedAt
+
+  @@index([promoCodeId])
+  @@index([orderId])
 }
 
 model Refund {
@@ -811,6 +831,7 @@ model TicketOrder {
   tableAssignment    SeatingAssignment?     @relation("SeatingAssignment_ticketOrder")
   hold               InventoryHold?         @relation("InventoryHold_order")
   payments           Payment[]              @relation("Payment_order")
+  redemptions        PromoRedemption[]      @relation("PromoRedemption_order")
   refunds            Refund[]               @relation("Refund_order")
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @default(now()) @updatedAt
@@ -1002,6 +1023,18 @@ enum PromoCodeDiscountTypeType {
   percent_bps
   amount_cents
   comp
+}
+
+enum PromoCodeStatusType {
+  active
+  paused
+  expired
+}
+
+enum PromoRedemptionStatusType {
+  reserved
+  committed
+  released
 }
 
 enum RoomSeatingModeType {

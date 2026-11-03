@@ -11,7 +11,9 @@ export const InventoryHold = domainList({
   expiresAt: timestamp(),
   cartToken: secret(),
   quote: json(),
-  promo: relationship({ref:'PromoCode.holds'}),
+  
+  promo: relationship({ ref: 'PromoCode.holds' }),
+  redemption: relationship({ ref: 'PromoRedemption.hold' }),
   order: relationship({ref:'TicketOrder.hold'}),
   occupancies: relationship({ref:'TableOccupancy.hold',many:true}),
 }, 'canManageOrders', true);
