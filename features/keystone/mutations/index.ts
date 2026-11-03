@@ -5,6 +5,8 @@ import * as tickets from "./tickets";
 import * as ops from "./operators";
 import * as checkout from "./checkout";
 import * as night from "./night";
+import updateActiveUser from "./updateActiveUser";
+import * as seed from "./seed";
 
 const graphql = String.raw;
 
@@ -23,6 +25,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         showAvailability(showId: ID!): JSON
         lookupTicketOrder(email: String!, orderNumber: String!): JSON
       }
+      input UserUpdateProfileInput { name: String, email: String, password: String, onboardingStatus: String, notificationPreference: Boolean }
       input CustomerInput { name: String!, email: String!, phone: String }
       input SlotOrderInput { id: ID!, position: Int!, setMinutes: Int! }
       type Mutation {
@@ -54,6 +57,9 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
         requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
         approveRequest(approvalId: ID!): JSON
+        updateActiveUser(data: UserUpdateProfileInput!): User
+        ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
+        seedClubOperations(template: String!): JSON
       }
     `,
     resolvers: {
@@ -91,6 +97,9 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         refundTicketOrder: op(checkout.refundTicketOrder),
         requestApproval: op(night.requestApproval),
         approveRequest: op(night.approveRequest),
+        updateActiveUser,
+        ensureClubOnboardingRecord: op(seed.ensureClubOnboardingRecord),
+        seedClubOperations: op(seed.seedClubOperations),
       },
     },
   });

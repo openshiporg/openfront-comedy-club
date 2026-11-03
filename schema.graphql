@@ -5433,6 +5433,9 @@ type Mutation {
   refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
   requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
   approveRequest(approvalId: ID!): JSON
+  updateActiveUser(data: UserUpdateProfileInput!): User
+  ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
+  seedClubOperations(template: String!): JSON
 }
 
 union UserAuthenticationWithPasswordResult = UserAuthenticationWithPasswordSuccess | UserAuthenticationWithPasswordFailure
@@ -5729,6 +5732,14 @@ type KeystoneAdminUISort {
 enum KeystoneAdminUISortDirection {
   ASC
   DESC
+}
+
+input UserUpdateProfileInput {
+  name: String
+  email: String
+  password: String
+  onboardingStatus: String
+  notificationPreference: Boolean
 }
 
 input CustomerInput {

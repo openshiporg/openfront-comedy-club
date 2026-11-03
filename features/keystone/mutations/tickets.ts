@@ -41,7 +41,7 @@ export async function createTicketHold(_root:any,input:any,context:any) {
     const ids=[...new Set<string>(input.tableIds||[])];
     if(tier.isTableTier && !ids.length) throw new Error('Choose a table');
     const tables=ids.length?await tx.table.findMany({where:{id:{in:ids}},include:{section:true}}):[];
-    if(tables.length!==ids.length||tables.some((t:any)=>t.section.roomId!==show.roomId||(t.section.priceTierId&&t.section.priceTierId!==tier.id))) throw new Error('Invalid tables');
+    if(tables.length!==ids.length||tables.some((t:any)=>t.section.roomId!==show.roomId||(tier.isTableTier&&t.section.name!==tier.name))) throw new Error('Invalid tables');
     if(tables.length && tables.reduce((n:number,t:any)=>n+t.seats,0)!==input.quantity) throw new Error('Reserve every seat at the selected tables');
     const settings=await tx.venueSettings.findFirst(); const token=crypto.randomBytes(32).toString('hex');
     const hold=await tx.inventoryHold.create({data:{holdKey:code('H'),showId:show.id,priceTierId:tier.id,quantity:input.quantity,cartToken:hash(token),status:'active',expiresAt:new Date(Date.now()+(settings?.holdMinutes||10)*60000),tables:{connect:ids.map(id=>({id}))}}});

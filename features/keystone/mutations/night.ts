@@ -3,6 +3,7 @@ import { minimum, payout, settlement } from '../lib/money';
 import { consumeManagerApproval, requestManagerApproval, approveManagerApproval } from '../utils/managerApproval';
 import { refundOrderInternal, ticketToken } from './checkout';
 import { expireUnderLock } from './tickets';
+import { zonedTime } from '../lib/time';
 
 const DAYS: Record<string, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
 
@@ -14,8 +15,7 @@ export async function generateShowsFromTemplate(_: any, a: any, c: any) {
     if (!t) throw new Error('Template not found');
     const byday = /BYDAY=([A-Z,]+)/.exec(t.recurrenceRule || '')?.[1]?.split(',').map((d: string) => DAYS[d]);
     if (!/FREQ=WEEKLY/.test(t.recurrenceRule || '') || !byday?.length || byday.some((d: any) => d === undefined)) throw new Error('Weekly BYDAY rule required');
-    const [h, m] = String(t.startTime).split(':').map(Number);
-    const tz = t.room.venue.timezone;
+        const tz = t.room.venue.timezone;
     const created: string[] = [];
     const from = new Date(a.from || Date.now());
     for (let i = 0; i < 56; i++) {
@@ -27,7 +27,7 @@ export async function generateShowsFromTemplate(_: any, a: any, c: any) {
       const day = `${g('year')}-${g('month')}-${g('day')}`;
       const key = `${t.id}:${day}`;
       if (await tx.show.findUnique({ where: { occurrenceKey: key } })) continue;
-      const startsAt = zonedTime(day, h, m, tz);
+      const startsAt = zonedTime(day, String(t.startTime), tz);
       const show = await tx.show.create({ data: { roomId: t.roomId, templateId: t.id, title: t.title, occurrenceKey: key, startsAt, doorsAt: new Date(startsAt.getTime() - 3600000), endsAt: new Date(startsAt.getTime() + t.duration * 60000), signupOpensAt: t.isOpenMic ? new Date(startsAt.getTime() - 7 * 86400000) : null, ageRestriction: t.defaultAgeRestriction, capacity: t.room.capacity, status: 'draft', isOpenMic: t.isOpenMic } });
       for (const tier of t.defaultPriceTiers) await tx.priceTier.create({ data: { showId: show.id, name: tier.name, priceCents: tier.priceCents, feeCents: tier.feeCents, capacity: Math.min(tier.capacity, t.room.capacity), isTableTier: tier.isTableTier, seatsPerUnit: tier.seatsPerUnit, status: 'on_sale' } });
       created.push(show.id);
@@ -36,12 +36,6 @@ export async function generateShowsFromTemplate(_: any, a: any, c: any) {
     return { created: created.length };
   }, 'template:' + a.templateId);
 }
-function zonedTime(day: string, h: number, m: number, tz: string) {
-  const guess = new Date(`${day}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00Z`);
-  const shown = new Date(guess.toLocaleString('en-US', { timeZone: tz }));
-  return new Date(guess.getTime() - (shown.getTime() - guess.getTime()));
-}
-
 export async function issueComp(_: any, a: any, c: any) {
   requirePermission(c, 'canManageOrders');
   if (!Number.isInteger(a.quantity) || a.quantity < 1 || a.quantity > 20) throw new Error('Choose 1–20 tickets');
@@ -137,6 +131,8 @@ export async function closeShow(_: any, a: any, c: any) {
     if (!show || !['in_progress', 'completed', 'doors_open'].includes(show.status)) throw new Error('Show cannot be closed');
     if (show.settlement?.status === 'closed') throw new Error('Settlement already closed');
     if (await tx.check.count({ where: { showId: show.id, status: { in: ['open', 'presented'] } } })) throw new Error('Close all checks first');
+    if (await tx.ticketOrder.count({ where: { showId: show.id, status: 'pending_payment' } }) || await tx.inventoryHold.count({ where: { showId: show.id, status: 'active' } })) throw new Error('Resolve pending payments and holds first');
+    if (await tx.refund.count({ where: { order: { showId: show.id }, status: { in: ['processing', 'unknown'] } } })) throw new Error('Reconcile refunds first');
     const orders = await tx.ticketOrder.findMany({ where: { showId: show.id, status: { in: ['paid', 'partially_refunded', 'refunded'] } } });
     const refunds = await tx.refund.aggregate({ where: { order: { showId: show.id }, status: 'succeeded' }, _sum: { amount: true } });
     const checks = await tx.check.aggregate({ where: { showId: show.id, status: 'paid' }, _sum: { subtotalCents: true, minimumShortfallCents: true, tipCents: true } });

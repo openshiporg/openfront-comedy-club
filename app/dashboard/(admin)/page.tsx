@@ -1,3 +1,5 @@
-import { HomePage } from "@/features/dashboard/screens/HomePage";
+import { redirect } from "next/navigation";
 
-export default HomePage;
+export default function Page() {
+  redirect("/dashboard/platform/tonight");
+}

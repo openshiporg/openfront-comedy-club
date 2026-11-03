@@ -1,0 +1,811 @@
+{
+  "venue": {
+    "name": "The Laugh Track",
+    "timezone": "America/Chicago",
+    "address": "412 Congress Ave, Austin, TX",
+    "defaultAgeRestriction": "18",
+    "drinkMinimumItems": 2,
+    "drinkMinimumCentsFloor": 0,
+    "serviceFeeBps": 0,
+    "taxBps": 825,
+    "policies": "Two-item minimum per guest. No phones during sets. Valid ID required."
+  },
+  "settings": {
+    "refundWindowHours": 24,
+    "holdMinutes": 10,
+    "approvalThresholdCents": 10000,
+    "compApprovalQuantity": 4
+  },
+  "rooms": [
+    {
+      "name": "Main Room",
+      "capacity": 180,
+      "seatingMode": "tables"
+    },
+    {
+      "name": "Back Room",
+      "capacity": 60,
+      "seatingMode": "ga"
+    }
+  ],
+  "sections": [
+    {
+      "room": "Main Room",
+      "name": "Front",
+      "sort": 1
+    },
+    {
+      "room": "Main Room",
+      "name": "Middle",
+      "sort": 2
+    },
+    {
+      "room": "Main Room",
+      "name": "Booth",
+      "sort": 3
+    },
+    {
+      "room": "Main Room",
+      "name": "Bar rail",
+      "sort": 4
+    }
+  ],
+  "tables": [
+    {
+      "room": "Main Room",
+      "section": "Front",
+      "label": "F1",
+      "seats": 6,
+      "x": 40,
+      "y": 40,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Front",
+      "label": "F2",
+      "seats": 6,
+      "x": 110,
+      "y": 40,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Front",
+      "label": "F3",
+      "seats": 6,
+      "x": 180,
+      "y": 40,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Front",
+      "label": "F4",
+      "seats": 6,
+      "x": 250,
+      "y": 40,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Front",
+      "label": "F5",
+      "seats": 6,
+      "x": 320,
+      "y": 40,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Front",
+      "label": "F6",
+      "seats": 6,
+      "x": 390,
+      "y": 40,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Front",
+      "label": "F7",
+      "seats": 6,
+      "x": 460,
+      "y": 40,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Front",
+      "label": "F8",
+      "seats": 6,
+      "x": 530,
+      "y": 40,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M1",
+      "seats": 6,
+      "x": 40,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M2",
+      "seats": 6,
+      "x": 110,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M3",
+      "seats": 6,
+      "x": 180,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M4",
+      "seats": 6,
+      "x": 250,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M5",
+      "seats": 6,
+      "x": 320,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M6",
+      "seats": 6,
+      "x": 390,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M7",
+      "seats": 6,
+      "x": 460,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M8",
+      "seats": 6,
+      "x": 530,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M9",
+      "seats": 6,
+      "x": 600,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Middle",
+      "label": "M10",
+      "seats": 6,
+      "x": 670,
+      "y": 130,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Booth",
+      "label": "B1",
+      "seats": 6,
+      "x": 40,
+      "y": 220,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Booth",
+      "label": "B2",
+      "seats": 6,
+      "x": 110,
+      "y": 220,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Booth",
+      "label": "B3",
+      "seats": 6,
+      "x": 180,
+      "y": 220,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Booth",
+      "label": "B4",
+      "seats": 6,
+      "x": 250,
+      "y": 220,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Booth",
+      "label": "B5",
+      "seats": 6,
+      "x": 320,
+      "y": 220,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Booth",
+      "label": "B6",
+      "seats": 6,
+      "x": 390,
+      "y": 220,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Bar rail",
+      "label": "B1",
+      "seats": 4,
+      "x": 40,
+      "y": 310,
+      "shape": "round"
+    },
+    {
+      "room": "Main Room",
+      "section": "Bar rail",
+      "label": "B2",
+      "seats": 4,
+      "x": 110,
+      "y": 310,
+      "shape": "round"
+    },
+    {
+      "room": "Main Room",
+      "section": "Bar rail",
+      "label": "B3",
+      "seats": 4,
+      "x": 180,
+      "y": 310,
+      "shape": "round"
+    },
+    {
+      "room": "Main Room",
+      "section": "Bar rail",
+      "label": "B4",
+      "seats": 4,
+      "x": 250,
+      "y": 310,
+      "shape": "round"
+    },
+    {
+      "room": "Main Room",
+      "section": "Bar rail",
+      "label": "B5",
+      "seats": 4,
+      "x": 320,
+      "y": 310,
+      "shape": "round"
+    },
+    {
+      "room": "Main Room",
+      "section": "Bar rail",
+      "label": "B6",
+      "seats": 4,
+      "x": 390,
+      "y": 310,
+      "shape": "round"
+    },
+    {
+      "room": "Main Room",
+      "section": "Bar rail",
+      "label": "B7",
+      "seats": 6,
+      "x": 460,
+      "y": 310,
+      "shape": "rectangle"
+    },
+    {
+      "room": "Main Room",
+      "section": "Bar rail",
+      "label": "B8",
+      "seats": 6,
+      "x": 530,
+      "y": 310,
+      "shape": "rectangle"
+    }
+  ],
+  "comedians": [
+    {
+      "stageName": "Maya Okonkwo",
+      "legalName": "Maya Okonkwo",
+      "email": "maya.okonkwo@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Austin",
+      "defaultFeeCents": 15000,
+      "payeeDetailsOnFile": true,
+      "status": "active"
+    },
+    {
+      "stageName": "Dex Ramirez",
+      "legalName": "Dex Ramirez",
+      "email": "dex.ramirez@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Houston",
+      "defaultFeeCents": 7500,
+      "payeeDetailsOnFile": false,
+      "status": "active"
+    },
+    {
+      "stageName": "Priya Venkataraman",
+      "legalName": "Priya Venkataraman",
+      "email": "priya.venkataraman@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Dallas",
+      "defaultFeeCents": 12500,
+      "payeeDetailsOnFile": true,
+      "status": "active"
+    },
+    {
+      "stageName": "Walt Hollis",
+      "legalName": "Walt Hollis",
+      "email": "walt.hollis@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "San Antonio",
+      "defaultFeeCents": 10000,
+      "payeeDetailsOnFile": false,
+      "status": "active"
+    },
+    {
+      "stageName": "Jun Tanaka",
+      "legalName": "Jun Tanaka",
+      "email": "jun.tanaka@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Chicago",
+      "defaultFeeCents": 8000,
+      "payeeDetailsOnFile": true,
+      "status": "active"
+    },
+    {
+      "stageName": "Bridget Salazar",
+      "legalName": "Bridget Salazar",
+      "email": "bridget.salazar@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Los Angeles",
+      "defaultFeeCents": 9000,
+      "payeeDetailsOnFile": false,
+      "status": "active"
+    },
+    {
+      "stageName": "Omar Haddad",
+      "legalName": "Omar Haddad",
+      "email": "omar.haddad@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "New York",
+      "defaultFeeCents": 7500,
+      "payeeDetailsOnFile": true,
+      "status": "active"
+    },
+    {
+      "stageName": "Lena Kowalski",
+      "legalName": "Lena Kowalski",
+      "email": "lena.kowalski@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Denver",
+      "defaultFeeCents": 11000,
+      "payeeDetailsOnFile": false,
+      "status": "active"
+    },
+    {
+      "stageName": "Theo Banks",
+      "legalName": "Theo Banks",
+      "email": "theo.banks@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Atlanta",
+      "defaultFeeCents": 6500,
+      "payeeDetailsOnFile": true,
+      "status": "active"
+    },
+    {
+      "stageName": "Rosa Delgado",
+      "legalName": "Rosa Delgado",
+      "email": "rosa.delgado@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Austin",
+      "defaultFeeCents": 8500,
+      "payeeDetailsOnFile": false,
+      "status": "active"
+    },
+    {
+      "stageName": "Gus Pemberton",
+      "legalName": "Gus Pemberton",
+      "email": "gus.pemberton@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Portland",
+      "defaultFeeCents": 6000,
+      "payeeDetailsOnFile": true,
+      "status": "active"
+    },
+    {
+      "stageName": "Nia Fontaine",
+      "legalName": "Nia Fontaine",
+      "email": "nia.fontaine@example.invalid",
+      "phone": "",
+      "bio": "",
+      "homeCity": "Nashville",
+      "defaultFeeCents": 14000,
+      "payeeDetailsOnFile": false,
+      "status": "active"
+    }
+  ],
+  "menuItems": [
+    {
+      "name": "House Lager",
+      "category": "drink",
+      "priceCents": 700,
+      "countsTowardMinimum": true,
+      "active": true
+    },
+    {
+      "name": "IPA",
+      "category": "drink",
+      "priceCents": 800,
+      "countsTowardMinimum": true,
+      "active": true
+    },
+    {
+      "name": "Well Cocktail",
+      "category": "drink",
+      "priceCents": 1000,
+      "countsTowardMinimum": true,
+      "active": true
+    },
+    {
+      "name": "Margarita",
+      "category": "drink",
+      "priceCents": 1200,
+      "countsTowardMinimum": true,
+      "active": true
+    },
+    {
+      "name": "Old Fashioned",
+      "category": "drink",
+      "priceCents": 1400,
+      "countsTowardMinimum": true,
+      "active": true
+    },
+    {
+      "name": "Wine, glass",
+      "category": "drink",
+      "priceCents": 1100,
+      "countsTowardMinimum": true,
+      "active": true
+    },
+    {
+      "name": "Soda",
+      "category": "drink",
+      "priceCents": 400,
+      "countsTowardMinimum": true,
+      "active": true
+    },
+    {
+      "name": "Sparkling Water",
+      "category": "drink",
+      "priceCents": 400,
+      "countsTowardMinimum": true,
+      "active": true
+    },
+    {
+      "name": "Coffee",
+      "category": "drink",
+      "priceCents": 350,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Nachos",
+      "category": "food",
+      "priceCents": 1400,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Wings",
+      "category": "food",
+      "priceCents": 1500,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Pretzel Bites",
+      "category": "food",
+      "priceCents": 1100,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Sliders",
+      "category": "food",
+      "priceCents": 1600,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Fries",
+      "category": "food",
+      "priceCents": 800,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Caesar Salad",
+      "category": "food",
+      "priceCents": 1200,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Flatbread",
+      "category": "food",
+      "priceCents": 1500,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Chicken Tenders",
+      "category": "food",
+      "priceCents": 1400,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Brownie",
+      "category": "food",
+      "priceCents": 900,
+      "countsTowardMinimum": false,
+      "active": true
+    },
+    {
+      "name": "Mocktail",
+      "category": "drink",
+      "priceCents": 800,
+      "countsTowardMinimum": true,
+      "active": true
+    },
+    {
+      "name": "Cider",
+      "category": "drink",
+      "priceCents": 800,
+      "countsTowardMinimum": true,
+      "active": true
+    }
+  ],
+  "templates": [
+    {
+      "title": "Tuesday Showcase",
+      "room": "Main Room",
+      "recurrenceRule": "FREQ=WEEKLY;BYDAY=TU",
+      "startTime": "20:00",
+      "duration": 90,
+      "isOpenMic": false,
+      "defaultAgeRestriction": "18",
+      "tiers": [
+        {
+          "name": "Front",
+          "priceCents": 2500,
+          "feeCents": 300,
+          "capacity": 48,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        },
+        {
+          "name": "Middle",
+          "priceCents": 1500,
+          "feeCents": 200,
+          "capacity": 60,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        },
+        {
+          "name": "Booth",
+          "priceCents": 3000,
+          "feeCents": 300,
+          "capacity": 36,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        },
+        {
+          "name": "Bar rail",
+          "priceCents": 1200,
+          "feeCents": 200,
+          "capacity": 36,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        }
+      ]
+    },
+    {
+      "title": "Wednesday Open Mic",
+      "room": "Back Room",
+      "recurrenceRule": "FREQ=WEEKLY;BYDAY=WE",
+      "startTime": "19:30",
+      "duration": 120,
+      "isOpenMic": true,
+      "defaultAgeRestriction": "18",
+      "tiers": [
+        {
+          "name": "Admission",
+          "priceCents": 500,
+          "feeCents": 0,
+          "capacity": 60,
+          "isTableTier": false,
+          "seatsPerUnit": 1
+        }
+      ]
+    },
+    {
+      "title": "Friday Late Show",
+      "room": "Main Room",
+      "recurrenceRule": "FREQ=WEEKLY;BYDAY=FR",
+      "startTime": "22:00",
+      "duration": 90,
+      "isOpenMic": false,
+      "defaultAgeRestriction": "21",
+      "tiers": [
+        {
+          "name": "Front",
+          "priceCents": 2500,
+          "feeCents": 300,
+          "capacity": 48,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        },
+        {
+          "name": "Middle",
+          "priceCents": 2000,
+          "feeCents": 250,
+          "capacity": 60,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        },
+        {
+          "name": "Booth",
+          "priceCents": 3500,
+          "feeCents": 350,
+          "capacity": 36,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        },
+        {
+          "name": "Bar rail",
+          "priceCents": 1400,
+          "feeCents": 250,
+          "capacity": 36,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        }
+      ]
+    },
+    {
+      "title": "Saturday Late Show",
+      "room": "Main Room",
+      "recurrenceRule": "FREQ=WEEKLY;BYDAY=SA",
+      "startTime": "22:00",
+      "duration": 90,
+      "isOpenMic": false,
+      "defaultAgeRestriction": "21",
+      "tiers": [
+        {
+          "name": "Front",
+          "priceCents": 2700,
+          "feeCents": 300,
+          "capacity": 48,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        },
+        {
+          "name": "Middle",
+          "priceCents": 2200,
+          "feeCents": 250,
+          "capacity": 60,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        },
+        {
+          "name": "Booth",
+          "priceCents": 3700,
+          "feeCents": 350,
+          "capacity": 36,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        },
+        {
+          "name": "Bar rail",
+          "priceCents": 1600,
+          "feeCents": 250,
+          "capacity": 36,
+          "isTableTier": true,
+          "seatsPerUnit": 1
+        }
+      ]
+    }
+  ],
+  "run": {
+    "headliner": "Maya Okonkwo",
+    "title": "Maya Okonkwo Live",
+    "days": [
+      "TH",
+      "FR",
+      "SA",
+      "SU"
+    ],
+    "runFeeCents": 300000,
+    "room": "Main Room"
+  },
+  "promoCodes": [
+    {
+      "code": "LAUGH10",
+      "discountType": "percent_bps",
+      "value": 1000,
+      "maxUses": 200,
+      "perOrderLimit": 1,
+      "status": "active"
+    },
+    {
+      "code": "INDUSTRY",
+      "discountType": "comp",
+      "value": 0,
+      "maxUses": 50,
+      "perOrderLimit": 2,
+      "status": "active"
+    }
+  ],
+  "paymentProviders": [
+    {
+      "name": "Stripe",
+      "code": "pp_stripe",
+      "adapter": "stripe"
+    },
+    {
+      "name": "Manual",
+      "code": "pp_manual",
+      "adapter": "manual"
+    }
+  ]
+}
