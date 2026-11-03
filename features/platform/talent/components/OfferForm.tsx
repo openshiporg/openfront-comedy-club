@@ -7,13 +7,20 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandItem, CommandList, CommandInput, CommandEmpty } from '@/components/ui/command';
 import { runCommand } from '../../actions/commands';
 import { pillClass } from '../../components/ActionButton';
+import { ClientOnly } from '../../components/ClientOnly';
 
 const ROLES = ['host', 'opener', 'guest_set', 'feature', 'headliner', 'bringer'];
 
 function Pick({ label, value, options, onChange }: { label: string; value: string; options: { id: string; name: string }[]; onChange: (id: string) => void }) {
   const [open, setOpen] = React.useState(false);
   const current = options.find((o) => o.id === value);
+  const face = (
+    <button type="button" aria-label={label} className="inline-flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
+      <span className="min-w-0 truncate">{current?.name || label}</span><ChevronsUpDown className="size-4 shrink-0 opacity-60" />
+    </button>
+  );
   return (
+    <ClientOnly placeholder={face}>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button type="button" aria-label={label} className="inline-flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
@@ -26,6 +33,7 @@ function Pick({ label, value, options, onChange }: { label: string; value: strin
         </CommandList></Command>
       </PopoverContent>
     </Popover>
+    </ClientOnly>
   );
 }
 

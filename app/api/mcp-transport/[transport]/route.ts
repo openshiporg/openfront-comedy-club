@@ -19,6 +19,7 @@ import { internalGraphqlEndpoint, withRequestIdentity } from '@/features/keyston
 const selfFetch = withRequestIdentity();
 import { keystoneContext } from '@/features/keystone/context';
 import { authorizeMcpRequest } from '@/features/keystone/mcp-oauth/http';
+import { CLUB_TOOLS, runClubTool } from '@/features/keystone/mcp-oauth/clubTools';
 
 // Get simple type name for display
 function getSimpleTypeName(type: any): string {
@@ -281,7 +282,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
           },
           required: ['modelName', 'searchQuery', 'fields']
         }
-      }];
+      }, ...CLUB_TOOLS.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema }))];
       
       return new Response(JSON.stringify({
         jsonrpc: '2.0',
@@ -730,6 +731,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
           });
         }
         
+        const clubTool = CLUB_TOOLS.find((t) => t.name === name);
+        if (clubTool) {
+          // Same custom operation the dashboard and storefront use, run as the caller.
+          const result = await runClubTool(clubTool, args || {}, graphqlEndpoint, auth, selfFetch);
+          return new Response(JSON.stringify({ jsonrpc: '2.0', id: body.id, result: { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+
         if (name === 'modelSpecificSearch') {
           const { modelName, searchQuery, fields, limit = 10 } = args;
           

@@ -98,8 +98,57 @@ export async function seedClubOperations(_: any, { template }: { template: strin
     else { await slot(s.id, hosts[i % 3]!, 'host', 1, 8); await slot(s.id, openers[i % 4]!, 'opener', 2, 12); await slot(s.id, openers[(i + 1) % 4]!, 'guest_set', 3, 15); await slot(s.id, features[i % 4]!, 'feature', 4, 25); }
     i++;
   }
+  // Tonight: realistic sales (about two thirds sold), some checked in, one seated party with an open check.
+  const tonight = await db.show.findFirst({ where: { status: 'on_sale', startsAt: { gte: new Date(Date.now() - 12 * 3600000), lt: new Date(Date.now() + 36 * 3600000) }, isOpenMic: false }, orderBy: { startsAt: 'asc' }, include: { tiers: true, room: true } });
+  const manualProvider = await db.paymentProvider.findFirst({ where: { code: 'pp_manual' } });
+  if (tonight) {
+    const taxBps = venue.taxBps;
+    const target = Math.floor(tonight.capacity * 0.66);
+    const sizes = [2, 4, 3, 2, 6, 2, 4, 3, 2, 5, 2, 4, 6, 3, 2, 4, 2, 3, 6, 2, 4, 2, 3, 5, 2, 4, 3, 6, 2, 4, 2, 3];
+    let soldTotal = 0, i = 0, seatedAssignmentId: string | null = null;
+    const tableTiers = tonight.tiers.filter((t: any) => t.isTableTier);
+    const tableRows = await db.table.findMany({ where: { section: { roomId: tonight.roomId } }, orderBy: { label: 'asc' }, include: { section: true } });
+    const usedTables = new Set<string>();
+    const firstName = ['Alex', 'Sam', 'Jordan', 'Casey', 'Riley', 'Morgan', 'Taylor', 'Jamie', 'Drew', 'Quinn'], lastName = ['Nguyen', 'Patel', 'Garcia', 'Smith', 'Okafor', 'Lopez', 'Kim', 'Brown', 'Haddad', 'Silva'];
+    while (soldTotal < target) {
+      const size = sizes[i % sizes.length];
+      const tier = tableTiers.find((t: any) => t.sold + size <= t.capacity && t.name === ['Middle', 'Front', 'Booth', 'Bar rail', 'Middle', 'Front'][i % 6]) || tableTiers.find((t: any) => t.sold + size <= t.capacity);
+      if (!tier || soldTotal + size > tonight.capacity) break;
+      const subtotal = tier.priceCents * size, fee = tier.feeCents * size, tax = Math.floor((subtotal * taxBps + 5000) / 10000), total = subtotal + fee + tax;
+      const name = `${firstName[i % 10]} ${lastName[(i * 3) % 10]}`;
+      const order = await db.ticketOrder.create({ data: { orderNumber: code('CC'), email: `${firstName[i % 10]}.${lastName[(i * 3) % 10]}${i}@example.invalid`.toLowerCase(), name, showId: tonight.id, status: 'paid', subtotalCents: subtotal, feesCents: fee, taxCents: tax, totalCents: total, source: 'online', partySize: size, ageAttested: true, secretKey: hash(code()), lines: { create: [{ tierName: tier.name, unitPriceCents: tier.priceCents, unitFeeCents: tier.feeCents, quantity: size, lineTotalCents: subtotal, taxCents: tax, priceTierId: tier.id }] } }, include: { lines: true } });
+      await db.payment.create({ data: { idempotencyKey: `seed-pay:${order.id}`, amount: total, currencyCode: 'USD', status: 'succeeded', paymentMethod: 'credit_card', providerPaymentId: `manual_${order.orderNumber}`, processedAt: new Date(), orderId: order.id, paymentProviderId: manualProvider?.id } });
+      const checkedIn = i % 3 === 0; // earlier arrivals are already through the door
+      for (let k = 0; k < size; k++) {
+        const tc = code('T');
+        const ticket = await db.ticket.create({ data: { orderId: order.id, showId: tonight.id, lineId: order.lines[0].id, ticketCode: tc, tokenHash: hash(ticketToken(tc)), holderName: name, status: checkedIn ? 'checked_in' : 'valid' } });
+        if (checkedIn) await db.checkIn.create({ data: { ticketId: ticket.id, showId: tonight.id, at: new Date(), method: 'scan', result: 'admitted' } });
+      }
+      await db.priceTier.update({ where: { id: tier.id }, data: { sold: { increment: size } } });
+      // The first checked-in party in a table tier is seated, and its check is open.
+      if (checkedIn && !seatedAssignmentId) {
+        const pool = tableRows.filter((t: any) => t.section.name === tier.name && !usedTables.has(t.id));
+        const picked: any[] = []; let seats = 0;
+        for (const t of pool) { if (seats >= size) break; picked.push(t); seats += t.seats; }
+        if (seats >= size) {
+          const seating = await db.seatingAssignment.create({ data: { showId: tonight.id, ticketOrderId: order.id, partySize: size, status: 'seated', seatedAt: new Date(), serverId: context.session.itemId, tables: { connect: picked.map((t: any) => ({ id: t.id })) } } });
+          for (const t of picked) { usedTables.add(t.id); await db.tableOccupancy.create({ data: { occupancyKey: `${tonight.id}:${t.id}`, showId: tonight.id, tableId: t.id, assignmentId: seating.id } }); }
+          const drinksList = await db.menuItem.findMany({ where: { countsTowardMinimum: true, active: true }, orderBy: { priceCents: 'asc' } });
+          const foodList = await db.menuItem.findMany({ where: { category: 'food', active: true }, orderBy: { priceCents: 'asc' } });
+          const cheapest = drinksList[0];
+          const check = await db.check.create({ data: { showId: tonight.id, seatingAssignmentId: seating.id, serverId: context.session.itemId, status: 'open', guestCount: size, minimumItemsRequired: size * venue.drinkMinimumItems, minimumUnitPriceCents: cheapest.priceCents, minimumCentsFloor: 0, taxBps, currencyCode: 'USD' } });
+          for (const [m, q] of [[drinksList[1], Math.max(1, size)], [foodList[0], 1]] as const) await db.checkItem.create({ data: { checkId: check.id, menuItemId: m.id, name: m.name, priceCents: m.priceCents, qty: q, countsTowardMinimum: m.countsTowardMinimum } });
+          seatedAssignmentId = seating.id;
+        }
+      }
+      soldTotal += size; i++;
+    }
+    const totals = await db.priceTier.aggregate({ where: { showId: tonight.id }, _sum: { sold: true } });
+    if ((totals._sum.sold || 0) !== await db.ticket.count({ where: { showId: tonight.id, status: { in: ['valid', 'checked_in'] } } })) throw new Error('Tonight sold count does not match tickets');
+    out.tonight = soldTotal;
+  }
   // History: three past nights with paid orders, check-ins, checks, payouts and a closed settlement; one cancelled show with refunds.
-  const manual = await db.paymentProvider.findFirst({ where: { code: 'pp_manual' } });
+  const manual = manualProvider;
   const tz = venue.timezone;
   const tuesday = templates.find((t: any) => t.title === 'Tuesday Showcase')!;
   const tuesdayTiers = (await db.showTemplate.findUnique({ where: { id: tuesday.id }, include: { defaultPriceTiers: true } }))!.defaultPriceTiers;

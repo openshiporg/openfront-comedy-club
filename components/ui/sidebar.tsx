@@ -77,12 +77,16 @@ function useSidebar() {
   };
 }
 
+const NO_SIDEBAR_STATE: SidebarState = {
+  state: "collapsed", open: false, setOpen: () => {}, openMobile: false, setOpenMobile: () => {}, toggleSidebar: () => {},
+} as unknown as SidebarState;
+
 function useSidebarWithSide(side: "left" | "right") {
   const context = useContext(SidebarContext);
 
-  if (!context) {
-    throw new Error("useSidebar must be used within a SidebarProvider.");
-  }
+  // Triggers can render in a streamed segment before the provider's context reaches them
+  // (dev compile ordering); they stay inert instead of failing the whole page.
+  if (!context) return { ...NO_SIDEBAR_STATE, isMobile: false, side } as ReturnType<typeof useSidebar>;
 
   return {
     ...context[side],

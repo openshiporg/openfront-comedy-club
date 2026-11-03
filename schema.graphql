@@ -5433,6 +5433,7 @@ type Mutation {
   refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
   requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
   approveRequest(approvalId: ID!): JSON
+  sweepPendingCheckouts(secret: String!): JSON
   updateActiveUser(data: UserUpdateProfileInput!): User
   ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
   seedClubOperations(template: String!): JSON
@@ -5594,6 +5595,8 @@ type Query {
   showsOnSale: JSON
   showAvailability(showId: ID!): JSON
   lookupTicketOrder(email: String!, orderNumber: String!): JSON
+  ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
+  openMicShows: JSON
 }
 
 union AuthenticatedItem = User

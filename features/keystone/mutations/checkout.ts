@@ -114,15 +114,13 @@ export async function completeTicketCheckout(_: any, input: any, context: any) {
   return { ...result, orderNumber: order.orderNumber };
 }
 
-/** Releases a pending order whose payment failed. Only after the provider confirms it cannot succeed. */
-export async function abandonTicketCheckout(_: any, input: any, context: any) {
-  const order = await orderForProof(context, input.orderNumber, input.orderSecret);
-  if (order.status !== 'pending_payment') return { status: order.status };
+/** Releases a pending order only after the provider confirms the payment cannot succeed. */
+async function abandonPending(context: any, order: any) {
   const intent = order.paymentCollection?.paymentSessions?.[0]?.data?.paymentIntentId;
   const provider = await providerFor(context);
   const observed = intent ? await getPaymentStatus({ provider, paymentId: intent }) : { status: 'canceled' };
-  if (observed.status === 'succeeded') return completeTicketCheckout(_, input, context);
-  if (!['canceled', 'requires_payment_method'].includes(observed.status)) return { status: 'pending' };
+  if (observed.status === 'succeeded') { await verifyAndFinalize(context, order); return 'paid'; }
+  if (!['canceled', 'requires_payment_method'].includes(observed.status)) return 'pending';
   await context.prisma.$transaction(async (tx: any) => {
     await lockTransactionKey(tx, 'show:' + order.showId);
     const fresh = await tx.ticketOrder.updateMany({ where: { id: order.id, status: 'pending_payment' }, data: { status: 'cancelled' } });
@@ -134,9 +132,31 @@ export async function abandonTicketCheckout(_: any, input: any, context: any) {
       await tx.tableOccupancy.updateMany({ where: { holdId: hold.id }, data: { occupancyKey: null } });
       if (hold.redemption) await tx.promoRedemption.update({ where: { id: hold.redemption.id }, data: { status: 'released' } });
     }
-    await audit(tx, context, 'cancelled', 'TicketOrder', order.id, { status: 'pending_payment' }, { status: 'cancelled' }, 'payment failed');
+    await audit(tx, context, 'cancelled', 'TicketOrder', order.id, { status: 'pending_payment' }, { status: 'cancelled' }, 'payment did not complete');
   });
-  return { status: 'cancelled' };
+  return 'cancelled';
+}
+
+export async function abandonTicketCheckout(_: any, input: any, context: any) {
+  const order = await orderForProof(context, input.orderNumber, input.orderSecret);
+  if (order.status !== 'pending_payment') return { status: order.status };
+  return { status: await abandonPending(context, order) };
+}
+
+/** Cron entry point: settles pending orders whose hold window has passed. Never trusts a timeout as failure. */
+export async function sweepPendingCheckouts(_: any, { secret }: { secret: string }, context: any) {
+  const expected = process.env.CRON_SECRET;
+  if (!expected || secret !== expected) throw new Error('Not authorized');
+  const orders = await context.prisma.ticketOrder.findMany({ where: { status: 'pending_payment', hold: { expiresAt: { lt: new Date(Date.now() - 5 * 60000) } } }, include: { paymentCollection: { include: { paymentSessions: true } } }, take: 50 });
+  const out: Record<string, number> = {};
+  for (const order of orders) { try { const r = await abandonPending(context, order); out[r] = (out[r] || 0) + 1; } catch { out.error = (out.error || 0) + 1; } }
+  return out;
+}
+
+export async function ticketOrderConfirmation(_: any, input: any, context: any) {
+  const order = await orderForProof(context, input.orderNumber, input.orderSecret);
+  const full = await context.prisma.ticketOrder.findUnique({ where: { id: order.id }, select: { orderNumber: true, status: true, name: true, totalCents: true, subtotalCents: true, feesCents: true, taxCents: true, discountCents: true, currencyCode: true, partySize: true, show: { select: { title: true, startsAt: true, doorsAt: true, ageRestriction: true, room: { select: { name: true } } } }, lines: { select: { tierName: true, quantity: true, unitPriceCents: true, lineTotalCents: true } }, tickets: { select: { ticketCode: true, status: true, holderName: true } } } });
+  return { ...full, tickets: full.tickets.map((t: any) => ({ ...t, token: ticketToken(t.ticketCode) })) };
 }
 
 /** Local reservation first, provider refund outside the transaction, then finalization. */

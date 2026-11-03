@@ -16,12 +16,16 @@ export async function expireUnderLock(tx:any,showId:string,context:any) {
   return holds.length;
 }
 export async function expireHolds(_root:any,args:any,context:any) {
-  const shows=await context.prisma.show.findMany({where:args.showId?{id:args.showId}:{status:{in:['on_sale','sold_out']}},select:{id:true},take:100});
-  let expired=0;for(const show of shows) expired+=await context.prisma.$transaction(async(tx:any)=>{await lockTransactionKey(tx,'show:'+show.id);return expireUnderLock(tx,show.id,context);});return {expired};
+  // One cheap query finds the shows that actually have expired holds; only those take a lock.
+  const due=await context.prisma.inventoryHold.findMany({where:{status:'active',expiresAt:{lte:new Date()},...(args.showId?{showId:args.showId}:{})},select:{showId:true},distinct:['showId'],take:100});
+  let expired=0;
+  for(const {showId} of due) expired+=await context.prisma.$transaction(async(tx:any)=>{await lockTransactionKey(tx,'show:'+showId);return expireUnderLock(tx,showId,context);});
+  return {expired};
 }
 export async function showsOnSale(_root:any,_args:any,context:any) {
   await expireHolds(null,{},context);
-  return context.prisma.show.findMany({where:{status:{in:['on_sale','sold_out']},startsAt:{gt:new Date()}},select:{id:true,title:true,startsAt:true,doorsAt:true,ageRestriction:true,publicNote:true,room:{select:{name:true}},tiers:{select:{id:true,name:true,priceCents:true,feeCents:true,capacity:true,sold:true,held:true,status:true}}},orderBy:{startsAt:'asc'},take:100});
+  const rows=await context.prisma.show.findMany({where:{status:{in:['on_sale','sold_out']},startsAt:{gt:new Date()}},select:{id:true,title:true,startsAt:true,doorsAt:true,ageRestriction:true,publicNote:true,room:{select:{name:true}},tiers:{select:{id:true,name:true,priceCents:true,feeCents:true,capacity:true,sold:true,held:true,status:true}}},orderBy:{startsAt:'asc'},take:100});
+  return rows;
 }
 export async function showAvailability(_root:any,{showId}:any,context:any) {
   await expireHolds(null,{showId},context);
@@ -81,4 +85,9 @@ export async function openMicSignup(_root:any,input:any,context:any) {
     if(comedian&&comedian.email.toLowerCase()!==email) throw new Error('Comedian email does not match');
     return tx.openMicSignup.create({data:{signupKey:show.id+':'+(comedian?.id||email),showId:show.id,comedianId:comedian?.id||null,name:input.name,email,method:'online_list',status:'waiting'}});
   },'show:'+input.showId);
+}
+
+export async function openMicShows(_root:any,_args:any,context:any) {
+  const from=new Date(Date.now()-3*3600000);
+  return context.prisma.show.findMany({where:{isOpenMic:true,status:{in:['on_sale','sold_out','doors_open']},startsAt:{gte:from}},select:{id:true,title:true,startsAt:true,signupOpensAt:true,room:{select:{name:true}}},orderBy:{startsAt:'asc'},take:6});
 }

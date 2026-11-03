@@ -1,5 +1,6 @@
 import { mergeSchemas } from "@graphql-tools/schema";
 import type { GraphQLSchema } from 'graphql';
+import { GraphQLError } from "graphql";
 import redirectToInit from "./redirectToInit";
 import * as tickets from "./tickets";
 import * as ops from "./operators";
@@ -12,7 +13,18 @@ const graphql = String.raw;
 
 // Every resolver validates proof or permission itself and runs money/inventory work
 // under advisory locks in a transaction. Raw lists are not the storefront API.
-const op = (fn: any) => (root: any, args: any, context: any) => fn(root, args, context);
+const UNSAFE = /prisma|invocation|\bat\s+\S+\s*\(|node_modules|postgres(ql)?:\/\/|\bSQL\b|ECONN|query engine|\.ts:\d+|\.js:\d+/i;
+// Business-rule messages reach the caller; database and driver detail never does.
+const op = (fn: any) => async (root: any, args: any, context: any) => {
+  try { return await fn(root, args, context); }
+  catch (error: any) {
+    if (error instanceof GraphQLError) throw error;
+    const message = typeof error?.message === 'string' ? error.message : '';
+    console.error('Operation failed:', message.slice(0, 300));
+    const safe = message && message.length <= 300 && !UNSAFE.test(message) && !error?.code;
+    throw new GraphQLError(safe ? message : 'Unable to complete the request. Please try again.', { extensions: { code: 'KS_USER_INPUT_ERROR' } });
+  }
+};
 
 export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
   return mergeSchemas({
@@ -24,6 +36,8 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         showsOnSale: JSON
         showAvailability(showId: ID!): JSON
         lookupTicketOrder(email: String!, orderNumber: String!): JSON
+        ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
+        openMicShows: JSON
       }
       input UserUpdateProfileInput { name: String, email: String, password: String, onboardingStatus: String, notificationPreference: Boolean }
       input CustomerInput { name: String!, email: String!, phone: String }
@@ -57,6 +71,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
         requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
         approveRequest(approvalId: ID!): JSON
+        sweepPendingCheckouts(secret: String!): JSON
         updateActiveUser(data: UserUpdateProfileInput!): User
         ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
         seedClubOperations(template: String!): JSON
@@ -68,6 +83,8 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         showsOnSale: op(tickets.showsOnSale),
         showAvailability: op(tickets.showAvailability),
         lookupTicketOrder: op(tickets.lookupTicketOrder),
+        ticketOrderConfirmation: op(checkout.ticketOrderConfirmation),
+        openMicShows: op(tickets.openMicShows),
       },
       Mutation: {
         expireHolds: op(tickets.expireHolds),
@@ -97,6 +114,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         refundTicketOrder: op(checkout.refundTicketOrder),
         requestApproval: op(night.requestApproval),
         approveRequest: op(night.approveRequest),
+        sweepPendingCheckouts: op(checkout.sweepPendingCheckouts),
         updateActiveUser,
         ensureClubOnboardingRecord: op(seed.ensureClubOnboardingRecord),
         seedClubOperations: op(seed.seedClubOperations),

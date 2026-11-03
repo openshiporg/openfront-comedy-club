@@ -6,6 +6,7 @@ import { runCommand } from '../../actions/commands';
 import { ActionButton, pillClass } from '../../components/ActionButton';
 import { Status } from '../../components/ui';
 import { money } from '../../lib/format';
+import { ClientOnly } from '../../components/ClientOnly';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandItem, CommandList, CommandInput, CommandEmpty } from '@/components/ui/command';
 
@@ -28,6 +29,7 @@ export function CheckPanel({ check, menu }: { check: { id: string; status: strin
       <div>{live.map((i) => <div key={i.id} className="flex justify-between gap-3 py-1 text-sm"><span className="min-w-0 break-words">{i.qty} × {i.name}</span><span className="font-mono text-xs">{money(i.qty * i.priceCents)}</span></div>)}</div>
       {['open', 'presented'].includes(check.status) ? (
         <div className="flex flex-wrap items-center gap-2">
+          <ClientOnly placeholder={<button type="button" className={pillClass + ' border'}>Add item</button>}>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild><button type="button" className={pillClass + ' border'}>Add item</button></PopoverTrigger>
             <PopoverContent className="w-[min(92vw,22rem)] p-0" align="start">
@@ -44,6 +46,7 @@ export function CheckPanel({ check, menu }: { check: { id: string; status: strin
               </Command>
             </PopoverContent>
           </Popover>
+          </ClientOnly>
           <input value={tip} onChange={(e) => setTip(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" placeholder="Tip" aria-label="Tip in dollars" className="h-8 w-20 rounded-md border bg-background px-2 text-sm" />
           <button type="button" disabled={pending} className={pillClass + ' border'} onClick={() => start(async () => { setError(''); const r = await runCommand('closeCheck', { checkId: check.id, tipCents: Math.round(Number(tip || 0) * 100) }); if (!r.ok) setError(r.error); else router.refresh(); })}>Close check</button>
         </div>
