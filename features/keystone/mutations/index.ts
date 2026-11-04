@@ -54,10 +54,11 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
       }
       input UserUpdateProfileInput { name: String, email: String, password: String, onboardingStatus: String, notificationPreference: Boolean }
       input CustomerInput { name: String!, email: String!, phone: String }
+      input HoldLineInput { tierId: ID!, quantity: Int!, tableIds: [ID!] }
       input SlotOrderInput { id: ID!, position: Int!, setMinutes: Int! }
       type Mutation {
         expireHolds(showId: ID): JSON
-        createTicketHold(showId: ID!, tierId: ID!, quantity: Int!, tableIds: [ID!], idempotencyKey: String!): JSON
+        createTicketHold(showId: ID!, tierId: ID, quantity: Int, tableIds: [ID!], lines: [HoldLineInput!], idempotencyKey: String!): JSON
         applyPromoToHold(holdKey: String!, cartToken: String!, code: String!, idempotencyKey: String!): JSON
         startTicketCheckout(holdKey: String!, cartToken: String!, customer: CustomerInput!, ageAttested: Boolean, seatingRequest: String, occasion: String, idempotencyKey: String!): JSON
         completeTicketCheckout(orderNumber: String!, orderSecret: String!): JSON

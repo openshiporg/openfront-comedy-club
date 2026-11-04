@@ -17,4 +17,5 @@ export const PriceTier = domainList({
   sections: relationship({ref:'Section.priceTier',many:true}),
   templates: relationship({ref:'ShowTemplate.defaultPriceTiers',many:true}),
   holds: relationship({ref:'InventoryHold.priceTier',many:true}),
+  holdLines: relationship({ref:'InventoryHoldLine.priceTier',many:true}),
 }, 'canManageShows', true);

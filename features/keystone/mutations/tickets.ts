@@ -4,6 +4,8 @@ import { saleState } from '../lib/saleWindow';
 import crypto from 'node:crypto';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
 import { quote } from '../lib/money';
+import { checkCapacity, checkLines, normalizeLines } from '../lib/groupHold';
+import { releaseHoldSeats } from '../lib/holds';
 
 export async function expireUnderLock(tx:any,showId:string,context:any) {
   const holds=await tx.inventoryHold.findMany({where:{showId,status:'active',expiresAt:{lte:new Date()}}});
@@ -11,7 +13,7 @@ export async function expireUnderLock(tx:any,showId:string,context:any) {
     // Provider-reserved inventory remains held until verified cancellation or capture.
     if(await tx.ticketOrder.count({where:{hold:{id:hold.id},status:'pending_payment'}})) continue;
     await tx.inventoryHold.update({where:{id:hold.id},data:{status:'expired'}});
-    await tx.priceTier.update({where:{id:hold.priceTierId},data:{held:{decrement:hold.quantity}}});
+    await releaseHoldSeats(tx,hold);
     await tx.tableOccupancy.updateMany({where:{holdId:hold.id},data:{occupancyKey:null}});
     await tx.promoRedemption.updateMany({where:{hold:{id:hold.id},status:'reserved'},data:{status:'released'}});
     await audit(tx,context,'expired','InventoryHold',hold.id,hold,{status:'expired'});
@@ -37,25 +39,37 @@ export async function showAvailability(_root:any,{showId}:any,context:any) {
   if(!show || !['on_sale','sold_out','doors_open'].includes(show.status)) throw new Error('Show not available');return show;
 }
 export async function createTicketHold(_root:any,input:any,context:any) {
-  if(!Number.isInteger(input.quantity)||input.quantity<1||input.quantity>20) throw new Error('Choose 1–20 tickets');
+  const lines=normalizeLines(input); checkLines(lines);
   return command(context,'createTicketHold',input,async(tx)=>{
     await expireUnderLock(tx,input.showId,context);
     const show=await tx.show.findUnique({where:{id:input.showId},include:{room:true}});
-    const tier=await tx.priceTier.findUnique({where:{id:input.tierId}});
-    if(!show||show.status!=='on_sale'||!tier||tier.showId!==show.id||tier.status!=='on_sale'||show.startsAt<=new Date()) throw new Error('Tickets unavailable');
-    {const state=saleState(tier);if(state==='scheduled') throw new Error('Sales have not opened for this tier yet');if(state==='ended') throw new Error('Sales have ended for this tier');}
+    if(!show||show.status!=='on_sale'||show.startsAt<=new Date()) throw new Error('Tickets unavailable');
+    const tiers=await tx.priceTier.findMany({where:{id:{in:lines.map(l=>l.tierId)}}});
+    if(tiers.length!==lines.length) throw new Error('Tickets unavailable');
+    for(const tier of tiers){const state=saleState(tier);if(state==='scheduled') throw new Error('Sales have not opened for this tier yet');if(state==='ended') throw new Error('Sales have ended for this tier');}
+    // the whole party is checked against every tier and the show before anything is held: all or nothing
     const totals=await tx.priceTier.aggregate({where:{showId:show.id},_sum:{sold:true,held:true}});
-    if(tier.sold+tier.held+input.quantity>tier.capacity||(totals._sum.sold||0)+(totals._sum.held||0)+input.quantity>showCapacity(show)) throw new Error('Not enough capacity');
-    const ids=[...new Set<string>(input.tableIds||[])];
-    if(tier.isTableTier && !ids.length) throw new Error('Choose a table');
-    const tables=ids.length?await tx.table.findMany({where:{id:{in:ids}},include:{section:true}}):[];
-    if(tables.length!==ids.length||tables.some((t:any)=>t.section.roomId!==show.roomId||(tier.isTableTier&&t.section.name!==tier.name))) throw new Error('Invalid tables');
-    if(tables.length && tables.reduce((n:number,t:any)=>n+t.seats,0)!==input.quantity) throw new Error('Reserve every seat at the selected tables');
+    checkCapacity(lines,tiers,show.id,showCapacity(show)-(totals._sum.sold||0)-(totals._sum.held||0));
+    const allIds:string[]=[]; const perLineTables=new Map<string,string[]>();
+    for(const l of lines){
+      const tier=tiers.find((t:any)=>t.id===l.tierId); const ids=[...new Set<string>(l.tableIds||[])];
+      if(tier.isTableTier && !ids.length) throw new Error('Choose a table');
+      const tables=ids.length?await tx.table.findMany({where:{id:{in:ids}},include:{section:true}}):[];
+      if(tables.length!==ids.length||tables.some((t:any)=>t.section.roomId!==show.roomId||(tier.isTableTier&&t.section.name!==tier.name))) throw new Error('Invalid tables');
+      if(tables.length && tables.reduce((n:number,t:any)=>n+t.seats,0)!==l.quantity) throw new Error('Reserve every seat at the selected tables');
+      perLineTables.set(l.tierId,ids); allIds.push(...ids);
+    }
+    if(new Set(allIds).size!==allIds.length) throw new Error('A table can only be chosen once');
+    const total=lines.reduce((n,l)=>n+l.quantity,0);
     const settings=await tx.venueSettings.findFirst(); const token=crypto.randomBytes(32).toString('hex');
-    const hold=await tx.inventoryHold.create({data:{holdKey:code('H'),showId:show.id,priceTierId:tier.id,quantity:input.quantity,cartToken:hash(token),status:'active',expiresAt:new Date(Date.now()+(settings?.holdMinutes||10)*60000),tables:{connect:ids.map(id=>({id}))}}});
-    for(const tableId of ids) await tx.tableOccupancy.create({data:{occupancyKey:show.id+':'+tableId,showId:show.id,tableId,holdId:hold.id}});
-    await tx.priceTier.update({where:{id:tier.id},data:{held:{increment:input.quantity}}});
-    await audit(tx,context,'held','InventoryHold',hold.id,null,{quantity:input.quantity});
+    // one hold, one expiry: its seats across every tier are released or converted together
+    const hold=await tx.inventoryHold.create({data:{holdKey:code('H'),showId:show.id,priceTierId:lines[0].tierId,quantity:total,cartToken:hash(token),status:'active',expiresAt:new Date(Date.now()+(settings?.holdMinutes||10)*60000),tables:{connect:allIds.map(id=>({id}))}}});
+    for(const l of lines){
+      await tx.inventoryHoldLine.create({data:{holdId:undefined,hold:{connect:{id:hold.id}},priceTier:{connect:{id:l.tierId}},quantity:l.quantity}});
+      await tx.priceTier.update({where:{id:l.tierId},data:{held:{increment:l.quantity}}});
+    }
+    for(const tableId of allIds) await tx.tableOccupancy.create({data:{occupancyKey:show.id+':'+tableId,showId:show.id,tableId,holdId:hold.id}});
+    await audit(tx,context,'held','InventoryHold',hold.id,null,{quantity:total,lines:lines.map(l=>({tierId:l.tierId,quantity:l.quantity}))});
     return {holdKey:hold.holdKey,cartToken:token,expiresAt:hold.expiresAt};
   },'show:'+input.showId);
 }
@@ -64,6 +78,7 @@ export async function applyPromoToHold(_root:any,input:any,context:any) {
   return command(context,'applyPromoToHold',input,async tx=>{
     const hold=await tx.inventoryHold.findUnique({where:{id:lookup.id},include:{show:true}});prove(hold,input.cartToken);
     if(hold.status!=='active'||hold.expiresAt<=new Date()||await tx.ticketOrder.count({where:{hold:{id:hold.id}}})) throw new Error('Hold cannot be changed');
+    if(await tx.inventoryHoldLine.count({where:{hold:{id:hold.id}}})>1) throw new Error('Promotions cannot be combined with several ticket types');
     const promo=await tx.promoCode.findUnique({where:{code:input.code.toUpperCase()}});if(!promo) throw new Error('Invalid promotion');
     await lockTransactionKey(tx,'promo:'+promo.id);
     const current=await tx.promoCode.findUnique({where:{id:promo.id}});

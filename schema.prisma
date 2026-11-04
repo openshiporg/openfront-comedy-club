@@ -192,6 +192,7 @@ model InventoryHold {
   priceTier       PriceTier?               @relation("InventoryHold_priceTier", fields: [priceTierId], references: [id])
   priceTierId     String?                  @map("priceTier")
   quantity        Int?                     @default(1)
+  lines           InventoryHoldLine[]      @relation("InventoryHoldLine_hold")
   tables          Table[]                  @relation("InventoryHold_tables")
   status          InventoryHoldStatusType? @default(active)
   expiresAt       DateTime?
@@ -212,6 +213,20 @@ model InventoryHold {
   @@index([showId])
   @@index([priceTierId])
   @@index([promoId])
+}
+
+model InventoryHoldLine {
+  id          String         @id @default(cuid())
+  hold        InventoryHold? @relation("InventoryHoldLine_hold", fields: [holdId], references: [id])
+  holdId      String?        @map("hold")
+  priceTier   PriceTier?     @relation("InventoryHoldLine_priceTier", fields: [priceTierId], references: [id])
+  priceTierId String?        @map("priceTier")
+  quantity    Int?           @default(1)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now()) @updatedAt
+
+  @@index([holdId])
+  @@index([priceTierId])
 }
 
 model LineupSlot {
@@ -516,6 +531,7 @@ model PriceTier {
   sections     Section[]            @relation("Section_priceTier")
   templates    ShowTemplate[]       @relation("PriceTier_templates")
   holds        InventoryHold[]      @relation("InventoryHold_priceTier")
+  holdLines    InventoryHoldLine[]  @relation("InventoryHoldLine_priceTier")
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @default(now()) @updatedAt
 

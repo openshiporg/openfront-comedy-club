@@ -6,6 +6,7 @@ export const InventoryHold = domainList({
   show: relationship({ref:'Show.holds'}),
   priceTier: relationship({ref:'PriceTier.holds'}),
   quantity: integer({defaultValue:1}),
+  lines: relationship({ref:'InventoryHoldLine.hold',many:true}),
   tables: relationship({ref:'Table.holds',many:true}),
   status: lifecycle(['active', 'converted', 'released', 'expired']),
   expiresAt: timestamp(),

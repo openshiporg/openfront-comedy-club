@@ -1,3 +1,4 @@
+import { releaseHoldSeats } from '../lib/holds';
 import { showCapacity } from '../lib/capacity';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
 import { tierFor } from '../lib/waitlist';
@@ -54,7 +55,7 @@ export async function removeWaitlistEntry(_: any, a: any, c: any) {
     if (entry.hold?.status === 'active') {
       if (await tx.ticketOrder.count({ where: { hold: { id: entry.hold.id }, status: 'pending_payment' } })) throw new Error('This party is paying now');
       await tx.inventoryHold.update({ where: { id: entry.hold.id }, data: { status: 'released' } });
-      await tx.priceTier.update({ where: { id: entry.hold.priceTierId }, data: { held: { decrement: entry.hold.quantity } } });
+      await releaseHoldSeats(tx, entry.hold);
     }
     const moved = await tx.waitlistEntry.updateMany({ where: { id: entry.id, status: entry.status }, data: { status: 'cancelled' } });
     if (moved.count !== 1) throw new Error('State changed');

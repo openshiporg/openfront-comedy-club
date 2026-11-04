@@ -3,7 +3,9 @@ import { showReminderKey } from '../lib/reminders';
 import { offerFreedSeats } from './waitlistCore';
 import crypto from 'node:crypto';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
-import { quote, selfRefundAllowed } from '../lib/money';
+import { selfRefundAllowed } from '../lib/money';
+import { quoteGroup, refundShare, splitTax } from '../lib/groupHold';
+import { releaseHoldSeats } from '../lib/holds';
 import { consumeManagerApproval } from '../utils/managerApproval';
 import { createPayment, getPaymentStatus, refundPayment } from '../utils/paymentProviderAdapter';
 import { assertCheckoutProviderObservation } from '../utils/checkoutProviderObservation';
@@ -27,21 +29,25 @@ export async function startTicketCheckout(_: any, input: any, context: any) {
   const secret = crypto.randomBytes(24).toString('hex');
   // Phase 1: freeze the quote and create the pending order under the show lock.
   const local = await command(context, 'startTicketCheckout', { ...input, cartToken: hash(input.cartToken) }, async tx => {
-    const hold = await tx.inventoryHold.findUnique({ where: { id: lookup.id }, include: { show: { include: { room: { include: { venue: true } } } }, priceTier: true, tables: true, redemption: { include: { promoCode: true } } } });
+    const hold = await tx.inventoryHold.findUnique({ where: { id: lookup.id }, include: { show: { include: { room: { include: { venue: true } } } }, lines: { include: { priceTier: true } }, priceTier: true, tables: true, redemption: { include: { promoCode: true } } } });
     prove(hold, input.cartToken);
     if (hold.status !== 'active' || hold.expiresAt <= new Date() || hold.show.status !== 'on_sale') throw new Error('Hold expired');
     if (await tx.ticketOrder.count({ where: { hold: { id: hold.id } } })) throw new Error('Checkout already started');
     if (hold.show.ageRestriction !== 'all' && input.ageAttested !== true) throw new Error('Age confirmation required');
     const venue = hold.show.room.venue;
     const promo = hold.redemption?.status === 'reserved' ? hold.redemption.promoCode : null;
-    const q = quote({ priceCents: hold.priceTier.priceCents, feeCents: hold.priceTier.feeCents, quantity: hold.quantity, serviceFeeBps: venue.serviceFeeBps, taxBps: venue.taxBps, discountType: promo?.discountType, discountValue: promo?.value, perOrderLimit: promo?.perOrderLimit });
+    // a hold made before party holds existed has no lines: price it from the hold itself
+    const hl: { tier: any; quantity: number }[] = hold.lines.length ? hold.lines.map((l: any) => ({ tier: l.priceTier, quantity: l.quantity })) : [{ tier: hold.priceTier, quantity: hold.quantity }];
+    const priced = hl.map((l) => ({ priceCents: l.tier.priceCents, feeCents: l.tier.feeCents, quantity: l.quantity }));
+    const q = quoteGroup(priced, venue.serviceFeeBps, venue.taxBps, promo ? { discountType: promo.discountType, discountValue: promo.value, perOrderLimit: promo.perOrderLimit } : null);
+    const parts = hl.length === 1 ? [{ subtotalCents: q.subtotalCents, taxCents: q.taxCents }] : splitTax(priced, q.taxCents);
     if (q.totalCents < 1) throw new Error('Payment is not required for this order; contact the venue');
     const order = await tx.ticketOrder.create({ data: {
       orderNumber: code('CC'), customerId: context.session?.itemId || null, email, name: String(customer.name).trim(), phone: String(customer.phone || ''),
       showId: hold.showId, status: 'pending_payment', ...q, currencyCode: 'USD', source: 'online', partySize: hold.quantity,
       seatingRequest: String(input.seatingRequest || '').slice(0, 500), birthdayOrOccasion: String(input.occasion || '').slice(0, 200), ageAttested: input.ageAttested === true,
       secretKey: hash(secret), holdId: undefined, hold: { connect: { id: hold.id } },
-      lines: { create: [{ tierName: hold.priceTier.name, unitPriceCents: hold.priceTier.priceCents, unitFeeCents: hold.priceTier.feeCents, quantity: hold.quantity, lineTotalCents: q.subtotalCents, discountCents: q.discountCents, taxCents: q.taxCents, currencyCode: 'USD', priceTierId: hold.priceTierId }] },
+      lines: { create: hl.map((l, i) => ({ tierName: l.tier.name, unitPriceCents: l.tier.priceCents, unitFeeCents: l.tier.feeCents, quantity: l.quantity, lineTotalCents: parts[i].subtotalCents, discountCents: hl.length === 1 ? q.discountCents : 0, taxCents: parts[i].taxCents, currencyCode: 'USD', priceTierId: l.tier.id })) },
     } });
     if (hold.redemption) await tx.promoRedemption.update({ where: { id: hold.redemption.id }, data: { orderId: order.id, amountCents: q.discountCents } });
     await audit(tx, context, 'checkout_started', 'TicketOrder', order.id, null, { totalCents: q.totalCents });
@@ -65,12 +71,15 @@ export async function finalizePaidOrder(tx: any, context: any, orderId: string, 
   if (!order) throw new Error('Order not found');
   if (order.status === 'paid') return order;
   if (order.status !== 'pending_payment' || !order.hold || order.hold.status !== 'active') throw new Error('Order cannot be completed; operator reconciliation required');
-  const line = order.lines[0];
-  for (let i = 0; i < order.hold.quantity; i++) {
-    const ticketCode = code('T');
-    await tx.ticket.create({ data: { orderId: order.id, showId: order.showId, lineId: line.id, ticketCode, tokenHash: hash(ticketToken(ticketCode)), holderName: order.name, status: 'valid' } });
+  // convert every line of the hold: tickets per ticket type, and each tier moves its seats from held to sold
+  const soldTiers: any[] = [];
+  for (const line of order.lines) {
+    for (let i = 0; i < line.quantity; i++) {
+      const ticketCode = code('T');
+      await tx.ticket.create({ data: { orderId: order.id, showId: order.showId, lineId: line.id, ticketCode, tokenHash: hash(ticketToken(ticketCode)), holderName: order.name, status: 'valid' } });
+    }
+    soldTiers.push(await tx.priceTier.update({ where: { id: line.priceTierId }, data: { sold: { increment: line.quantity }, held: { decrement: line.quantity } } }));
   }
-  const tier = await tx.priceTier.update({ where: { id: order.hold.priceTierId }, data: { sold: { increment: order.hold.quantity }, held: { decrement: order.hold.quantity } } });
   await tx.inventoryHold.update({ where: { id: order.hold.id }, data: { status: 'converted' } });
   if (order.hold.redemption) {
     await tx.promoRedemption.update({ where: { id: order.hold.redemption.id }, data: { status: 'committed' } });
@@ -79,7 +88,7 @@ export async function finalizePaidOrder(tx: any, context: any, orderId: string, 
   await tx.payment.create({ data: { idempotencyKey: 'pay:' + order.id, amount: order.totalCents, currencyCode: order.currencyCode, status: 'succeeded', paymentMethod: 'credit_card', providerPaymentId, processedAt: new Date(), orderId: order.id, paymentProviderId: provider.id, paymentCollectionId: order.paymentCollection?.id || null } });
   await tx.ticketOrder.update({ where: { id: order.id }, data: { status: 'paid' } });
   const totals = await tx.priceTier.aggregate({ where: { showId: order.showId }, _sum: { sold: true, held: true } });
-  if (tier.sold >= tier.capacity) await tx.priceTier.update({ where: { id: tier.id }, data: { status: 'sold_out' } });
+  for (const tier of soldTiers) if (tier.sold >= tier.capacity) await tx.priceTier.update({ where: { id: tier.id }, data: { status: 'sold_out' } });
   if (order.show.status === 'on_sale' && (totals._sum.sold || 0) + (totals._sum.held || 0) >= order.show.capacity) await tx.show.update({ where: { id: order.showId }, data: { status: 'sold_out' } });
   await audit(tx, context, 'paid', 'TicketOrder', order.id, { status: 'pending_payment' }, { status: 'paid' });
   return order;
@@ -131,7 +140,7 @@ async function abandonPending(context: any, order: any) {
     const hold = await tx.inventoryHold.findFirst({ where: { order: { id: order.id }, status: 'active' }, include: { redemption: true } });
     if (hold) {
       await tx.inventoryHold.update({ where: { id: hold.id }, data: { status: 'released' } });
-      await tx.priceTier.update({ where: { id: hold.priceTierId }, data: { held: { decrement: hold.quantity } } });
+      await releaseHoldSeats(tx, hold);
       await tx.tableOccupancy.updateMany({ where: { holdId: hold.id }, data: { occupancyKey: null } });
       if (hold.redemption) await tx.promoRedemption.update({ where: { id: hold.redemption.id }, data: { status: 'released' } });
     }
@@ -167,7 +176,7 @@ export async function ticketOrderConfirmation(_: any, input: any, context: any) 
 export async function refundOrderInternal(context: any, a: { orderId: string; amountCents?: number; ticketIds?: string[]; reason: string; idempotencyKey: string; approvalId?: string; actorId: string | null; threshold: number }) {
   const prisma = context.prisma;
   const reserved = await command(context, 'refundTicketOrder', { ...a }, async tx => {
-    const order = await tx.ticketOrder.findUnique({ where: { id: a.orderId }, include: { payments: true, tickets: true } });
+    const order = await tx.ticketOrder.findUnique({ where: { id: a.orderId }, include: { payments: true, tickets: { include: { line: true } } } });
     if (!order || !['paid', 'partially_refunded'].includes(order.status)) throw new Error('Order is not refundable');
     const payment = order.payments.find((p: any) => ['succeeded', 'partially_refunded'].includes(p.status));
     if (!payment) throw new Error('No captured payment');
@@ -175,7 +184,10 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     if (!tickets.length || tickets.some((t: any) => t.status !== 'valid')) throw new Error('Only valid tickets can be refunded');
     const remaining = payment.amount - payment.refundedAmount;
     const full = tickets.length === order.tickets.filter((t: any) => t.status === 'valid').length;
-    const amount = a.amountCents ?? (full ? remaining : Math.floor(order.totalCents * tickets.length / (order.tickets.length - order.tickets.filter((t: any) => t.transferredFromCode).length)));
+    // tickets replaced by a transfer are not part of the party any more; each remaining ticket weighs its own line price
+    const live = order.tickets.filter((t: any) => !order.tickets.some((x: any) => x.transferredFromCode === t.ticketCode));
+    const price = (t: any) => ({ priceCents: t.line?.unitPriceCents ?? 0 });
+    const amount = a.amountCents ?? (full ? remaining : refundShare(order.totalCents, tickets.map(price), live.map(price)));
     if (!Number.isSafeInteger(amount) || amount < 1 || amount > remaining) throw new Error('Invalid refund amount');
     if (a.actorId && amount > a.threshold) await consumeManagerApproval(tx, { approvalId: a.approvalId, actorId: a.actorId, actionType: 'refund_payment', targetId: order.id, reason: a.reason, amount, entityType: 'TicketOrder', entityId: order.id });
     const refund = await tx.refund.create({ data: { idempotencyKey: 'refund:' + a.idempotencyKey, amount, currencyCode: payment.currencyCode, status: 'processing', reason: a.reason, paymentId: payment.id, orderId: order.id, requestedById: a.actorId } });

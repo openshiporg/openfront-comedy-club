@@ -1131,6 +1131,8 @@ type InventoryHold {
   show: Show
   priceTier: PriceTier
   quantity: Int
+  lines(where: InventoryHoldLineWhereInput! = {}, orderBy: [InventoryHoldLineOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InventoryHoldLineWhereUniqueInput): [InventoryHoldLine!]
+  linesCount(where: InventoryHoldLineWhereInput! = {}): Int
   tables(where: TableWhereInput! = {}, orderBy: [TableOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TableWhereUniqueInput): [Table!]
   tablesCount(where: TableWhereInput! = {}): Int
   status: InventoryHoldStatusType
@@ -1171,6 +1173,7 @@ input InventoryHoldWhereInput {
   show: ShowWhereInput
   priceTier: PriceTierWhereInput
   quantity: IntNullableFilter
+  lines: InventoryHoldLineManyRelationFilter
   tables: TableManyRelationFilter
   status: InventoryHoldStatusTypeNullableFilter
   expiresAt: DateTimeNullableFilter
@@ -1182,6 +1185,12 @@ input InventoryHoldWhereInput {
   occupancies: TableOccupancyManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
+}
+
+input InventoryHoldLineManyRelationFilter {
+  every: InventoryHoldLineWhereInput
+  some: InventoryHoldLineWhereInput
+  none: InventoryHoldLineWhereInput
 }
 
 input TableManyRelationFilter {
@@ -1219,6 +1228,7 @@ input InventoryHoldUpdateInput {
   show: ShowRelateToOneForUpdateInput
   priceTier: PriceTierRelateToOneForUpdateInput
   quantity: Int
+  lines: InventoryHoldLineRelateToManyForUpdateInput
   tables: TableRelateToManyForUpdateInput
   status: InventoryHoldStatusType
   expiresAt: DateTime
@@ -1237,6 +1247,13 @@ input PriceTierRelateToOneForUpdateInput {
   create: PriceTierCreateInput
   connect: PriceTierWhereUniqueInput
   disconnect: Boolean
+}
+
+input InventoryHoldLineRelateToManyForUpdateInput {
+  disconnect: [InventoryHoldLineWhereUniqueInput!]
+  set: [InventoryHoldLineWhereUniqueInput!]
+  create: [InventoryHoldLineCreateInput!]
+  connect: [InventoryHoldLineWhereUniqueInput!]
 }
 
 input TableRelateToManyForUpdateInput {
@@ -1287,6 +1304,7 @@ input InventoryHoldCreateInput {
   show: ShowRelateToOneForCreateInput
   priceTier: PriceTierRelateToOneForCreateInput
   quantity: Int
+  lines: InventoryHoldLineRelateToManyForCreateInput
   tables: TableRelateToManyForCreateInput
   status: InventoryHoldStatusType
   expiresAt: DateTime
@@ -1304,6 +1322,11 @@ input InventoryHoldCreateInput {
 input PriceTierRelateToOneForCreateInput {
   create: PriceTierCreateInput
   connect: PriceTierWhereUniqueInput
+}
+
+input InventoryHoldLineRelateToManyForCreateInput {
+  create: [InventoryHoldLineCreateInput!]
+  connect: [InventoryHoldLineWhereUniqueInput!]
 }
 
 input TableRelateToManyForCreateInput {
@@ -1334,6 +1357,70 @@ input WaitlistEntryRelateToOneForCreateInput {
 input TableOccupancyRelateToManyForCreateInput {
   create: [TableOccupancyCreateInput!]
   connect: [TableOccupancyWhereUniqueInput!]
+}
+
+type InventoryHoldLine {
+  id: ID!
+  hold: InventoryHold
+  priceTier: PriceTier
+  quantity: Int
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input InventoryHoldLineWhereUniqueInput {
+  id: ID
+}
+
+input InventoryHoldLineWhereInput {
+  AND: [InventoryHoldLineWhereInput!]
+  OR: [InventoryHoldLineWhereInput!]
+  NOT: [InventoryHoldLineWhereInput!]
+  id: IDFilter
+  hold: InventoryHoldWhereInput
+  priceTier: PriceTierWhereInput
+  quantity: IntNullableFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input InventoryHoldLineOrderByInput {
+  id: OrderDirection
+  quantity: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input InventoryHoldLineUpdateInput {
+  hold: InventoryHoldRelateToOneForUpdateInput
+  priceTier: PriceTierRelateToOneForUpdateInput
+  quantity: Int
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input InventoryHoldRelateToOneForUpdateInput {
+  create: InventoryHoldCreateInput
+  connect: InventoryHoldWhereUniqueInput
+  disconnect: Boolean
+}
+
+input InventoryHoldLineUpdateArgs {
+  where: InventoryHoldLineWhereUniqueInput!
+  data: InventoryHoldLineUpdateInput!
+}
+
+input InventoryHoldLineCreateInput {
+  hold: InventoryHoldRelateToOneForCreateInput
+  priceTier: PriceTierRelateToOneForCreateInput
+  quantity: Int
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input InventoryHoldRelateToOneForCreateInput {
+  create: InventoryHoldCreateInput
+  connect: InventoryHoldWhereUniqueInput
 }
 
 type LineupSlot {
@@ -2781,6 +2868,8 @@ type PriceTier {
   templatesCount(where: ShowTemplateWhereInput! = {}): Int
   holds(where: InventoryHoldWhereInput! = {}, orderBy: [InventoryHoldOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InventoryHoldWhereUniqueInput): [InventoryHold!]
   holdsCount(where: InventoryHoldWhereInput! = {}): Int
+  holdLines(where: InventoryHoldLineWhereInput! = {}, orderBy: [InventoryHoldLineOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InventoryHoldLineWhereUniqueInput): [InventoryHoldLine!]
+  holdLinesCount(where: InventoryHoldLineWhereInput! = {}): Int
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -2816,6 +2905,7 @@ input PriceTierWhereInput {
   sections: SectionManyRelationFilter
   templates: ShowTemplateManyRelationFilter
   holds: InventoryHoldManyRelationFilter
+  holdLines: InventoryHoldLineManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
@@ -2878,6 +2968,7 @@ input PriceTierUpdateInput {
   sections: SectionRelateToManyForUpdateInput
   templates: ShowTemplateRelateToManyForUpdateInput
   holds: InventoryHoldRelateToManyForUpdateInput
+  holdLines: InventoryHoldLineRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -2924,6 +3015,7 @@ input PriceTierCreateInput {
   sections: SectionRelateToManyForCreateInput
   templates: ShowTemplateRelateToManyForCreateInput
   holds: InventoryHoldRelateToManyForCreateInput
+  holdLines: InventoryHoldLineRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -3163,12 +3255,6 @@ input PromoRedemptionUpdateInput {
   updatedAt: DateTime
 }
 
-input InventoryHoldRelateToOneForUpdateInput {
-  create: InventoryHoldCreateInput
-  connect: InventoryHoldWhereUniqueInput
-  disconnect: Boolean
-}
-
 input PromoRedemptionUpdateArgs {
   where: PromoRedemptionWhereUniqueInput!
   data: PromoRedemptionUpdateInput!
@@ -3182,11 +3268,6 @@ input PromoRedemptionCreateInput {
   status: PromoRedemptionStatusType
   createdAt: DateTime
   updatedAt: DateTime
-}
-
-input InventoryHoldRelateToOneForCreateInput {
-  create: InventoryHoldCreateInput
-  connect: InventoryHoldWhereUniqueInput
 }
 
 type Refund {
@@ -5562,6 +5643,12 @@ type Mutation {
   updateInventoryHolds(data: [InventoryHoldUpdateArgs!]!): [InventoryHold]
   deleteInventoryHold(where: InventoryHoldWhereUniqueInput!): InventoryHold
   deleteInventoryHolds(where: [InventoryHoldWhereUniqueInput!]!): [InventoryHold]
+  createInventoryHoldLine(data: InventoryHoldLineCreateInput!): InventoryHoldLine
+  createInventoryHoldLines(data: [InventoryHoldLineCreateInput!]!): [InventoryHoldLine]
+  updateInventoryHoldLine(where: InventoryHoldLineWhereUniqueInput!, data: InventoryHoldLineUpdateInput!): InventoryHoldLine
+  updateInventoryHoldLines(data: [InventoryHoldLineUpdateArgs!]!): [InventoryHoldLine]
+  deleteInventoryHoldLine(where: InventoryHoldLineWhereUniqueInput!): InventoryHoldLine
+  deleteInventoryHoldLines(where: [InventoryHoldLineWhereUniqueInput!]!): [InventoryHoldLine]
   createLineupSlot(data: LineupSlotCreateInput!): LineupSlot
   createLineupSlots(data: [LineupSlotCreateInput!]!): [LineupSlot]
   updateLineupSlot(where: LineupSlotWhereUniqueInput!, data: LineupSlotUpdateInput!): LineupSlot
@@ -5766,7 +5853,7 @@ type Mutation {
   sendUserPasswordResetLink(email: String!): Boolean!
   redeemUserPasswordResetToken(email: String!, token: String!, password: String!): RedeemUserPasswordResetTokenResult
   expireHolds(showId: ID): JSON
-  createTicketHold(showId: ID!, tierId: ID!, quantity: Int!, tableIds: [ID!], idempotencyKey: String!): JSON
+  createTicketHold(showId: ID!, tierId: ID, quantity: Int, tableIds: [ID!], lines: [HoldLineInput!], idempotencyKey: String!): JSON
   applyPromoToHold(holdKey: String!, cartToken: String!, code: String!, idempotencyKey: String!): JSON
   startTicketCheckout(holdKey: String!, cartToken: String!, customer: CustomerInput!, ageAttested: Boolean, seatingRequest: String, occasion: String, idempotencyKey: String!): JSON
   completeTicketCheckout(orderNumber: String!, orderSecret: String!): JSON
@@ -5874,6 +5961,9 @@ type Query {
   inventoryHold(where: InventoryHoldWhereUniqueInput!): InventoryHold
   inventoryHolds(where: InventoryHoldWhereInput! = {}, orderBy: [InventoryHoldOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InventoryHoldWhereUniqueInput): [InventoryHold!]
   inventoryHoldsCount(where: InventoryHoldWhereInput! = {}): Int
+  inventoryHoldLine(where: InventoryHoldLineWhereUniqueInput!): InventoryHoldLine
+  inventoryHoldLines(where: InventoryHoldLineWhereInput! = {}, orderBy: [InventoryHoldLineOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InventoryHoldLineWhereUniqueInput): [InventoryHoldLine!]
+  inventoryHoldLinesCount(where: InventoryHoldLineWhereInput! = {}): Int
   lineupSlot(where: LineupSlotWhereUniqueInput!): LineupSlot
   lineupSlots(where: LineupSlotWhereInput! = {}, orderBy: [LineupSlotOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: LineupSlotWhereUniqueInput): [LineupSlot!]
   lineupSlotsCount(where: LineupSlotWhereInput! = {}): Int
@@ -6139,6 +6229,12 @@ input CustomerInput {
   name: String!
   email: String!
   phone: String
+}
+
+input HoldLineInput {
+  tierId: ID!
+  quantity: Int!
+  tableIds: [ID!]
 }
 
 input SlotOrderInput {

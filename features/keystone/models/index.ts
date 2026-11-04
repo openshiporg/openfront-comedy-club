@@ -7,6 +7,7 @@ import { ComedianPayout } from './ComedianPayout';
 import { Comp } from './Comp';
 import { IdempotencyKey } from './IdempotencyKey';
 import { InventoryHold } from './InventoryHold';
+import { InventoryHoldLine } from './InventoryHoldLine';
 import { LineupSlot } from './LineupSlot';
 import { ManagerApproval } from './ManagerApproval';
 import { MenuItem } from './MenuItem';
@@ -51,6 +52,7 @@ export const models = {
   Comp,
   IdempotencyKey,
   InventoryHold,
+  InventoryHoldLine,
   LineupSlot,
   ManagerApproval,
   MenuItem,

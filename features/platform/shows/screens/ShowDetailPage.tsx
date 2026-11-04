@@ -20,7 +20,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
       lineup(orderBy: { position: asc }) { id role position setMinutes feeCents status comedian { stageName email } }
       notifications(where: { kind: { in: [show_reminder, lineup_confirmation] } }, orderBy: { createdAt: desc }, take: 30) { id kind status toEmail sendAfter sentAt }
       waitlist(where: { status: { in: [waiting, offered] } }, orderBy: { createdAt: asc }) { id name email partySize status offerExpiresAt }
-      holds(where: { status: { equals: active } }) { id holdKey quantity expiresAt }
+      holds(where: { status: { equals: active } }) { id holdKey quantity expiresAt lines { quantity priceTier { name } } }
       orders(orderBy: { createdAt: desc }, take: 50) { id orderNumber name status totalCents partySize }
       assignments { id status tables { label } }
       checks { id status guestCount minimumItemsRequired minimumItemsMet seatingAssignment { id tables { label } } items { id name qty priceCents voided countsTowardMinimum } }
@@ -99,7 +99,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         )) : <Empty>No lineup yet.</Empty>}
       </Section>
 
-      {show.holds.length ? <Section title="Active holds">{show.holds.map((h: any) => <Row key={h.id}><span className="font-mono text-xs">{h.holdKey}</span><Meta>{h.quantity} tickets · expires {when(h.expiresAt, tz, 'time')}</Meta></Row>)}</Section> : null}
+      {show.holds.length ? <Section title="Active holds">{show.holds.map((h: any) => <Row key={h.id}><span className="font-mono text-xs">{h.holdKey}</span><Meta>{h.lines?.length > 1 ? h.lines.map((l: any) => `${l.quantity} ${l.priceTier?.name}`).join(' + ') : `${h.quantity} tickets`} · expires {when(h.expiresAt, tz, 'time')}</Meta></Row>)}</Section> : null}
 
       {!['draft', 'cancelled', 'completed', 'settled'].includes(show.status) ? <Section title="Issue comp"><CompForm showId={show.id} tiers={show.tiers} threshold={venueSettingsItems[0]?.compApprovalQuantity ?? 4} /></Section> : null}
       <Section title="Orders">
