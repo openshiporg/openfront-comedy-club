@@ -47,3 +47,14 @@ export async function openCheck(_:any,a:any,c:any){requirePermission(c,'canManag
 },'seating:'+a.seatingAssignmentId);}
 export async function addCheckItem(_:any,a:any,c:any){requirePermission(c,'canManageChecks');return command(c,'addCheckItem',a,async tx=>{const check=await tx.check.findUnique({where:{id:a.checkId}});const item=await tx.menuItem.findUnique({where:{id:a.menuItemId}});if(check?.status!=='open'||!item?.active||!Number.isInteger(a.qty)||a.qty<1||a.qty>100) throw new Error('Invalid check item');const line=await tx.checkItem.create({data:{checkId:check.id,menuItemId:item.id,name:item.name,priceCents:item.priceCents,qty:a.qty,countsTowardMinimum:item.countsTowardMinimum}});await audit(tx,c,'item_added','Check',check.id,null,line);return line;},'check:'+a.checkId);}
 export async function runOpenMicLottery(_:any,a:any,c:any){requirePermission(c,'canManageTalent');return command(c,'runOpenMicLottery',a,async tx=>{const show=await tx.show.findUnique({where:{id:a.showId}});if(!show?.isOpenMic)throw new Error('Not an open mic');const rows=await tx.openMicSignup.findMany({where:{showId:a.showId,status:'waiting'},take:1000});const eligible=rows.filter((r:any)=>r.method!=='bringer'||(r.bringerGuestsRequired>0&&r.bringerGuestsArrived>=r.bringerGuestsRequired));rows.length=0;rows.push(...eligible);for(let i=rows.length-1;i>0;i--){const j=crypto.randomInt(i+1);[rows[i],rows[j]]=[rows[j],rows[i]];}for(let i=0;i<rows.length;i++)await tx.openMicSignup.update({where:{id:rows[i].id},data:{lotteryNumber:i+1}});await audit(tx,c,'lottery','Show',show.id,null,{count:rows.length});return {count:rows.length};},'show:'+a.showId);}
+
+export async function updatePromoLimit(_:any,a:any,c:any){
+ requirePermission(c,'canManageOrders');
+ if(!Number.isSafeInteger(a.perOrderLimit)||a.perOrderLimit<1||a.perOrderLimit>20) throw new Error('Limit must be 1 to 20 tickets');
+ return command(c,'updatePromoLimit',a,async tx=>{
+  const before=await tx.promoCode.findUnique({where:{id:a.promoId}});if(!before) throw new Error('Promo not found');
+  const after=await tx.promoCode.update({where:{id:before.id},data:{perOrderLimit:a.perOrderLimit}});
+  await audit(tx,c,'promo_limit_changed','PromoCode',before.id,{perOrderLimit:before.perOrderLimit},{perOrderLimit:after.perOrderLimit});
+  return {id:after.id,perOrderLimit:after.perOrderLimit};
+ },'promo:'+a.promoId);
+}
