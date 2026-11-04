@@ -74,3 +74,19 @@ export async function undoCheckIn(_:any,a:any,c:any){
   return {ticketId:ticket.id,status:'valid'};
  },'show:'+a.showId);
 }
+
+const SLOT_FLOW: Record<string, string[]> = { offered: ['declined', 'cancelled'], confirmed: ['cancelled', 'no_show'] };
+/** Declines, cancels or marks a no-show so closeShow never pays a comedian who did not perform. */
+export async function updateSlotStatus(_:any,a:any,c:any){
+ requirePermission(c,'canManageTalent');
+ return command(c,'updateSlotStatus',a,async tx=>{
+  const first=await tx.lineupSlot.findUnique({where:{id:a.slotId}});if(!first) throw new Error('Slot not found');
+  await lockTransactionKey(tx,'show:'+first.showId);
+  const slot=await tx.lineupSlot.findUnique({where:{id:a.slotId}});
+  if(!slot||!SLOT_FLOW[slot.status]?.includes(a.status)) throw new Error('Invalid state transition');
+  const show=await tx.show.findUnique({where:{id:slot.showId}});
+  if(!show||['settled','cancelled'].includes(show.status)) throw new Error('Show is closed to lineup changes');
+  if(a.status==='no_show'&&!['doors_open','in_progress','completed'].includes(show.status)) throw new Error('No-show can only be recorded once doors are open');
+  return transition(tx,c,'lineupSlot',slot.id,a.status,SLOT_FLOW);
+ });
+}

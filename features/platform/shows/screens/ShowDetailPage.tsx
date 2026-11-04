@@ -58,7 +58,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         {show.lineup.length ? show.lineup.map((l: any) => (
           <Row key={l.id}>
             <span className="min-w-0"><span className="font-medium">{l.position}. {l.comedian?.stageName}</span> <Meta>{l.role.replace('_', ' ')} · {l.setMinutes} min · {money(l.feeCents)}</Meta></span>
-            <span className="inline-flex items-center gap-3"><Status value={l.status} />{l.status === 'offered' ? <ActionButton op="confirmSlot" vars={{ slotId: l.id }}>Confirm</ActionButton> : null}</span>
+            <span className="inline-flex flex-wrap items-center justify-end gap-2"><Status value={l.status} />{l.status === 'offered' ? <ActionButton op="confirmSlot" vars={{ slotId: l.id }}>Confirm</ActionButton> : null}{l.status === 'offered' ? <ActionButton op="updateSlotStatus" vars={{ slotId: l.id, status: 'declined' }}>Decline</ActionButton> : null}{['offered', 'confirmed'].includes(l.status) ? <ActionButton op="updateSlotStatus" vars={{ slotId: l.id, status: 'cancelled' }} confirm="Cancel this slot? The comedian will not be paid for it.">Cancel slot</ActionButton> : null}{l.status === 'confirmed' && ['doors_open', 'in_progress', 'completed'].includes(show.status) ? <ActionButton op="updateSlotStatus" vars={{ slotId: l.id, status: 'no_show' }} confirm="Mark as no-show? No fee will be paid.">No-show</ActionButton> : null}</span>
           </Row>
         )) : <Empty>No lineup yet.</Empty>}
       </Section>
