@@ -1,3 +1,4 @@
+import { showCapacity } from '../lib/capacity';
 import crypto from 'node:crypto';
 import { audit, code, hash } from '../lib/commands';
 import { offerExpiry, planOffers } from '../lib/waitlist';
@@ -20,7 +21,7 @@ export async function offerFreedSeats(tx: any, context: any, showId: string) {
   if (!show || !['on_sale', 'sold_out'].includes(show.status) || show.startsAt <= now) return [];
   const tiers = await tx.priceTier.findMany({ where: { showId } });
   const totals = await tx.priceTier.aggregate({ where: { showId }, _sum: { sold: true, held: true } });
-  const remaining = Math.min(show.capacity, show.room.capacity) - (totals._sum.sold || 0) - (totals._sum.held || 0);
+  const remaining = showCapacity(show) - (totals._sum.sold || 0) - (totals._sum.held || 0);
   // Checkout only accepts holds on an on_sale show, so freed seats reopen it.
   if (show.status === 'sold_out' && remaining > 0) await tx.show.update({ where: { id: showId }, data: { status: 'on_sale' } });
   const waiting = await tx.waitlistEntry.findMany({ where: { showId, status: 'waiting' }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });

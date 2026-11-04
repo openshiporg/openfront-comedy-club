@@ -37,4 +37,10 @@ export const Show = domainList({
   settlement: relationship({ref:'ShowSettlement.show'}),
   promos: relationship({ref:'PromoCode.show',many:true}),
   occupancies: relationship({ref:'TableOccupancy.show',many:true}),
-}, 'canManageShows', false);
+}, 'canManageShows', false, false, {
+  validate: {
+    // A new show needs a room for seating and capacity. Older rows without one still work: showCapacity falls back to the show's own cap.
+    async create({ resolvedData, addValidationError }: any) { if (!resolvedData.room?.connect?.id) addValidationError('A show needs a room'); },
+    async update({ resolvedData, item, addValidationError }: any) { if (resolvedData.room?.disconnect && !resolvedData.room?.connect) addValidationError('A show needs a room'); },
+  },
+});

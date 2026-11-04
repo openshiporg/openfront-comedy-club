@@ -1,3 +1,4 @@
+import { showCapacity } from '../lib/capacity';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
 import { tierFor } from '../lib/waitlist';
 import { expireUnderLock } from './tickets';
@@ -14,7 +15,7 @@ export async function joinWaitlist(_: any, a: any, c: any) {
     if (!show || !['on_sale', 'sold_out'].includes(show.status) || show.startsAt <= new Date()) throw new Error('This show has no waitlist');
     const tiers = await tx.priceTier.findMany({ where: { showId: show.id } });
     const totals = await tx.priceTier.aggregate({ where: { showId: show.id }, _sum: { sold: true, held: true } });
-    const remaining = Math.min(show.capacity, show.room.capacity) - (totals._sum.sold || 0) - (totals._sum.held || 0);
+    const remaining = showCapacity(show) - (totals._sum.sold || 0) - (totals._sum.held || 0);
     if (tierFor(size, tiers, remaining, new Date())) throw new Error('Tickets are available; no waitlist needed');
     if (await tx.waitlistEntry.count({ where: { showId: show.id, email, status: { in: ['waiting', 'offered'] } } })) throw new Error('This email is already on the waitlist');
     const entry = await tx.waitlistEntry.create({ data: { entryKey: code('W'), showId: show.id, name, email, partySize: size, status: 'waiting' } });

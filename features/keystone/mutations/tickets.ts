@@ -1,3 +1,4 @@
+import { showCapacity } from '../lib/capacity';
 import { offerFreedSeats } from './waitlistCore';
 import { saleState } from '../lib/saleWindow';
 import crypto from 'node:crypto';
@@ -44,7 +45,7 @@ export async function createTicketHold(_root:any,input:any,context:any) {
     if(!show||show.status!=='on_sale'||!tier||tier.showId!==show.id||tier.status!=='on_sale'||show.startsAt<=new Date()) throw new Error('Tickets unavailable');
     {const state=saleState(tier);if(state==='scheduled') throw new Error('Sales have not opened for this tier yet');if(state==='ended') throw new Error('Sales have ended for this tier');}
     const totals=await tx.priceTier.aggregate({where:{showId:show.id},_sum:{sold:true,held:true}});
-    if(tier.sold+tier.held+input.quantity>tier.capacity||(totals._sum.sold||0)+(totals._sum.held||0)+input.quantity>Math.min(show.capacity,show.room.capacity)) throw new Error('Not enough capacity');
+    if(tier.sold+tier.held+input.quantity>tier.capacity||(totals._sum.sold||0)+(totals._sum.held||0)+input.quantity>showCapacity(show)) throw new Error('Not enough capacity');
     const ids=[...new Set<string>(input.tableIds||[])];
     if(tier.isTableTier && !ids.length) throw new Error('Choose a table');
     const tables=ids.length?await tx.table.findMany({where:{id:{in:ids}},include:{section:true}}):[];

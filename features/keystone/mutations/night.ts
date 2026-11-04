@@ -1,3 +1,4 @@
+import { showCapacity } from '../lib/capacity';
 import { cancelQueued } from './reminders';
 import { audit, code, command, hash, lockTransactionKey, requirePermission } from '../lib/commands';
 import { minimum, payout, settlement, runClosePlan } from '../lib/money';
@@ -47,7 +48,7 @@ export async function issueComp(_: any, a: any, c: any) {
     const tier = await tx.priceTier.findUnique({ where: { id: a.tierId } });
     if (!show || !tier || tier.showId !== show.id || ['cancelled', 'completed', 'settled'].includes(show.status)) throw new Error('Tickets unavailable');
     const totals = await tx.priceTier.aggregate({ where: { showId: show.id }, _sum: { sold: true, held: true } });
-    if (tier.sold + tier.held + a.quantity > tier.capacity || (totals._sum.sold || 0) + (totals._sum.held || 0) + a.quantity > Math.min(show.capacity, show.room.capacity)) throw new Error('Not enough capacity');
+    if (tier.sold + tier.held + a.quantity > tier.capacity || (totals._sum.sold || 0) + (totals._sum.held || 0) + a.quantity > showCapacity(show)) throw new Error('Not enough capacity');
     let approvalId: string | null = null;
     if (a.quantity > (settings?.compApprovalQuantity ?? 4)) {
       await consumeManagerApproval(tx, { approvalId: a.approvalId, actorId: c.session.itemId, actionType: 'comp_tickets', targetId: show.id, reason: a.reason, amount: a.quantity, entityType: 'Comp', entityId: show.id });
