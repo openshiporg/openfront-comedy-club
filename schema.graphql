@@ -1934,7 +1934,9 @@ type NotificationRecord {
   body: String
   payload: JSON
   status: NotificationRecordStatusType
+  sendAfter: DateTime
   sentAt: DateTime
+  show: Show
   waitlistEntry: WaitlistEntry
   createdAt: DateTime
   updatedAt: DateTime
@@ -1942,6 +1944,8 @@ type NotificationRecord {
 
 enum NotificationRecordKindType {
   waitlist_offer
+  show_reminder
+  lineup_confirmation
 }
 
 enum NotificationRecordChannelType {
@@ -1952,6 +1956,7 @@ enum NotificationRecordStatusType {
   queued
   sent
   failed
+  cancelled
 }
 
 input NotificationRecordWhereUniqueInput {
@@ -1971,7 +1976,9 @@ input NotificationRecordWhereInput {
   subject: StringFilter
   body: StringFilter
   status: NotificationRecordStatusTypeNullableFilter
+  sendAfter: DateTimeNullableFilter
   sentAt: DateTimeNullableFilter
+  show: ShowWhereInput
   waitlistEntry: WaitlistEntryWhereInput
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
@@ -2007,6 +2014,7 @@ input NotificationRecordOrderByInput {
   subject: OrderDirection
   body: OrderDirection
   status: OrderDirection
+  sendAfter: OrderDirection
   sentAt: OrderDirection
   createdAt: OrderDirection
   updatedAt: OrderDirection
@@ -2021,7 +2029,9 @@ input NotificationRecordUpdateInput {
   body: String
   payload: JSON
   status: NotificationRecordStatusType
+  sendAfter: DateTime
   sentAt: DateTime
+  show: ShowRelateToOneForUpdateInput
   waitlistEntry: WaitlistEntryRelateToOneForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
@@ -2041,7 +2051,9 @@ input NotificationRecordCreateInput {
   body: String
   payload: JSON
   status: NotificationRecordStatusType
+  sendAfter: DateTime
   sentAt: DateTime
+  show: ShowRelateToOneForCreateInput
   waitlistEntry: WaitlistEntryRelateToOneForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
@@ -3967,6 +3979,8 @@ type Show {
   signupsCount(where: OpenMicSignupWhereInput! = {}): Int
   waitlist(where: WaitlistEntryWhereInput! = {}, orderBy: [WaitlistEntryOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WaitlistEntryWhereUniqueInput): [WaitlistEntry!]
   waitlistCount(where: WaitlistEntryWhereInput! = {}): Int
+  notifications(where: NotificationRecordWhereInput! = {}, orderBy: [NotificationRecordOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NotificationRecordWhereUniqueInput): [NotificationRecord!]
+  notificationsCount(where: NotificationRecordWhereInput! = {}): Int
   tiers(where: PriceTierWhereInput! = {}, orderBy: [PriceTierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PriceTierWhereUniqueInput): [PriceTier!]
   tiersCount(where: PriceTierWhereInput! = {}): Int
   holds(where: InventoryHoldWhereInput! = {}, orderBy: [InventoryHoldOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InventoryHoldWhereUniqueInput): [InventoryHold!]
@@ -4033,6 +4047,7 @@ input ShowWhereInput {
   lineup: LineupSlotManyRelationFilter
   signups: OpenMicSignupManyRelationFilter
   waitlist: WaitlistEntryManyRelationFilter
+  notifications: NotificationRecordManyRelationFilter
   tiers: PriceTierManyRelationFilter
   holds: InventoryHoldManyRelationFilter
   orders: TicketOrderManyRelationFilter
@@ -4133,6 +4148,7 @@ input ShowUpdateInput {
   lineup: LineupSlotRelateToManyForUpdateInput
   signups: OpenMicSignupRelateToManyForUpdateInput
   waitlist: WaitlistEntryRelateToManyForUpdateInput
+  notifications: NotificationRecordRelateToManyForUpdateInput
   tiers: PriceTierRelateToManyForUpdateInput
   holds: InventoryHoldRelateToManyForUpdateInput
   orders: TicketOrderRelateToManyForUpdateInput
@@ -4227,6 +4243,7 @@ input ShowCreateInput {
   lineup: LineupSlotRelateToManyForCreateInput
   signups: OpenMicSignupRelateToManyForCreateInput
   waitlist: WaitlistEntryRelateToManyForCreateInput
+  notifications: NotificationRecordRelateToManyForCreateInput
   tiers: PriceTierRelateToManyForCreateInput
   holds: InventoryHoldRelateToManyForCreateInput
   orders: TicketOrderRelateToManyForCreateInput
@@ -5769,6 +5786,8 @@ type Mutation {
   requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
   approveRequest(approvalId: ID!): JSON
   sweepPendingCheckouts(secret: String!): JSON
+  sweepShowReminders(secret: String!): JSON
+  scheduleShowReminders(showId: ID!, idempotencyKey: String!): JSON
   updateActiveUser(data: UserUpdateProfileInput!): User
   ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
   seedClubOperations(template: String!): JSON

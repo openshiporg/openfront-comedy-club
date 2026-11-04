@@ -10,6 +10,7 @@ import * as payouts from "./payouts";
 import * as openMic from "./openMic";
 import * as waitlist from "./waitlist";
 import * as reports from "./reports";
+import * as reminders from "./reminders";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
 import { matchingManagerApproval } from '../utils/managerApproval';
@@ -95,6 +96,8 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
         approveRequest(approvalId: ID!): JSON
         sweepPendingCheckouts(secret: String!): JSON
+        sweepShowReminders(secret: String!): JSON
+        scheduleShowReminders(showId: ID!, idempotencyKey: String!): JSON
         updateActiveUser(data: UserUpdateProfileInput!): User
         ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
         seedClubOperations(template: String!): JSON
@@ -156,6 +159,8 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         requestApproval: op(night.requestApproval),
         approveRequest: op(night.approveRequest),
         sweepPendingCheckouts: op(checkout.sweepPendingCheckouts),
+        sweepShowReminders: op(reminders.sweepShowReminders),
+        scheduleShowReminders: op(reminders.scheduleShowReminders),
         updateActiveUser,
         ensureClubOnboardingRecord: op(seed.ensureClubOnboardingRecord),
         seedClubOperations: op(seed.seedClubOperations),

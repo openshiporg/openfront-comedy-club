@@ -1,3 +1,5 @@
+import { cancelQueued } from './reminders';
+import { showReminderKey } from '../lib/reminders';
 import { offerFreedSeats } from './waitlistCore';
 import crypto from 'node:crypto';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
@@ -198,6 +200,7 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     for (const [tierId, n] of byTier) await tx.priceTier.update({ where: { id: tierId }, data: { sold: { decrement: n }, status: 'on_sale' } });
     const remainingValid = await tx.ticket.count({ where: { orderId: a.orderId, status: { in: ['valid', 'checked_in'] } } });
     await tx.ticketOrder.update({ where: { id: a.orderId }, data: { status: remainingValid ? 'partially_refunded' : 'refunded' } });
+    if (!remainingValid) await cancelQueued(tx, { notificationKey: showReminderKey(a.orderId) });
     await tx.show.updateMany({ where: { id: reserved.showId, status: 'sold_out' }, data: { status: 'on_sale' } });
     await audit(tx, { session: { itemId: a.actorId } }, 'refunded', 'TicketOrder', a.orderId, null, { amount: reserved.amount, tickets: voided.length }, a.reason);
     await offerFreedSeats(tx, { session: { itemId: a.actorId } }, reserved.showId);

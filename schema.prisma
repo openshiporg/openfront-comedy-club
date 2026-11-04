@@ -342,12 +342,16 @@ model NotificationRecord {
   body            String                         @default("")
   payload         Json?
   status          NotificationRecordStatusType?  @default(queued)
+  sendAfter       DateTime?
   sentAt          DateTime?
+  show            Show?                          @relation("NotificationRecord_show", fields: [showId], references: [id])
+  showId          String?                        @map("show")
   waitlistEntry   WaitlistEntry?                 @relation("NotificationRecord_waitlistEntry", fields: [waitlistEntryId], references: [id])
   waitlistEntryId String?                        @map("waitlistEntry")
   createdAt       DateTime                       @default(now())
   updatedAt       DateTime                       @default(now()) @updatedAt
 
+  @@index([showId])
   @@index([waitlistEntryId])
 }
 
@@ -700,42 +704,43 @@ model Section {
 }
 
 model Show {
-  id             String              @id @default(cuid())
-  room           Room?               @relation("Show_room", fields: [roomId], references: [id])
-  roomId         String?             @map("room")
-  template       ShowTemplate?       @relation("Show_template", fields: [templateId], references: [id])
-  templateId     String?             @map("template")
-  run            Run?                @relation("Show_run", fields: [runId], references: [id])
-  runId          String?             @map("run")
-  title          String              @default("")
-  occurrenceKey  String              @unique @default("")
+  id             String               @id @default(cuid())
+  room           Room?                @relation("Show_room", fields: [roomId], references: [id])
+  roomId         String?              @map("room")
+  template       ShowTemplate?        @relation("Show_template", fields: [templateId], references: [id])
+  templateId     String?              @map("template")
+  run            Run?                 @relation("Show_run", fields: [runId], references: [id])
+  runId          String?              @map("run")
+  title          String               @default("")
+  occurrenceKey  String               @unique @default("")
   startsAt       DateTime?
   doorsAt        DateTime?
   endsAt         DateTime?
   signupOpensAt  DateTime?
-  ageRestriction String?             @default("all")
-  capacity       Int?                @default(180)
-  status         ShowStatusType?     @default(draft)
-  isOpenMic      Boolean             @default(false)
-  publicNote     String              @default("")
-  lineup         LineupSlot[]        @relation("LineupSlot_show")
-  signups        OpenMicSignup[]     @relation("OpenMicSignup_show")
-  waitlist       WaitlistEntry[]     @relation("WaitlistEntry_show")
-  tiers          PriceTier[]         @relation("PriceTier_show")
-  holds          InventoryHold[]     @relation("InventoryHold_show")
-  orders         TicketOrder[]       @relation("TicketOrder_show")
-  tickets        Ticket[]            @relation("Ticket_show")
-  comps          Comp[]              @relation("Comp_show")
-  assignments    SeatingAssignment[] @relation("SeatingAssignment_show")
-  checks         Check[]             @relation("Check_show")
-  checkIns       CheckIn[]           @relation("CheckIn_show")
-  payouts        ComedianPayout[]    @relation("ComedianPayout_show")
-  settlement     ShowSettlement?     @relation("Show_settlement", fields: [settlementId], references: [id])
-  settlementId   String?             @unique @map("settlement")
-  promos         PromoCode[]         @relation("PromoCode_show")
-  occupancies    TableOccupancy[]    @relation("TableOccupancy_show")
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @default(now()) @updatedAt
+  ageRestriction String?              @default("all")
+  capacity       Int?                 @default(180)
+  status         ShowStatusType?      @default(draft)
+  isOpenMic      Boolean              @default(false)
+  publicNote     String               @default("")
+  lineup         LineupSlot[]         @relation("LineupSlot_show")
+  signups        OpenMicSignup[]      @relation("OpenMicSignup_show")
+  waitlist       WaitlistEntry[]      @relation("WaitlistEntry_show")
+  notifications  NotificationRecord[] @relation("NotificationRecord_show")
+  tiers          PriceTier[]          @relation("PriceTier_show")
+  holds          InventoryHold[]      @relation("InventoryHold_show")
+  orders         TicketOrder[]        @relation("TicketOrder_show")
+  tickets        Ticket[]             @relation("Ticket_show")
+  comps          Comp[]               @relation("Comp_show")
+  assignments    SeatingAssignment[]  @relation("SeatingAssignment_show")
+  checks         Check[]              @relation("Check_show")
+  checkIns       CheckIn[]            @relation("CheckIn_show")
+  payouts        ComedianPayout[]     @relation("ComedianPayout_show")
+  settlement     ShowSettlement?      @relation("Show_settlement", fields: [settlementId], references: [id])
+  settlementId   String?              @unique @map("settlement")
+  promos         PromoCode[]          @relation("PromoCode_show")
+  occupancies    TableOccupancy[]     @relation("TableOccupancy_show")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @default(now()) @updatedAt
 
   @@index([roomId])
   @@index([templateId])
@@ -1038,6 +1043,8 @@ enum MenuItemCategoryType {
 
 enum NotificationRecordKindType {
   waitlist_offer
+  show_reminder
+  lineup_confirmation
 }
 
 enum NotificationRecordChannelType {
@@ -1048,6 +1055,7 @@ enum NotificationRecordStatusType {
   queued
   sent
   failed
+  cancelled
 }
 
 enum OpenMicSignupMethodType {
