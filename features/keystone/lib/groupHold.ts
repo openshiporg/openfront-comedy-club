@@ -37,27 +37,46 @@ export function checkCapacity(lines: HoldLineInput[], tiers: TierState[], showId
 }
 
 export type PriceLine = { priceCents: number; feeCents: number; quantity: number };
+export type Promo = { discountType?: string; discountValue?: number; perOrderLimit?: number };
+export type LineQuote = { subtotalCents: number; discountCents: number; taxCents: number };
 
-/**
- * Quote for a party across tiers. With one line and an optional promotion this is exactly `quote()`;
- * promotions are not combined with several ticket types (one fixed-amount discount cannot be split fairly).
- */
-export function quoteGroup(lines: PriceLine[], serviceFeeBps: number, taxBps: number, promo?: { discountType?: string; discountValue?: number; perOrderLimit?: number } | null) {
-  if (!lines.length) throw new Error('Quantity required');
-  if (lines.length === 1) return quote({ ...lines[0], serviceFeeBps, taxBps, discountType: promo?.discountType, discountValue: promo?.discountValue, perOrderLimit: promo?.perOrderLimit });
-  if (promo) throw new Error('Promotions cannot be combined with several ticket types');
-  for (const l of lines) { cents(l.priceCents); cents(l.feeCents); if (!Number.isInteger(l.quantity) || l.quantity < 1) throw new Error('Quantity required'); }
-  const subtotalCents = cents(lines.reduce((n, l) => n + l.priceCents * l.quantity, 0));
-  const feesCents = cents(lines.reduce((n, l) => n + l.feeCents * l.quantity, 0) + basisPoints(subtotalCents, serviceFeeBps));
-  const taxCents = basisPoints(subtotalCents, taxBps);
-  return { subtotalCents, feesCents, discountCents: 0, taxCents, totalCents: cents(subtotalCents + feesCents + taxCents) };
+/** Split `total` across weights, rounding down; the remainder goes to the last line that can still take it (`caps`). */
+export function allocate(total: number, weights: number[], caps: number[]): number[] {
+  cents(total); const sum = weights.reduce((a, b) => a + b, 0);
+  if (total === 0 || sum === 0) return weights.map(() => 0);
+  const out = weights.map((w, i) => Math.min(caps[i], Math.floor((total * w) / sum)));
+  let left = total - out.reduce((a, b) => a + b, 0);
+  for (let i = out.length - 1; i >= 0 && left > 0; i--) { const room = Math.min(left, caps[i] - out[i]); out[i] += room; left -= room; }
+  if (left !== 0) throw new Error('Discount could not be allocated');
+  return out;
 }
 
-/** Per-line cents for the order lines: subtotal exact, tax split by share with the remainder on the last line so lines add up to the order. */
-export function splitTax(lines: PriceLine[], taxCents: number) {
-  const subs = lines.map((l) => l.priceCents * l.quantity); const sum = subs.reduce((a, b) => a + b, 0);
-  let left = taxCents;
-  return lines.map((_, i) => { const t = i === lines.length - 1 ? left : sum ? Math.floor((taxCents * subs[i]) / sum) : 0; left -= t; return { subtotalCents: subs[i], taxCents: t }; });
+/**
+ * Quote for a party across tiers. One line is exactly `quote()`. With several lines the promotion is worked out once on the
+ * whole party (the same per-order unit limit, applied to the cheapest units so a limit never over-discounts), then split across
+ * lines pro rata by line subtotal. Tax is charged on the discounted amount and split by each line's net.
+ */
+export function quoteGroup(lines: PriceLine[], serviceFeeBps: number, taxBps: number, promo?: Promo | null) {
+  if (!lines.length) throw new Error('Quantity required');
+  if (lines.length === 1) {
+    const q = quote({ ...lines[0], serviceFeeBps, taxBps, discountType: promo?.discountType, discountValue: promo?.discountValue, perOrderLimit: promo?.perOrderLimit });
+    return { ...q, lines: [{ subtotalCents: q.subtotalCents, discountCents: q.discountCents, taxCents: q.taxCents }] as LineQuote[] };
+  }
+  for (const l of lines) { cents(l.priceCents); cents(l.feeCents); if (!Number.isInteger(l.quantity) || l.quantity < 1) throw new Error('Quantity required'); }
+  const subs = lines.map((l) => l.priceCents * l.quantity);
+  const subtotalCents = cents(subs.reduce((n, v) => n + v, 0));
+  const feesCents = cents(lines.reduce((n, l) => n + l.feeCents * l.quantity, 0) + basisPoints(subtotalCents, serviceFeeBps));
+  const units = lines.flatMap((l) => Array<number>(l.quantity).fill(l.priceCents)).sort((a, b) => a - b);
+  const limit = promo?.perOrderLimit;
+  if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < 1)) throw new Error('Positive promotion limit required');
+  const eligibleCents = promo ? cents(units.slice(0, Math.min(units.length, limit ?? units.length)).reduce((a, b) => a + b, 0)) : 0;
+  const value = promo?.discountValue || 0; cents(value);
+  const discountCents = !promo ? 0 : Math.min(eligibleCents, promo.discountType === 'comp' ? eligibleCents : promo.discountType === 'percent_bps' ? basisPoints(eligibleCents, value) : promo.discountType === 'amount_cents' ? value : 0);
+  const discounts = allocate(discountCents, subs, subs);
+  const taxCents = basisPoints(subtotalCents - discountCents, taxBps);
+  const nets = subs.map((v, i) => v - discounts[i]);
+  const taxes = allocate(taxCents, nets, nets.map(() => taxCents));
+  return { subtotalCents, feesCents, discountCents, taxCents, totalCents: cents(subtotalCents + feesCents - discountCents + taxCents), lines: subs.map((v, i) => ({ subtotalCents: v, discountCents: discounts[i], taxCents: taxes[i] })) as LineQuote[] };
 }
 
 /** The seat counts a hold is holding, per tier. Older single-tier holds have no lines, so fall back to the hold itself. */
@@ -66,7 +85,10 @@ export function heldByTier(hold: { priceTierId?: string | null; quantity?: numbe
   return hold.priceTierId ? [{ tierId: hold.priceTierId, quantity: hold.quantity || 0 }] : [];
 }
 
-/** Default partial-refund amount: the share of the order total carried by the chosen tickets, weighted by each ticket's own price. */
+/** Default partial-refund amount: the share of the order total carried by the chosen tickets, weighted by what each ticket paid (its line net of any discount, per ticket). */
+export const ticketWeight = (line: { lineTotalCents?: number | null; discountCents?: number | null; quantity?: number | null; unitPriceCents?: number | null; unitFeeCents?: number | null } | null | undefined) =>
+  !line ? 0 : (line.quantity ? Math.round((((line.lineTotalCents ?? 0) - (line.discountCents ?? 0)) * 1000) / line.quantity) : (line.unitPriceCents ?? 0) * 1000) + (line.unitFeeCents ?? 0) * 1000;
+
 export function refundShare(totalCents: number, chosen: { priceCents: number }[], all: { priceCents: number }[]): number {
   const weight = (xs: { priceCents: number }[]) => xs.reduce((n, x) => n + x.priceCents, 0);
   const denom = weight(all);

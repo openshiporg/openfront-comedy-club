@@ -84,10 +84,10 @@ export function CheckoutForm({ holdKey }: { holdKey: string }) {
           <label className="block text-sm">Phone<input className={input} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" /></label>
           <label className="block text-sm">Seating request<input className={input} value={form.seatingRequest} onChange={(e) => setForm({ ...form, seatingRequest: e.target.value })} /></label>
           <label className="block text-sm">Occasion<input className={input} value={form.occasion} onChange={(e) => setForm({ ...form, occasion: e.target.value })} /></label>
-          {hold.mixed ? <p className="text-sm text-muted-foreground">Promo codes are not available on a group with several ticket types.</p> : <div className="flex gap-2">
+          <div className="flex gap-2">
             <input className={input} placeholder="Promo code" value={promo} onChange={(e) => setPromo(e.target.value)} />
             <button type="button" className="h-10 rounded-md border px-4 text-sm" disabled={pending || !promo.trim()} onClick={() => start(async () => { const r = await applyPromo({ holdKey, cartToken: hold.cartToken, code: promo }); setPromoMsg(r.ok ? 'Code applied' : r.error); })}>Apply</button>
-          </div>}
+          </div>
           {promoMsg ? <p role="status" className="text-sm">{promoMsg}</p> : null}
           {needsAge ? <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={age} onChange={(e) => setAge(e.target.checked)} />Everyone in my party is {hold.ageRestriction} or older and will show ID.</label> : null}
           <button type="button" className={btn} disabled={pending || !form.name || !form.email || (needsAge && !age)} onClick={submitDetails}>{pending ? 'Working' : 'Continue to payment'}</button>

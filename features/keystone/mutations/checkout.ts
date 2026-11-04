@@ -4,7 +4,7 @@ import { offerFreedSeats } from './waitlistCore';
 import crypto from 'node:crypto';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
 import { selfRefundAllowed } from '../lib/money';
-import { quoteGroup, refundShare, splitTax } from '../lib/groupHold';
+import { quoteGroup, refundShare, ticketWeight } from '../lib/groupHold';
 import { releaseHoldSeats } from '../lib/holds';
 import { consumeManagerApproval } from '../utils/managerApproval';
 import { createPayment, getPaymentStatus, refundPayment } from '../utils/paymentProviderAdapter';
@@ -40,14 +40,14 @@ export async function startTicketCheckout(_: any, input: any, context: any) {
     const hl: { tier: any; quantity: number }[] = hold.lines.length ? hold.lines.map((l: any) => ({ tier: l.priceTier, quantity: l.quantity })) : [{ tier: hold.priceTier, quantity: hold.quantity }];
     const priced = hl.map((l) => ({ priceCents: l.tier.priceCents, feeCents: l.tier.feeCents, quantity: l.quantity }));
     const q = quoteGroup(priced, venue.serviceFeeBps, venue.taxBps, promo ? { discountType: promo.discountType, discountValue: promo.value, perOrderLimit: promo.perOrderLimit } : null);
-    const parts = hl.length === 1 ? [{ subtotalCents: q.subtotalCents, taxCents: q.taxCents }] : splitTax(priced, q.taxCents);
+    const parts = q.lines;
     if (q.totalCents < 1) throw new Error('Payment is not required for this order; contact the venue');
     const order = await tx.ticketOrder.create({ data: {
       orderNumber: code('CC'), customerId: context.session?.itemId || null, email, name: String(customer.name).trim(), phone: String(customer.phone || ''),
       showId: hold.showId, status: 'pending_payment', ...q, currencyCode: 'USD', source: 'online', partySize: hold.quantity,
       seatingRequest: String(input.seatingRequest || '').slice(0, 500), birthdayOrOccasion: String(input.occasion || '').slice(0, 200), ageAttested: input.ageAttested === true,
       secretKey: hash(secret), holdId: undefined, hold: { connect: { id: hold.id } },
-      lines: { create: hl.map((l, i) => ({ tierName: l.tier.name, unitPriceCents: l.tier.priceCents, unitFeeCents: l.tier.feeCents, quantity: l.quantity, lineTotalCents: parts[i].subtotalCents, discountCents: hl.length === 1 ? q.discountCents : 0, taxCents: parts[i].taxCents, currencyCode: 'USD', priceTierId: l.tier.id })) },
+      lines: { create: hl.map((l, i) => ({ tierName: l.tier.name, unitPriceCents: l.tier.priceCents, unitFeeCents: l.tier.feeCents, quantity: l.quantity, lineTotalCents: parts[i].subtotalCents, discountCents: parts[i].discountCents, taxCents: parts[i].taxCents, currencyCode: 'USD', priceTierId: l.tier.id })) },
     } });
     if (hold.redemption) await tx.promoRedemption.update({ where: { id: hold.redemption.id }, data: { orderId: order.id, amountCents: q.discountCents } });
     await audit(tx, context, 'checkout_started', 'TicketOrder', order.id, null, { totalCents: q.totalCents });
@@ -186,7 +186,7 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     const full = tickets.length === order.tickets.filter((t: any) => t.status === 'valid').length;
     // tickets replaced by a transfer are not part of the party any more; each remaining ticket weighs its own line price
     const live = order.tickets.filter((t: any) => !order.tickets.some((x: any) => x.transferredFromCode === t.ticketCode));
-    const price = (t: any) => ({ priceCents: t.line?.unitPriceCents ?? 0 });
+    const price = (t: any) => ({ priceCents: ticketWeight(t.line) });
     const amount = a.amountCents ?? (full ? remaining : refundShare(order.totalCents, tickets.map(price), live.map(price)));
     if (!Number.isSafeInteger(amount) || amount < 1 || amount > remaining) throw new Error('Invalid refund amount');
     if (a.actorId && amount > a.threshold) await consumeManagerApproval(tx, { approvalId: a.approvalId, actorId: a.actorId, actionType: 'refund_payment', targetId: order.id, reason: a.reason, amount, entityType: 'TicketOrder', entityId: order.id });

@@ -78,7 +78,6 @@ export async function applyPromoToHold(_root:any,input:any,context:any) {
   return command(context,'applyPromoToHold',input,async tx=>{
     const hold=await tx.inventoryHold.findUnique({where:{id:lookup.id},include:{show:true}});prove(hold,input.cartToken);
     if(hold.status!=='active'||hold.expiresAt<=new Date()||await tx.ticketOrder.count({where:{hold:{id:hold.id}}})) throw new Error('Hold cannot be changed');
-    if(await tx.inventoryHoldLine.count({where:{hold:{id:hold.id}}})>1) throw new Error('Promotions cannot be combined with several ticket types');
     const promo=await tx.promoCode.findUnique({where:{code:input.code.toUpperCase()}});if(!promo) throw new Error('Invalid promotion');
     await lockTransactionKey(tx,'promo:'+promo.id);
     const current=await tx.promoCode.findUnique({where:{id:promo.id}});
@@ -86,8 +85,10 @@ export async function applyPromoToHold(_root:any,input:any,context:any) {
     const now=new Date();
     if(current.status!=='active'||(current.showId&&current.showId!==hold.showId)||(current.templateId&&current.templateId!==hold.show.templateId)||(current.startsAt&&current.startsAt>now)||(current.endsAt&&current.endsAt<now)||(current.maxUses!==null&&current.usedCount+reserved>=current.maxUses)) throw new Error('Promotion unavailable');
     await tx.promoRedemption.updateMany({where:{hold:{id:hold.id},status:'reserved'},data:{status:'released'}});
-    await tx.promoRedemption.create({data:{promoCodeId:promo.id,holdId:hold.id,status:'reserved',amountCents:0}});
-    await tx.inventoryHold.update({where:{id:hold.id},data:{promoId:promo.id}});return {applied:true};
+    const redemption=await tx.promoRedemption.create({data:{promoCode:{connect:{id:promo.id}},status:'reserved',amountCents:0}});
+    await tx.inventoryHold.update({where:{id:hold.id},data:{promo:{connect:{id:promo.id}},redemption:{connect:{id:redemption.id}}}});
+    await audit(tx,context,'promo_applied','InventoryHold',hold.id,null,{code:promo.code});
+    return {applied:true};
   },'show:'+lookup.showId);
 }
 export async function lookupTicketOrder(_root:any,{email,orderNumber}:any,context:any) {
