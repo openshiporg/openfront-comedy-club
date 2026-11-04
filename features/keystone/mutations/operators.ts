@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { audit,code,command,hash,lockTransactionKey,requirePermission,transition } from '../lib/commands';
 import { minimum,payout,settlement } from '../lib/money';
 import { expireUnderLock } from './tickets';
+import { assertValidWindow } from '../lib/saleWindow';
 const showTransitions={draft:['on_sale','cancelled'],on_sale:['sold_out','doors_open','cancelled'],sold_out:['on_sale','doors_open','cancelled'],doors_open:['in_progress','cancelled'],in_progress:['completed','cancelled'],completed:['settled']};
 export async function publishShow(_:any,a:any,c:any) {requirePermission(c,'canManageShows');return command(c,'publishShow',a,tx=>transition(tx,c,'show',a.showId,a.nextStatus||'on_sale',showTransitions),'show:'+a.showId);}
 export async function pauseSales(_:any,a:any,c:any) {requirePermission(c,'canManageShows');return command(c,'pauseSales',a,async tx=>{const show=await tx.show.findUnique({where:{id:a.showId}});if(!show||!['on_sale','sold_out'].includes(show.status)) throw new Error('Sales are not open');await tx.priceTier.updateMany({where:{showId:a.showId},data:{status:'paused'}});await audit(tx,c,'sales_paused','Show',a.showId,null,null);return {paused:true};},'show:'+a.showId);}
@@ -88,5 +89,22 @@ export async function updateSlotStatus(_:any,a:any,c:any){
   if(!show||['settled','cancelled'].includes(show.status)) throw new Error('Show is closed to lineup changes');
   if(a.status==='no_show'&&!['doors_open','in_progress','completed'].includes(show.status)) throw new Error('No-show can only be recorded once doors are open');
   return transition(tx,c,'lineupSlot',slot.id,a.status,SLOT_FLOW);
+ });
+}
+
+/** Schedules when a tier goes on sale and off sale. Times are absolute instants; the screen converts from venue time. */
+export async function setSalesWindow(_:any,a:any,c:any){
+ requirePermission(c,'canManageShows');
+ const parse=(v:any)=>v?new Date(v):null;
+ const start=parse(a.salesStartAt), end=parse(a.salesEndAt);
+ return command(c,'setSalesWindow',a,async tx=>{
+  const first=await tx.priceTier.findUnique({where:{id:a.tierId}});if(!first) throw new Error('Tier not found');
+  await lockTransactionKey(tx,'show:'+first.showId);
+  const tier=await tx.priceTier.findUnique({where:{id:a.tierId},include:{show:true}});
+  if(!tier||['cancelled','settled','completed'].includes(tier.show.status)) throw new Error('Show is closed to sales changes');
+  assertValidWindow(start,end,tier.show.startsAt);
+  const after=await tx.priceTier.update({where:{id:tier.id},data:{salesStartAt:start,salesEndAt:end}});
+  await audit(tx,c,'sales_window_set','PriceTier',tier.id,{salesStartAt:tier.salesStartAt,salesEndAt:tier.salesEndAt},{salesStartAt:after.salesStartAt,salesEndAt:after.salesEndAt});
+  return {tierId:after.id,salesStartAt:after.salesStartAt,salesEndAt:after.salesEndAt};
  });
 }

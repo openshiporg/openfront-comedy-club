@@ -1,3 +1,4 @@
+import { saleState } from '../lib/saleWindow';
 import crypto from 'node:crypto';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
 import { quote } from '../lib/money';
@@ -24,12 +25,12 @@ export async function expireHolds(_root:any,args:any,context:any) {
 }
 export async function showsOnSale(_root:any,_args:any,context:any) {
   await expireHolds(null,{},context);
-  const rows=await context.prisma.show.findMany({where:{status:{in:['on_sale','sold_out']},startsAt:{gt:new Date()}},select:{id:true,title:true,startsAt:true,doorsAt:true,ageRestriction:true,publicNote:true,room:{select:{name:true}},tiers:{select:{id:true,name:true,priceCents:true,feeCents:true,capacity:true,sold:true,held:true,status:true}}},orderBy:{startsAt:'asc'},take:100});
+  const rows=await context.prisma.show.findMany({where:{status:{in:['on_sale','sold_out']},startsAt:{gt:new Date()}},select:{id:true,title:true,startsAt:true,doorsAt:true,ageRestriction:true,publicNote:true,room:{select:{name:true}},tiers:{select:{id:true,name:true,priceCents:true,feeCents:true,capacity:true,sold:true,held:true,status:true,salesStartAt:true,salesEndAt:true}}},orderBy:{startsAt:'asc'},take:100});
   return rows;
 }
 export async function showAvailability(_root:any,{showId}:any,context:any) {
   await expireHolds(null,{showId},context);
-  const show=await context.prisma.show.findUnique({where:{id:showId},select:{id:true,title:true,status:true,startsAt:true,endsAt:true,ageRestriction:true,publicNote:true,capacity:true,room:{select:{name:true,seatingMode:true,sections:{select:{name:true,tables:{select:{id:true,label:true,seats:true}}}}}},tiers:{select:{id:true,name:true,priceCents:true,feeCents:true,capacity:true,sold:true,held:true,status:true,isTableTier:true,seatsPerUnit:true}},lineup:{where:{status:'confirmed'},select:{role:true,position:true,setMinutes:true,comedian:{select:{stageName:true,bio:true}}},orderBy:{position:'asc'}},occupancies:{where:{occupancyKey:{not:null}},select:{tableId:true}}}});
+  const show=await context.prisma.show.findUnique({where:{id:showId},select:{id:true,title:true,status:true,startsAt:true,endsAt:true,ageRestriction:true,publicNote:true,capacity:true,room:{select:{name:true,seatingMode:true,sections:{select:{name:true,tables:{select:{id:true,label:true,seats:true}}}}}},tiers:{select:{id:true,name:true,priceCents:true,feeCents:true,capacity:true,sold:true,held:true,status:true,isTableTier:true,seatsPerUnit:true,salesStartAt:true,salesEndAt:true}},lineup:{where:{status:'confirmed'},select:{role:true,position:true,setMinutes:true,comedian:{select:{stageName:true,bio:true}}},orderBy:{position:'asc'}},occupancies:{where:{occupancyKey:{not:null}},select:{tableId:true}}}});
   if(!show || !['on_sale','sold_out','doors_open'].includes(show.status)) throw new Error('Show not available');return show;
 }
 export async function createTicketHold(_root:any,input:any,context:any) {
@@ -39,7 +40,7 @@ export async function createTicketHold(_root:any,input:any,context:any) {
     const show=await tx.show.findUnique({where:{id:input.showId},include:{room:true}});
     const tier=await tx.priceTier.findUnique({where:{id:input.tierId}});
     if(!show||show.status!=='on_sale'||!tier||tier.showId!==show.id||tier.status!=='on_sale'||show.startsAt<=new Date()) throw new Error('Tickets unavailable');
-    if((tier.salesStartAt&&tier.salesStartAt>new Date())||(tier.salesEndAt&&tier.salesEndAt<=new Date())) throw new Error('Sales closed');
+    {const state=saleState(tier);if(state==='scheduled') throw new Error('Sales have not opened for this tier yet');if(state==='ended') throw new Error('Sales have ended for this tier');}
     const totals=await tx.priceTier.aggregate({where:{showId:show.id},_sum:{sold:true,held:true}});
     if(tier.sold+tier.held+input.quantity>tier.capacity||(totals._sum.sold||0)+(totals._sum.held||0)+input.quantity>Math.min(show.capacity,show.room.capacity)) throw new Error('Not enough capacity');
     const ids=[...new Set<string>(input.tableIds||[])];

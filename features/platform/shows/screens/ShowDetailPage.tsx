@@ -6,6 +6,8 @@ import { Page, Section, Row, Empty, Stat, Status, Meta } from '../../components/
 import { ActionButton } from '../../components/ActionButton';
 import { CheckPanel } from '../components/CheckPanel';
 import { CompForm } from '../components/CompForm';
+import { SalesWindowForm } from '../components/SalesWindowForm';
+import { saleState } from '../../../keystone/lib/saleWindow';
 
 export default async function ShowDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,7 +16,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
     `query($id: ID!) { show(where: { id: $id }) {
       id title startsAt doorsAt status capacity ageRestriction soldCount heldCount checkedInCount remaining isOpenMic publicNote
       room { name } template { title }
-      tiers(orderBy: { priceCents: desc }) { id name priceCents feeCents capacity sold held status }
+      tiers(orderBy: { priceCents: desc }) { id name priceCents feeCents capacity sold held status salesStartAt salesEndAt }
       lineup(orderBy: { position: asc }) { id role position setMinutes feeCents status comedian { stageName } }
       holds(where: { status: { equals: active } }) { id holdKey quantity expiresAt }
       orders(orderBy: { createdAt: desc }, take: 50) { id orderNumber name status totalCents partySize }
@@ -49,7 +51,9 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         {show.tiers.length ? show.tiers.map((t: any) => (
           <Row key={t.id}>
             <span className="min-w-0"><span className="font-medium">{t.name}</span> <Meta>{money(t.priceCents)} + {money(t.feeCents)} fee</Meta></span>
-            <span className="inline-flex items-center gap-3"><Meta>{t.sold} sold · {t.held} held · {t.capacity} total</Meta><Status value={t.status} /></span>
+            <span className="inline-flex items-center gap-3"><Meta>{t.sold} sold · {t.held} held · {t.capacity} total</Meta><Status value={saleState(t) === 'scheduled' || saleState(t) === 'ended' ? saleState(t) : t.status} /></span>
+            {t.salesStartAt || t.salesEndAt ? <span className="w-full text-xs text-muted-foreground">{t.salesStartAt ? `On sale ${when(t.salesStartAt, tz)}` : 'On sale now'}{t.salesEndAt ? ` · off sale ${when(t.salesEndAt, tz)}` : ''}</span> : null}
+            {open ? <SalesWindowForm tierId={t.id} tz={tz} start={t.salesStartAt} end={t.salesEndAt} /> : null}
           </Row>
         )) : <Empty>No tiers.</Empty>}
       </Section>

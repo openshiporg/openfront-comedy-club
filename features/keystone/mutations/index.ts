@@ -78,6 +78,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         undoCheckIn(ticketId: ID!, showId: ID!, reason: String!, idempotencyKey: String!): JSON
         setSignupStatus(signupId: ID!, status: String!, idempotencyKey: String!): JSON
         updateSlotStatus(slotId: ID!, status: String!, idempotencyKey: String!): JSON
+        setSalesWindow(tierId: ID!, salesStartAt: String, salesEndAt: String, idempotencyKey: String!): JSON
         closeShow(showId: ID!, idempotencyKey: String!): JSON
         closeRun(runId: ID!, idempotencyKey: String!): JSON
         approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
@@ -126,6 +127,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         voidCheckItem: op(night.voidCheckItem),
         closeCheck: op(night.closeCheck),
         runOpenMicLottery: op(ops.runOpenMicLottery),
+        setSalesWindow: op(ops.setSalesWindow),
         updateSlotStatus: op(ops.updateSlotStatus),
         undoCheckIn: op(ops.undoCheckIn),
         updatePromoLimit: op(ops.updatePromoLimit),
