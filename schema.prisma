@@ -215,21 +215,23 @@ model InventoryHold {
 }
 
 model LineupSlot {
-  id          String                @id @default(cuid())
-  show        Show?                 @relation("LineupSlot_show", fields: [showId], references: [id])
-  showId      String?               @map("show")
-  comedian    Comedian?             @relation("LineupSlot_comedian", fields: [comedianId], references: [id])
-  comedianId  String?               @map("comedian")
-  role        LineupSlotRoleType?   @default(host)
-  position    Int?                  @default(0)
-  setMinutes  Int?                  @default(10)
-  feeCents    Int?                  @default(0)
-  bonusCents  Int?                  @default(0)
-  status      LineupSlotStatusType? @default(offered)
-  confirmedAt DateTime?
-  payouts     ComedianPayout[]      @relation("ComedianPayout_lineupSlots")
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @default(now()) @updatedAt
+  id                     String                @id @default(cuid())
+  show                   Show?                 @relation("LineupSlot_show", fields: [showId], references: [id])
+  showId                 String?               @map("show")
+  comedian               Comedian?             @relation("LineupSlot_comedian", fields: [comedianId], references: [id])
+  comedianId             String?               @map("comedian")
+  role                   LineupSlotRoleType?   @default(host)
+  position               Int?                  @default(0)
+  setMinutes             Int?                  @default(10)
+  feeCents               Int?                  @default(0)
+  bonusCents             Int?                  @default(0)
+  status                 LineupSlotStatusType? @default(offered)
+  confirmedAt            DateTime?
+  responseTokenHash      String                @default("")
+  responseTokenExpiresAt DateTime?
+  payouts                ComedianPayout[]      @relation("ComedianPayout_lineupSlots")
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @default(now()) @updatedAt
 
   @@index([showId])
   @@index([comedianId])
@@ -1045,6 +1047,7 @@ enum NotificationRecordKindType {
   waitlist_offer
   show_reminder
   lineup_confirmation
+  lineup_invite
 }
 
 enum NotificationRecordChannelType {

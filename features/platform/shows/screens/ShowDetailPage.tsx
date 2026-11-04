@@ -17,7 +17,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
       id title startsAt doorsAt status capacity ageRestriction soldCount heldCount checkedInCount remaining isOpenMic publicNote
       room { name } template { title }
       tiers(orderBy: { priceCents: desc }) { id name priceCents feeCents capacity sold held status salesStartAt salesEndAt }
-      lineup(orderBy: { position: asc }) { id role position setMinutes feeCents status comedian { stageName } }
+      lineup(orderBy: { position: asc }) { id role position setMinutes feeCents status comedian { stageName email } }
       notifications(where: { kind: { in: [show_reminder, lineup_confirmation] } }, orderBy: { createdAt: desc }, take: 30) { id kind status toEmail sendAfter sentAt }
       waitlist(where: { status: { in: [waiting, offered] } }, orderBy: { createdAt: asc }) { id name email partySize status offerExpiresAt }
       holds(where: { status: { equals: active } }) { id holdKey quantity expiresAt }
@@ -94,7 +94,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         {show.lineup.length ? show.lineup.map((l: any) => (
           <Row key={l.id}>
             <span className="min-w-0"><span className="font-medium">{l.position}. {l.comedian?.stageName}</span> <Meta>{l.role.replace('_', ' ')} · {l.setMinutes} min · {money(l.feeCents)}</Meta></span>
-            <span className="inline-flex flex-wrap items-center justify-end gap-2"><Status value={l.status} />{l.status === 'offered' ? <ActionButton op="confirmSlot" vars={{ slotId: l.id }}>Confirm</ActionButton> : null}{l.status === 'offered' ? <ActionButton op="updateSlotStatus" vars={{ slotId: l.id, status: 'declined' }}>Decline</ActionButton> : null}{['offered', 'confirmed'].includes(l.status) ? <ActionButton op="updateSlotStatus" vars={{ slotId: l.id, status: 'cancelled' }} confirm="Cancel this slot? The comedian will not be paid for it.">Cancel slot</ActionButton> : null}{l.status === 'confirmed' && ['doors_open', 'in_progress', 'completed'].includes(show.status) ? <ActionButton op="updateSlotStatus" vars={{ slotId: l.id, status: 'no_show' }} confirm="Mark as no-show? No fee will be paid.">No-show</ActionButton> : null}</span>
+            <span className="inline-flex flex-wrap items-center justify-end gap-2"><Status value={l.status} />{l.status === 'offered' && l.comedian?.email ? <ActionButton op="issueSlotLink" vars={{ slotId: l.id }}>Send link</ActionButton> : null}{l.status === 'offered' ? <ActionButton op="confirmSlot" vars={{ slotId: l.id }}>Confirm</ActionButton> : null}{l.status === 'offered' ? <ActionButton op="updateSlotStatus" vars={{ slotId: l.id, status: 'declined' }}>Decline</ActionButton> : null}{['offered', 'confirmed'].includes(l.status) ? <ActionButton op="updateSlotStatus" vars={{ slotId: l.id, status: 'cancelled' }} confirm="Cancel this slot? The comedian will not be paid for it.">Cancel slot</ActionButton> : null}{l.status === 'confirmed' && ['doors_open', 'in_progress', 'completed'].includes(show.status) ? <ActionButton op="updateSlotStatus" vars={{ slotId: l.id, status: 'no_show' }} confirm="Mark as no-show? No fee will be paid.">No-show</ActionButton> : null}</span>
           </Row>
         )) : <Empty>No lineup yet.</Empty>}
       </Section>

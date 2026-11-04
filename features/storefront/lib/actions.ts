@@ -14,6 +14,9 @@ const MIC = `mutation($showId: ID!, $name: String!, $email: String!, $k: String!
 const JOIN = `mutation($showId: ID!, $name: String!, $email: String!, $partySize: Int!, $k: String!) { joinWaitlist(showId: $showId, name: $name, email: $email, partySize: $partySize, idempotencyKey: $k) }`;
 const OFFER = `query($holdKey: String!, $cartToken: String!) { waitlistOffer(holdKey: $holdKey, cartToken: $cartToken) }`;
 
+const INVITE = `query($slotId: ID!, $token: String!) { slotInvite(slotId: $slotId, token: $token) }`;
+const RESPOND = `mutation($slotId: ID!, $token: String!, $response: String!, $k: String!) { respondToSlot(slotId: $slotId, token: $token, response: $response, idempotencyKey: $k) }`;
+
 async function unwrap(p: ReturnType<typeof gqlCall>, key: string) { const r = await p; return r.ok ? { ok: true as const, data: (r.data as any)[key] } : { ok: false as const, error: r.error }; }
 
 export async function createHold(v: { showId: string; tierId: string; quantity: number; tableIds?: string[] }) { return unwrap(gqlCall(HOLD, { ...v, k: randomUUID() }), 'createTicketHold'); }
@@ -25,3 +28,5 @@ export async function cancelOrder(n: string, e: string) { return unwrap(gqlCall(
 export async function micSignup(v: { showId: string; name: string; email: string }) { return unwrap(gqlCall(MIC, { ...v, k: randomUUID() }), 'openMicSignup'); }
 export async function joinWaitlist(v: { showId: string; name: string; email: string; partySize: number }) { return unwrap(gqlCall(JOIN, { ...v, k: randomUUID() }), 'joinWaitlist'); }
 export async function claimWaitlistOffer(holdKey: string, cartToken: string) { return unwrap(gqlCall(OFFER, { holdKey, cartToken }), 'waitlistOffer'); }
+export async function loadSlotInvite(slotId: string, token: string) { return unwrap(gqlCall(INVITE, { slotId, token }), 'slotInvite'); }
+export async function answerSlot(slotId: string, token: string, response: 'confirm' | 'decline') { return unwrap(gqlCall(RESPOND, { slotId, token, response, k: randomUUID() }), 'respondToSlot'); }

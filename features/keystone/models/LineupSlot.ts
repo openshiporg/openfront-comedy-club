@@ -11,5 +11,7 @@ export const LineupSlot = domainList({
   bonusCents: money(),
   status: lifecycle(['offered', 'confirmed', 'declined', 'cancelled', 'performed', 'no_show']),
   confirmedAt: timestamp(),
+  responseTokenHash: secret(),
+  responseTokenExpiresAt: timestamp(),
   payouts: relationship({ref:'ComedianPayout.lineupSlots',many:true}),
 }, 'canManageTalent', true);
