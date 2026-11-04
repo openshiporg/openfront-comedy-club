@@ -23,6 +23,8 @@ const OPS: Record<string, Record<string, string>> = {
   runOpenMicLottery: { showId: 'ID!' },
   closeShow: { showId: 'ID!' },
   closeRun: { runId: 'ID!' },
+  approvePayout: { payoutId: 'ID!' },
+  recordPayoutPaid: { payoutId: 'ID!', method: 'String!', reference: 'String!' },
   refundTicketOrder: { orderId: 'ID!', amountCents: 'Int', ticketIds: '[ID!]', reason: 'String!', approvalId: 'ID' },
   requestApproval: { actionType: 'String!', targetId: 'String!', reason: 'String!', amount: 'Int' },
   approveRequest: { approvalId: 'ID!' },

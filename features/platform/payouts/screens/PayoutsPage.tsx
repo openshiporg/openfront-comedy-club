@@ -2,13 +2,14 @@ import { q, venueTimezone } from '../../lib/server';
 import { money, when } from '../../lib/format';
 import { Page, Tabs, Section, Row, Empty, Stat, Status, Meta } from '../../components/ui';
 import { CloseRun } from '../components/CloseRun';
+import { PayoutActions } from '../components/PayoutActions';
 
 const TABS = ['draft', 'approved', 'paid', 'void'];
 export default async function PayoutsPage({ searchParams }: { searchParams?: Promise<{ tab?: string }> }) {
   const tz = await venueTimezone();
   const tab = ((await searchParams) || {}).tab || 'draft';
   const [{ comedianPayouts }, { showSettlements }, { runs }] = await Promise.all([
-    q<any>(`query($s: ComedianPayoutStatusType!) { comedianPayouts(where: { status: { equals: $s } }, orderBy: { createdAt: desc }, take: 60) { id amountCents method reference comedian { stageName } show { title startsAt } run { notes startAt } } }`, { s: tab }),
+    q<any>(`query($s: ComedianPayoutStatusType!) { comedianPayouts(where: { status: { equals: $s } }, orderBy: { createdAt: desc }, take: 60) { id status amountCents method reference comedian { stageName } show { title startsAt } run { notes startAt } } }`, { s: tab }),
     q<any>(`{ showSettlements(orderBy: { createdAt: desc }, take: 20) { id status netCents ticketGrossCents feesCents refundsCents foodBeverageGrossCents minimumShortfallRevenueCents tipsCents talentCostCents show { title startsAt } } }`),
     q<any>(`{ runs(orderBy: { startAt: desc }, take: 10) { id status runFeeCents startAt notes headliner { stageName } shows { status } } }`),
   ]);
@@ -18,8 +19,9 @@ export default async function PayoutsPage({ searchParams }: { searchParams?: Pro
       <div>
         {comedianPayouts.length ? comedianPayouts.map((p: any) => (
           <Row key={p.id}>
-            <span className="min-w-0"><span className="font-medium">{p.comedian?.stageName}</span> <Meta>{p.show ? `${p.show.title} · ${when(p.show.startsAt, tz, 'day')}` : `Run fee · ${p.run?.notes || ''} · ${when(p.run?.startAt, tz, 'day')}`} · {p.method}{p.reference ? ` ${p.reference}` : ''}</Meta></span>
+            <span className="min-w-0"><span className="font-medium">{p.comedian?.stageName}</span> <Meta>{p.show ? `${p.show.title} · ${when(p.show.startsAt, tz, 'day')}` : p.run ? `Run fee · ${p.run.notes || ''} · ${when(p.run.startAt, tz, 'day')}` : 'Manual payout'} · {p.method}{p.reference ? ` ${p.reference}` : ''}</Meta></span>
             <span className="font-mono text-xs">{money(p.amountCents)}</span>
+            <PayoutActions id={p.id} status={p.status} />
           </Row>
         )) : <Empty>No payouts here.</Empty>}
       </div>

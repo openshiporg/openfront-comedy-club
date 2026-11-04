@@ -5440,6 +5440,7 @@ type Mutation {
   generateShowsFromTemplate(templateId: ID!, from: String, idempotencyKey: String!): JSON
   publishShow(showId: ID!, nextStatus: String, idempotencyKey: String!): JSON
   pauseSales(showId: ID!, idempotencyKey: String!): JSON
+  resumeSales(showId: ID!, idempotencyKey: String!): JSON
   cancelShow(showId: ID!, reason: String!, idempotencyKey: String!): JSON
   setLineup(showId: ID!, slots: [SlotOrderInput!]!, idempotencyKey: String!): JSON
   offerSlot(showId: ID!, comedianId: ID!, role: String!, position: Int, setMinutes: Int, feeCents: Int, idempotencyKey: String!): JSON
@@ -5454,6 +5455,8 @@ type Mutation {
   runOpenMicLottery(showId: ID!, idempotencyKey: String!): JSON
   closeShow(showId: ID!, idempotencyKey: String!): JSON
   closeRun(runId: ID!, idempotencyKey: String!): JSON
+  approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
+  recordPayoutPaid(payoutId: ID!, method: String!, reference: String!, idempotencyKey: String!): JSON
   refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
   requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
   approveRequest(approvalId: ID!): JSON
@@ -5621,6 +5624,7 @@ type Query {
   lookupTicketOrder(email: String!, orderNumber: String!): JSON
   ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
   openMicShows: JSON
+  matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
 }
 
 union AuthenticatedItem = User
