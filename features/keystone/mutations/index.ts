@@ -7,6 +7,7 @@ import * as ops from "./operators";
 import * as checkout from "./checkout";
 import * as night from "./night";
 import * as payouts from "./payouts";
+import * as openMic from "./openMic";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
 import { matchingManagerApproval } from '../utils/managerApproval';
@@ -71,6 +72,8 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         voidCheckItem(itemId: ID!, checkId: ID!, reason: String!, approvalId: ID!, idempotencyKey: String!): JSON
         closeCheck(checkId: ID!, tipCents: Int, waive: Boolean, reason: String, approvalId: ID, idempotencyKey: String!): JSON
         runOpenMicLottery(showId: ID!, idempotencyKey: String!): JSON
+        addBringerSignup(showId: ID!, name: String!, email: String!, guestsRequired: Int!, idempotencyKey: String!): JSON
+        recordBringerArrival(signupId: ID!, guests: Int!, idempotencyKey: String!): JSON
         closeShow(showId: ID!, idempotencyKey: String!): JSON
         closeRun(runId: ID!, idempotencyKey: String!): JSON
         approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
@@ -119,6 +122,8 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         voidCheckItem: op(night.voidCheckItem),
         closeCheck: op(night.closeCheck),
         runOpenMicLottery: op(ops.runOpenMicLottery),
+        addBringerSignup: op(openMic.addBringerSignup),
+        recordBringerArrival: op(openMic.recordBringerArrival),
         closeShow: op(night.closeShow),
         closeRun: op(night.closeRun),
         approvePayout: op(payouts.approvePayout),
