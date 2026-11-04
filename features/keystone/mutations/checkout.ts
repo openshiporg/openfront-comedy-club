@@ -31,7 +31,7 @@ export async function startTicketCheckout(_: any, input: any, context: any) {
     if (hold.show.ageRestriction !== 'all' && input.ageAttested !== true) throw new Error('Age confirmation required');
     const venue = hold.show.room.venue;
     const promo = hold.redemption?.status === 'reserved' ? hold.redemption.promoCode : null;
-    const q = quote({ priceCents: hold.priceTier.priceCents, feeCents: hold.priceTier.feeCents, quantity: hold.quantity, serviceFeeBps: venue.serviceFeeBps, taxBps: venue.taxBps, discountType: promo?.discountType, discountValue: promo?.value });
+    const q = quote({ priceCents: hold.priceTier.priceCents, feeCents: hold.priceTier.feeCents, quantity: hold.quantity, serviceFeeBps: venue.serviceFeeBps, taxBps: venue.taxBps, discountType: promo?.discountType, discountValue: promo?.value, perOrderLimit: promo?.perOrderLimit });
     if (q.totalCents < 1) throw new Error('Payment is not required for this order; contact the venue');
     const order = await tx.ticketOrder.create({ data: {
       orderNumber: code('CC'), customerId: context.session?.itemId || null, email, name: String(customer.name).trim(), phone: String(customer.phone || ''),

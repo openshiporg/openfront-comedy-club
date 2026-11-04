@@ -1,12 +1,14 @@
 export function cents(value: number) { if (!Number.isSafeInteger(value) || value < 0) throw new Error('Non-negative integer cents required'); return value; }
 export function basisPoints(amount: number, bps: number) { cents(amount); cents(bps); return Math.floor((amount * bps + 5000) / 10000); }
-export function quote(input: { priceCents:number; feeCents:number; quantity:number; serviceFeeBps:number; taxBps:number; discountType?:string; discountValue?:number }) {
+export function quote(input: { priceCents:number; feeCents:number; quantity:number; serviceFeeBps:number; taxBps:number; discountType?:string; discountValue?:number; perOrderLimit?:number }) {
   for (const n of [input.priceCents,input.feeCents,input.quantity,input.serviceFeeBps,input.taxBps,input.discountValue || 0]) cents(n);
   if (input.quantity < 1) throw new Error('Quantity required');
   const subtotalCents = cents(input.priceCents * input.quantity);
   const feesCents = cents(input.feeCents * input.quantity + basisPoints(subtotalCents,input.serviceFeeBps));
   const value = input.discountValue || 0;
-  const discountCents = Math.min(subtotalCents, input.discountType === 'comp' ? subtotalCents : input.discountType === 'percent_bps' ? basisPoints(subtotalCents,value) : input.discountType === 'amount_cents' ? value : 0);
+  if (input.perOrderLimit !== undefined && (!Number.isSafeInteger(input.perOrderLimit) || input.perOrderLimit < 1)) throw new Error('Positive promotion limit required');
+  const eligibleCents = cents(input.priceCents * Math.min(input.quantity, input.perOrderLimit ?? input.quantity));
+  const discountCents = Math.min(eligibleCents, input.discountType === 'comp' ? eligibleCents : input.discountType === 'percent_bps' ? basisPoints(eligibleCents,value) : input.discountType === 'amount_cents' ? value : 0);
   const taxCents = basisPoints(subtotalCents-discountCents,input.taxBps);
   return {subtotalCents,feesCents,discountCents,taxCents,totalCents:cents(subtotalCents+feesCents-discountCents+taxCents)};
 }
