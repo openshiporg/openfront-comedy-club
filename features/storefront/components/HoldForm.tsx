@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { createHold } from '../lib/actions';
 import { price, showTime } from '../lib/format';
+import { WaitlistForm } from './WaitlistForm';
 import { saleState } from '../../keystone/lib/saleWindow';
 
 type Tier = { id: string; name: string; priceCents: number; feeCents: number; capacity: number; sold: number; held: number; status: string; isTableTier: boolean; salesStartAt?: string | null; salesEndAt?: string | null };
@@ -12,7 +13,7 @@ type Section = { name: string; tables: { id: string; label: string; seats: numbe
 const btn = 'inline-flex h-10 items-center justify-center rounded-md border bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50';
 const chip = (on: boolean, off?: boolean) => `min-w-12 rounded-md border px-2 py-2 text-sm ${on ? 'border-foreground bg-foreground text-background' : ''} ${off ? 'opacity-40' : ''}`;
 
-export function HoldForm({ showId, ageRestriction, tiers, sections }: { showId: string; ageRestriction: string; tiers: Tier[]; sections: Section[] }) {
+export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { showId: string; title: string; ageRestriction: string; tiers: Tier[]; sections: Section[] }) {
   const router = useRouter();
   const open = tiers.filter((t) => saleState(t) === 'open' && t.sold + t.held < t.capacity);
   const upcoming = tiers.filter((t) => saleState(t) === 'scheduled');
@@ -28,7 +29,7 @@ export function HoldForm({ showId, ageRestriction, tiers, sections }: { showId: 
   const quantity = tableMode ? seats : qty;
   const left = tier ? tier.capacity - tier.sold - tier.held : 0;
 
-  if (!open.length) return <p className="text-sm text-muted-foreground">{upcoming.length ? `Tickets go on sale ${showTime(upcoming.map((t) => t.salesStartAt as string).sort()[0])}.` : 'Sold out.'}</p>;
+  if (!open.length) return upcoming.length ? <p className="text-sm text-muted-foreground">Tickets go on sale {showTime(upcoming.map((t) => t.salesStartAt as string).sort()[0])}.</p> : <div className="space-y-4"><p className="text-sm text-muted-foreground">Sold out.</p><WaitlistForm showId={showId} title={title} /></div>;
   return (
     <section className="space-y-5">
       <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Tickets</h2>

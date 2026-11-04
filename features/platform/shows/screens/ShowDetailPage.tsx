@@ -18,6 +18,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
       room { name } template { title }
       tiers(orderBy: { priceCents: desc }) { id name priceCents feeCents capacity sold held status salesStartAt salesEndAt }
       lineup(orderBy: { position: asc }) { id role position setMinutes feeCents status comedian { stageName } }
+      waitlist(where: { status: { in: [waiting, offered] } }, orderBy: { createdAt: asc }) { id name email partySize status offerExpiresAt }
       holds(where: { status: { equals: active } }) { id holdKey quantity expiresAt }
       orders(orderBy: { createdAt: desc }, take: 50) { id orderNumber name status totalCents partySize }
       assignments { id status tables { label } }
@@ -46,6 +47,22 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         {!['cancelled', 'completed', 'settled'].includes(show.status) ? <ActionButton op="cancelShow" vars={{ showId: show.id, reason: 'Cancelled by venue' }} confirm="Cancel this show and refund every order?">Cancel show</ActionButton> : null}
         {show.isOpenMic ? <Link className="self-center text-sm underline underline-offset-4" href="/dashboard/platform/open-mic">Open mic list</Link> : null}
       </div>
+
+      {show.waitlist.length || show.status === 'sold_out' ? (
+        <Section title="Waitlist">
+          {show.waitlist.length ? <div className="flex flex-wrap gap-2 pb-2"><ActionButton op="offerWaitlist" vars={{ showId: show.id }}>Offer open seats</ActionButton></div> : null}
+          {show.waitlist.length ? show.waitlist.map((w: any, i: number) => (
+            <Row key={w.id}>
+              <span className="min-w-0 break-words"><span className="font-medium">{i + 1}. {w.name}</span> <Meta>party of {w.partySize} · {w.email}</Meta></span>
+              <span className="inline-flex flex-wrap items-center gap-3">
+                <Status value={w.status} />
+                {w.status === 'offered' && w.offerExpiresAt ? <Meta>until {when(w.offerExpiresAt, tz, 'time')}</Meta> : null}
+                <ActionButton op="removeWaitlistEntry" vars={{ entryId: w.id, reason: 'Removed by operator' }} confirm={`Remove ${w.name} from the waitlist?`}>Remove</ActionButton>
+              </span>
+            </Row>
+          )) : <Empty>Nobody is waiting.</Empty>}
+        </Section>
+      ) : null}
 
       <Section title="Ticket tiers">
         {show.tiers.length ? show.tiers.map((t: any) => (

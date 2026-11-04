@@ -8,6 +8,7 @@ import * as checkout from "./checkout";
 import * as night from "./night";
 import * as payouts from "./payouts";
 import * as openMic from "./openMic";
+import * as waitlist from "./waitlist";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
 import { matchingManagerApproval } from '../utils/managerApproval';
@@ -38,6 +39,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         redirectToInit: Boolean
         showsOnSale: JSON
         showAvailability(showId: ID!): JSON
+        waitlistOffer(holdKey: String!, cartToken: String!): JSON
         lookupTicketOrder(email: String!, orderNumber: String!): JSON
         ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
         openMicShows: JSON
@@ -54,6 +56,9 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         completeTicketCheckout(orderNumber: String!, orderSecret: String!): JSON
         abandonTicketCheckout(orderNumber: String!, orderSecret: String!): JSON
         cancelMyTicketOrder(orderNumber: String!, email: String!, idempotencyKey: String!): JSON
+        joinWaitlist(showId: ID!, name: String!, email: String!, partySize: Int!, idempotencyKey: String!): JSON
+        offerWaitlist(showId: ID!, idempotencyKey: String!): JSON
+        removeWaitlistEntry(entryId: ID!, reason: String, idempotencyKey: String!): JSON
         openMicSignup(showId: ID!, name: String!, email: String!, comedianId: ID, idempotencyKey: String!): JSON
 
         generateShowsFromTemplate(templateId: ID!, from: String, idempotencyKey: String!): JSON
@@ -97,6 +102,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         redirectToInit,
         showsOnSale: op(tickets.showsOnSale),
         showAvailability: op(tickets.showAvailability),
+        waitlistOffer: op(waitlist.waitlistOffer),
         lookupTicketOrder: op(tickets.lookupTicketOrder),
         ticketOrderConfirmation: op(checkout.ticketOrderConfirmation),
         openMicShows: op(tickets.openMicShows),
@@ -111,6 +117,9 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         abandonTicketCheckout: op(checkout.abandonTicketCheckout),
         cancelMyTicketOrder: op(checkout.cancelMyTicketOrder),
         openMicSignup: op(tickets.openMicSignup),
+        joinWaitlist: op(waitlist.joinWaitlist),
+        offerWaitlist: op(waitlist.offerWaitlist),
+        removeWaitlistEntry: op(waitlist.removeWaitlistEntry),
         generateShowsFromTemplate: op(night.generateShowsFromTemplate),
         publishShow: op(ops.publishShow),
         pauseSales: op(ops.pauseSales),

@@ -15,5 +15,6 @@ export const InventoryHold = domainList({
   promo: relationship({ ref: 'PromoCode.holds' }),
   redemption: relationship({ ref: 'PromoRedemption.hold' }),
   order: relationship({ref:'TicketOrder.hold'}),
+  waitlistEntry: relationship({ref:'WaitlistEntry.hold'}),
   occupancies: relationship({ref:'TableOccupancy.hold',many:true}),
 }, 'canManageOrders', true);

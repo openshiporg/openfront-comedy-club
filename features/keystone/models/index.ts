@@ -12,6 +12,7 @@ import { ManagerApproval } from './ManagerApproval';
 import { MenuItem } from './MenuItem';
 import { OAuthApp } from './OAuthApp';
 import { OAuthToken } from './OAuthToken';
+import { NotificationRecord } from './NotificationRecord';
 import { OpenMicSignup } from './OpenMicSignup';
 import { Payment } from './Payment';
 import { PaymentCollection } from './PaymentCollection';
@@ -22,6 +23,7 @@ import { PriceTier } from './PriceTier';
 import { PromoCode } from './PromoCode';
 import { PromoRedemption } from './PromoRedemption';
 import { Refund } from './Refund';
+import { WaitlistEntry } from './WaitlistEntry';
 import { Role } from './Role';
 import { Room } from './Room';
 import { Run } from './Run';
@@ -54,6 +56,7 @@ export const models = {
   MenuItem,
   OAuthApp,
   OAuthToken,
+  NotificationRecord,
   OpenMicSignup,
   Payment,
   PaymentCollection,
@@ -64,6 +67,7 @@ export const models = {
   PromoCode,
   PromoRedemption,
   Refund,
+  WaitlistEntry,
   Role,
   Room,
   Run,

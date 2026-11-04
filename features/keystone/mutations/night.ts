@@ -111,6 +111,7 @@ export async function cancelShow(_: any, a: any, c: any) {
     await tx.show.update({ where: { id: show.id }, data: { status: 'cancelled' } });
     await tx.priceTier.updateMany({ where: { showId: show.id }, data: { status: 'closed' } });
     await tx.lineupSlot.updateMany({ where: { showId: show.id, status: { notIn: ['performed'] } }, data: { status: 'cancelled' } });
+    await tx.waitlistEntry.updateMany({ where: { showId: show.id, status: { in: ['waiting', 'offered'] } }, data: { status: 'cancelled' } });
     const holds = await tx.inventoryHold.findMany({ where: { showId: show.id, status: 'active', order: null } });
     for (const h of holds) { await tx.inventoryHold.update({ where: { id: h.id }, data: { status: 'released' } }); await tx.priceTier.update({ where: { id: h.priceTierId }, data: { held: { decrement: h.quantity } } }); await tx.tableOccupancy.updateMany({ where: { holdId: h.id }, data: { occupancyKey: null } }); }
     await audit(tx, c, 'cancelled', 'Show', show.id, show, { status: 'cancelled' }, a.reason);

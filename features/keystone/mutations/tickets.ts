@@ -1,3 +1,4 @@
+import { offerFreedSeats } from './waitlistCore';
 import { saleState } from '../lib/saleWindow';
 import crypto from 'node:crypto';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
@@ -11,9 +12,10 @@ export async function expireUnderLock(tx:any,showId:string,context:any) {
     await tx.inventoryHold.update({where:{id:hold.id},data:{status:'expired'}});
     await tx.priceTier.update({where:{id:hold.priceTierId},data:{held:{decrement:hold.quantity}}});
     await tx.tableOccupancy.updateMany({where:{holdId:hold.id},data:{occupancyKey:null}});
-    await tx.promoRedemption.updateMany({where:{holdId:hold.id,status:'reserved'},data:{status:'released'}});
+    await tx.promoRedemption.updateMany({where:{hold:{id:hold.id},status:'reserved'},data:{status:'released'}});
     await audit(tx,context,'expired','InventoryHold',hold.id,hold,{status:'expired'});
   }
+  if(holds.length) await offerFreedSeats(tx,context,showId);
   return holds.length;
 }
 export async function expireHolds(_root:any,args:any,context:any) {
@@ -67,7 +69,7 @@ export async function applyPromoToHold(_root:any,input:any,context:any) {
     const reserved=await tx.promoRedemption.count({where:{promoCodeId:current.id,status:'reserved'}});
     const now=new Date();
     if(current.status!=='active'||(current.showId&&current.showId!==hold.showId)||(current.templateId&&current.templateId!==hold.show.templateId)||(current.startsAt&&current.startsAt>now)||(current.endsAt&&current.endsAt<now)||(current.maxUses!==null&&current.usedCount+reserved>=current.maxUses)) throw new Error('Promotion unavailable');
-    await tx.promoRedemption.updateMany({where:{holdId:hold.id,status:'reserved'},data:{status:'released'}});
+    await tx.promoRedemption.updateMany({where:{hold:{id:hold.id},status:'reserved'},data:{status:'released'}});
     await tx.promoRedemption.create({data:{promoCodeId:promo.id,holdId:hold.id,status:'reserved',amountCents:0}});
     await tx.inventoryHold.update({where:{id:hold.id},data:{promoId:promo.id}});return {applied:true};
   },'show:'+lookup.showId);

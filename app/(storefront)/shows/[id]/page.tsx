@@ -29,6 +29,7 @@ export default async function ShowPage({ params }: { params: Promise<{ id: strin
       ) : null}
       <HoldForm
         showId={show.id}
+        title={show.title}
         ageRestriction={show.ageRestriction}
         tiers={show.tiers}
         sections={show.room.seatingMode === 'tables' ? show.room.sections.map((s: any) => ({ name: s.name, tables: s.tables.map((t: any) => ({ ...t, taken: taken.has(t.id) })) })) : []}

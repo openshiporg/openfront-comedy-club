@@ -185,27 +185,29 @@ model IdempotencyKey {
 }
 
 model InventoryHold {
-  id           String                   @id @default(cuid())
-  holdKey      String                   @unique @default("")
-  show         Show?                    @relation("InventoryHold_show", fields: [showId], references: [id])
-  showId       String?                  @map("show")
-  priceTier    PriceTier?               @relation("InventoryHold_priceTier", fields: [priceTierId], references: [id])
-  priceTierId  String?                  @map("priceTier")
-  quantity     Int?                     @default(1)
-  tables       Table[]                  @relation("InventoryHold_tables")
-  status       InventoryHoldStatusType? @default(active)
-  expiresAt    DateTime?
-  cartToken    String                   @default("")
-  quote        Json?
-  promo        PromoCode?               @relation("InventoryHold_promo", fields: [promoId], references: [id])
-  promoId      String?                  @map("promo")
-  redemption   PromoRedemption?         @relation("InventoryHold_redemption", fields: [redemptionId], references: [id])
-  redemptionId String?                  @unique @map("redemption")
-  order        TicketOrder?             @relation("InventoryHold_order", fields: [orderId], references: [id])
-  orderId      String?                  @unique @map("order")
-  occupancies  TableOccupancy[]         @relation("TableOccupancy_hold")
-  createdAt    DateTime                 @default(now())
-  updatedAt    DateTime                 @default(now()) @updatedAt
+  id              String                   @id @default(cuid())
+  holdKey         String                   @unique @default("")
+  show            Show?                    @relation("InventoryHold_show", fields: [showId], references: [id])
+  showId          String?                  @map("show")
+  priceTier       PriceTier?               @relation("InventoryHold_priceTier", fields: [priceTierId], references: [id])
+  priceTierId     String?                  @map("priceTier")
+  quantity        Int?                     @default(1)
+  tables          Table[]                  @relation("InventoryHold_tables")
+  status          InventoryHoldStatusType? @default(active)
+  expiresAt       DateTime?
+  cartToken       String                   @default("")
+  quote           Json?
+  promo           PromoCode?               @relation("InventoryHold_promo", fields: [promoId], references: [id])
+  promoId         String?                  @map("promo")
+  redemption      PromoRedemption?         @relation("InventoryHold_redemption", fields: [redemptionId], references: [id])
+  redemptionId    String?                  @unique @map("redemption")
+  order           TicketOrder?             @relation("InventoryHold_order", fields: [orderId], references: [id])
+  orderId         String?                  @unique @map("order")
+  waitlistEntry   WaitlistEntry?           @relation("InventoryHold_waitlistEntry", fields: [waitlistEntryId], references: [id])
+  waitlistEntryId String?                  @unique @map("waitlistEntry")
+  occupancies     TableOccupancy[]         @relation("TableOccupancy_hold")
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @default(now()) @updatedAt
 
   @@index([showId])
   @@index([priceTierId])
@@ -328,6 +330,25 @@ model OAuthToken {
 
   @@index([clientId])
   @@index([userId])
+}
+
+model NotificationRecord {
+  id              String                         @id @default(cuid())
+  notificationKey String                         @unique @default("")
+  kind            NotificationRecordKindType?    @default(waitlist_offer)
+  channel         NotificationRecordChannelType? @default(email)
+  toEmail         String                         @default("")
+  subject         String                         @default("")
+  body            String                         @default("")
+  payload         Json?
+  status          NotificationRecordStatusType?  @default(queued)
+  sentAt          DateTime?
+  waitlistEntry   WaitlistEntry?                 @relation("NotificationRecord_waitlistEntry", fields: [waitlistEntryId], references: [id])
+  waitlistEntryId String?                        @map("waitlistEntry")
+  createdAt       DateTime                       @default(now())
+  updatedAt       DateTime                       @default(now()) @updatedAt
+
+  @@index([waitlistEntryId])
 }
 
 model OpenMicSignup {
@@ -562,6 +583,25 @@ model Refund {
   @@index([approvedById])
 }
 
+model WaitlistEntry {
+  id             String                   @id @default(cuid())
+  entryKey       String                   @unique @default("")
+  show           Show?                    @relation("WaitlistEntry_show", fields: [showId], references: [id])
+  showId         String?                  @map("show")
+  name           String                   @default("")
+  email          String                   @default("")
+  partySize      Int?                     @default(1)
+  status         WaitlistEntryStatusType? @default(waiting)
+  hold           InventoryHold?           @relation("InventoryHold_waitlistEntry")
+  offeredAt      DateTime?
+  offerExpiresAt DateTime?
+  notifications  NotificationRecord[]     @relation("NotificationRecord_waitlistEntry")
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @default(now()) @updatedAt
+
+  @@index([showId])
+}
+
 model Role {
   id                  String   @id @default(cuid())
   name                String   @default("")
@@ -680,6 +720,7 @@ model Show {
   publicNote     String              @default("")
   lineup         LineupSlot[]        @relation("LineupSlot_show")
   signups        OpenMicSignup[]     @relation("OpenMicSignup_show")
+  waitlist       WaitlistEntry[]     @relation("WaitlistEntry_show")
   tiers          PriceTier[]         @relation("PriceTier_show")
   holds          InventoryHold[]     @relation("InventoryHold_show")
   orders         TicketOrder[]       @relation("TicketOrder_show")
@@ -995,6 +1036,20 @@ enum MenuItemCategoryType {
   na
 }
 
+enum NotificationRecordKindType {
+  waitlist_offer
+}
+
+enum NotificationRecordChannelType {
+  email
+}
+
+enum NotificationRecordStatusType {
+  queued
+  sent
+  failed
+}
+
 enum OpenMicSignupMethodType {
   online_list
   bucket
@@ -1037,6 +1092,14 @@ enum PromoRedemptionStatusType {
   reserved
   committed
   released
+}
+
+enum WaitlistEntryStatusType {
+  waiting
+  offered
+  converted
+  expired
+  cancelled
 }
 
 enum RoomSeatingModeType {

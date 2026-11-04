@@ -1,3 +1,4 @@
+import { offerFreedSeats } from './waitlistCore';
 import crypto from 'node:crypto';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
 import { quote, selfRefundAllowed } from '../lib/money';
@@ -132,6 +133,7 @@ async function abandonPending(context: any, order: any) {
       await tx.tableOccupancy.updateMany({ where: { holdId: hold.id }, data: { occupancyKey: null } });
       if (hold.redemption) await tx.promoRedemption.update({ where: { id: hold.redemption.id }, data: { status: 'released' } });
     }
+    await offerFreedSeats(tx, context, order.showId);
     await audit(tx, context, 'cancelled', 'TicketOrder', order.id, { status: 'pending_payment' }, { status: 'cancelled' }, 'payment did not complete');
   });
   return 'cancelled';
@@ -198,6 +200,7 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     await tx.ticketOrder.update({ where: { id: a.orderId }, data: { status: remainingValid ? 'partially_refunded' : 'refunded' } });
     await tx.show.updateMany({ where: { id: reserved.showId, status: 'sold_out' }, data: { status: 'on_sale' } });
     await audit(tx, { session: { itemId: a.actorId } }, 'refunded', 'TicketOrder', a.orderId, null, { amount: reserved.amount, tickets: voided.length }, a.reason);
+    await offerFreedSeats(tx, { session: { itemId: a.actorId } }, reserved.showId);
   }, { timeout: 20000 });
   return { refundId: reserved.refundId, status: finalStatus, amountCents: reserved.amount };
 }

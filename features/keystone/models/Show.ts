@@ -23,6 +23,7 @@ export const Show = domainList({
   publicNote: text(),
   lineup: relationship({ref:'LineupSlot.show',many:true}),
   signups: relationship({ref:'OpenMicSignup.show',many:true}),
+  waitlist: relationship({ref:'WaitlistEntry.show',many:true}),
   tiers: relationship({ref:'PriceTier.show',many:true}),
   holds: relationship({ref:'InventoryHold.show',many:true}),
   orders: relationship({ref:'TicketOrder.show',many:true}),

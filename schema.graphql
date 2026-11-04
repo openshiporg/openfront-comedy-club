@@ -1140,6 +1140,7 @@ type InventoryHold {
   promo: PromoCode
   redemption: PromoRedemption
   order: TicketOrder
+  waitlistEntry: WaitlistEntry
   occupancies(where: TableOccupancyWhereInput! = {}, orderBy: [TableOccupancyOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TableOccupancyWhereUniqueInput): [TableOccupancy!]
   occupanciesCount(where: TableOccupancyWhereInput! = {}): Int
   createdAt: DateTime
@@ -1158,6 +1159,7 @@ input InventoryHoldWhereUniqueInput {
   holdKey: String
   redemption: PromoRedemptionWhereUniqueInput
   order: TicketOrderWhereUniqueInput
+  waitlistEntry: WaitlistEntryWhereUniqueInput
 }
 
 input InventoryHoldWhereInput {
@@ -1176,6 +1178,7 @@ input InventoryHoldWhereInput {
   promo: PromoCodeWhereInput
   redemption: PromoRedemptionWhereInput
   order: TicketOrderWhereInput
+  waitlistEntry: WaitlistEntryWhereInput
   occupancies: TableOccupancyManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
@@ -1224,6 +1227,7 @@ input InventoryHoldUpdateInput {
   promo: PromoCodeRelateToOneForUpdateInput
   redemption: PromoRedemptionRelateToOneForUpdateInput
   order: TicketOrderRelateToOneForUpdateInput
+  waitlistEntry: WaitlistEntryRelateToOneForUpdateInput
   occupancies: TableOccupancyRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
@@ -1260,6 +1264,12 @@ input TicketOrderRelateToOneForUpdateInput {
   disconnect: Boolean
 }
 
+input WaitlistEntryRelateToOneForUpdateInput {
+  create: WaitlistEntryCreateInput
+  connect: WaitlistEntryWhereUniqueInput
+  disconnect: Boolean
+}
+
 input TableOccupancyRelateToManyForUpdateInput {
   disconnect: [TableOccupancyWhereUniqueInput!]
   set: [TableOccupancyWhereUniqueInput!]
@@ -1285,6 +1295,7 @@ input InventoryHoldCreateInput {
   promo: PromoCodeRelateToOneForCreateInput
   redemption: PromoRedemptionRelateToOneForCreateInput
   order: TicketOrderRelateToOneForCreateInput
+  waitlistEntry: WaitlistEntryRelateToOneForCreateInput
   occupancies: TableOccupancyRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
@@ -1313,6 +1324,11 @@ input PromoRedemptionRelateToOneForCreateInput {
 input TicketOrderRelateToOneForCreateInput {
   create: TicketOrderCreateInput
   connect: TicketOrderWhereUniqueInput
+}
+
+input WaitlistEntryRelateToOneForCreateInput {
+  create: WaitlistEntryCreateInput
+  connect: WaitlistEntryWhereUniqueInput
 }
 
 input TableOccupancyRelateToManyForCreateInput {
@@ -1904,6 +1920,129 @@ input OAuthTokenCreateInput {
   state: String
   codeChallenge: String
   codeChallengeMethod: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type NotificationRecord {
+  id: ID!
+  notificationKey: String
+  kind: NotificationRecordKindType
+  channel: NotificationRecordChannelType
+  toEmail: String
+  subject: String
+  body: String
+  payload: JSON
+  status: NotificationRecordStatusType
+  sentAt: DateTime
+  waitlistEntry: WaitlistEntry
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+enum NotificationRecordKindType {
+  waitlist_offer
+}
+
+enum NotificationRecordChannelType {
+  email
+}
+
+enum NotificationRecordStatusType {
+  queued
+  sent
+  failed
+}
+
+input NotificationRecordWhereUniqueInput {
+  id: ID
+  notificationKey: String
+}
+
+input NotificationRecordWhereInput {
+  AND: [NotificationRecordWhereInput!]
+  OR: [NotificationRecordWhereInput!]
+  NOT: [NotificationRecordWhereInput!]
+  id: IDFilter
+  notificationKey: StringFilter
+  kind: NotificationRecordKindTypeNullableFilter
+  channel: NotificationRecordChannelTypeNullableFilter
+  toEmail: StringFilter
+  subject: StringFilter
+  body: StringFilter
+  status: NotificationRecordStatusTypeNullableFilter
+  sentAt: DateTimeNullableFilter
+  waitlistEntry: WaitlistEntryWhereInput
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input NotificationRecordKindTypeNullableFilter {
+  equals: NotificationRecordKindType
+  in: [NotificationRecordKindType!]
+  notIn: [NotificationRecordKindType!]
+  not: NotificationRecordKindTypeNullableFilter
+}
+
+input NotificationRecordChannelTypeNullableFilter {
+  equals: NotificationRecordChannelType
+  in: [NotificationRecordChannelType!]
+  notIn: [NotificationRecordChannelType!]
+  not: NotificationRecordChannelTypeNullableFilter
+}
+
+input NotificationRecordStatusTypeNullableFilter {
+  equals: NotificationRecordStatusType
+  in: [NotificationRecordStatusType!]
+  notIn: [NotificationRecordStatusType!]
+  not: NotificationRecordStatusTypeNullableFilter
+}
+
+input NotificationRecordOrderByInput {
+  id: OrderDirection
+  notificationKey: OrderDirection
+  kind: OrderDirection
+  channel: OrderDirection
+  toEmail: OrderDirection
+  subject: OrderDirection
+  body: OrderDirection
+  status: OrderDirection
+  sentAt: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input NotificationRecordUpdateInput {
+  notificationKey: String
+  kind: NotificationRecordKindType
+  channel: NotificationRecordChannelType
+  toEmail: String
+  subject: String
+  body: String
+  payload: JSON
+  status: NotificationRecordStatusType
+  sentAt: DateTime
+  waitlistEntry: WaitlistEntryRelateToOneForUpdateInput
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input NotificationRecordUpdateArgs {
+  where: NotificationRecordWhereUniqueInput!
+  data: NotificationRecordUpdateInput!
+}
+
+input NotificationRecordCreateInput {
+  notificationKey: String
+  kind: NotificationRecordKindType
+  channel: NotificationRecordChannelType
+  toEmail: String
+  subject: String
+  body: String
+  payload: JSON
+  status: NotificationRecordStatusType
+  sentAt: DateTime
+  waitlistEntry: WaitlistEntryRelateToOneForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -3121,6 +3260,129 @@ input RefundCreateInput {
   updatedAt: DateTime
 }
 
+type WaitlistEntry {
+  id: ID!
+  entryKey: String
+  show: Show
+  name: String
+  email: String
+  partySize: Int
+  status: WaitlistEntryStatusType
+  hold: InventoryHold
+  offeredAt: DateTime
+  offerExpiresAt: DateTime
+  notifications(where: NotificationRecordWhereInput! = {}, orderBy: [NotificationRecordOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NotificationRecordWhereUniqueInput): [NotificationRecord!]
+  notificationsCount(where: NotificationRecordWhereInput! = {}): Int
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+enum WaitlistEntryStatusType {
+  waiting
+  offered
+  converted
+  expired
+  cancelled
+}
+
+input WaitlistEntryWhereUniqueInput {
+  id: ID
+  entryKey: String
+  hold: InventoryHoldWhereUniqueInput
+}
+
+input WaitlistEntryWhereInput {
+  AND: [WaitlistEntryWhereInput!]
+  OR: [WaitlistEntryWhereInput!]
+  NOT: [WaitlistEntryWhereInput!]
+  id: IDFilter
+  entryKey: StringFilter
+  show: ShowWhereInput
+  name: StringFilter
+  email: StringFilter
+  partySize: IntNullableFilter
+  status: WaitlistEntryStatusTypeNullableFilter
+  hold: InventoryHoldWhereInput
+  offeredAt: DateTimeNullableFilter
+  offerExpiresAt: DateTimeNullableFilter
+  notifications: NotificationRecordManyRelationFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input WaitlistEntryStatusTypeNullableFilter {
+  equals: WaitlistEntryStatusType
+  in: [WaitlistEntryStatusType!]
+  notIn: [WaitlistEntryStatusType!]
+  not: WaitlistEntryStatusTypeNullableFilter
+}
+
+input NotificationRecordManyRelationFilter {
+  every: NotificationRecordWhereInput
+  some: NotificationRecordWhereInput
+  none: NotificationRecordWhereInput
+}
+
+input WaitlistEntryOrderByInput {
+  id: OrderDirection
+  entryKey: OrderDirection
+  name: OrderDirection
+  email: OrderDirection
+  partySize: OrderDirection
+  status: OrderDirection
+  offeredAt: OrderDirection
+  offerExpiresAt: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input WaitlistEntryUpdateInput {
+  entryKey: String
+  show: ShowRelateToOneForUpdateInput
+  name: String
+  email: String
+  partySize: Int
+  status: WaitlistEntryStatusType
+  hold: InventoryHoldRelateToOneForUpdateInput
+  offeredAt: DateTime
+  offerExpiresAt: DateTime
+  notifications: NotificationRecordRelateToManyForUpdateInput
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input NotificationRecordRelateToManyForUpdateInput {
+  disconnect: [NotificationRecordWhereUniqueInput!]
+  set: [NotificationRecordWhereUniqueInput!]
+  create: [NotificationRecordCreateInput!]
+  connect: [NotificationRecordWhereUniqueInput!]
+}
+
+input WaitlistEntryUpdateArgs {
+  where: WaitlistEntryWhereUniqueInput!
+  data: WaitlistEntryUpdateInput!
+}
+
+input WaitlistEntryCreateInput {
+  entryKey: String
+  show: ShowRelateToOneForCreateInput
+  name: String
+  email: String
+  partySize: Int
+  status: WaitlistEntryStatusType
+  hold: InventoryHoldRelateToOneForCreateInput
+  offeredAt: DateTime
+  offerExpiresAt: DateTime
+  notifications: NotificationRecordRelateToManyForCreateInput
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input NotificationRecordRelateToManyForCreateInput {
+  create: [NotificationRecordCreateInput!]
+  connect: [NotificationRecordWhereUniqueInput!]
+}
+
 type Role {
   id: ID!
   name: String
@@ -3703,6 +3965,8 @@ type Show {
   lineupCount(where: LineupSlotWhereInput! = {}): Int
   signups(where: OpenMicSignupWhereInput! = {}, orderBy: [OpenMicSignupOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: OpenMicSignupWhereUniqueInput): [OpenMicSignup!]
   signupsCount(where: OpenMicSignupWhereInput! = {}): Int
+  waitlist(where: WaitlistEntryWhereInput! = {}, orderBy: [WaitlistEntryOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WaitlistEntryWhereUniqueInput): [WaitlistEntry!]
+  waitlistCount(where: WaitlistEntryWhereInput! = {}): Int
   tiers(where: PriceTierWhereInput! = {}, orderBy: [PriceTierOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: PriceTierWhereUniqueInput): [PriceTier!]
   tiersCount(where: PriceTierWhereInput! = {}): Int
   holds(where: InventoryHoldWhereInput! = {}, orderBy: [InventoryHoldOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: InventoryHoldWhereUniqueInput): [InventoryHold!]
@@ -3768,6 +4032,7 @@ input ShowWhereInput {
   publicNote: StringFilter
   lineup: LineupSlotManyRelationFilter
   signups: OpenMicSignupManyRelationFilter
+  waitlist: WaitlistEntryManyRelationFilter
   tiers: PriceTierManyRelationFilter
   holds: InventoryHoldManyRelationFilter
   orders: TicketOrderManyRelationFilter
@@ -3789,6 +4054,12 @@ input ShowStatusTypeNullableFilter {
   in: [ShowStatusType!]
   notIn: [ShowStatusType!]
   not: ShowStatusTypeNullableFilter
+}
+
+input WaitlistEntryManyRelationFilter {
+  every: WaitlistEntryWhereInput
+  some: WaitlistEntryWhereInput
+  none: WaitlistEntryWhereInput
 }
 
 input PriceTierManyRelationFilter {
@@ -3861,6 +4132,7 @@ input ShowUpdateInput {
   publicNote: String
   lineup: LineupSlotRelateToManyForUpdateInput
   signups: OpenMicSignupRelateToManyForUpdateInput
+  waitlist: WaitlistEntryRelateToManyForUpdateInput
   tiers: PriceTierRelateToManyForUpdateInput
   holds: InventoryHoldRelateToManyForUpdateInput
   orders: TicketOrderRelateToManyForUpdateInput
@@ -3875,6 +4147,13 @@ input ShowUpdateInput {
   occupancies: TableOccupancyRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
+}
+
+input WaitlistEntryRelateToManyForUpdateInput {
+  disconnect: [WaitlistEntryWhereUniqueInput!]
+  set: [WaitlistEntryWhereUniqueInput!]
+  create: [WaitlistEntryCreateInput!]
+  connect: [WaitlistEntryWhereUniqueInput!]
 }
 
 input PriceTierRelateToManyForUpdateInput {
@@ -3947,6 +4226,7 @@ input ShowCreateInput {
   publicNote: String
   lineup: LineupSlotRelateToManyForCreateInput
   signups: OpenMicSignupRelateToManyForCreateInput
+  waitlist: WaitlistEntryRelateToManyForCreateInput
   tiers: PriceTierRelateToManyForCreateInput
   holds: InventoryHoldRelateToManyForCreateInput
   orders: TicketOrderRelateToManyForCreateInput
@@ -3961,6 +4241,11 @@ input ShowCreateInput {
   occupancies: TableOccupancyRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
+}
+
+input WaitlistEntryRelateToManyForCreateInput {
+  create: [WaitlistEntryCreateInput!]
+  connect: [WaitlistEntryWhereUniqueInput!]
 }
 
 input PriceTierRelateToManyForCreateInput {
@@ -5268,6 +5553,12 @@ type Mutation {
   updateOAuthTokens(data: [OAuthTokenUpdateArgs!]!): [OAuthToken]
   deleteOAuthToken(where: OAuthTokenWhereUniqueInput!): OAuthToken
   deleteOAuthTokens(where: [OAuthTokenWhereUniqueInput!]!): [OAuthToken]
+  createNotificationRecord(data: NotificationRecordCreateInput!): NotificationRecord
+  createNotificationRecords(data: [NotificationRecordCreateInput!]!): [NotificationRecord]
+  updateNotificationRecord(where: NotificationRecordWhereUniqueInput!, data: NotificationRecordUpdateInput!): NotificationRecord
+  updateNotificationRecords(data: [NotificationRecordUpdateArgs!]!): [NotificationRecord]
+  deleteNotificationRecord(where: NotificationRecordWhereUniqueInput!): NotificationRecord
+  deleteNotificationRecords(where: [NotificationRecordWhereUniqueInput!]!): [NotificationRecord]
   createOpenMicSignup(data: OpenMicSignupCreateInput!): OpenMicSignup
   createOpenMicSignups(data: [OpenMicSignupCreateInput!]!): [OpenMicSignup]
   updateOpenMicSignup(where: OpenMicSignupWhereUniqueInput!, data: OpenMicSignupUpdateInput!): OpenMicSignup
@@ -5328,6 +5619,12 @@ type Mutation {
   updateRefunds(data: [RefundUpdateArgs!]!): [Refund]
   deleteRefund(where: RefundWhereUniqueInput!): Refund
   deleteRefunds(where: [RefundWhereUniqueInput!]!): [Refund]
+  createWaitlistEntry(data: WaitlistEntryCreateInput!): WaitlistEntry
+  createWaitlistEntries(data: [WaitlistEntryCreateInput!]!): [WaitlistEntry]
+  updateWaitlistEntry(where: WaitlistEntryWhereUniqueInput!, data: WaitlistEntryUpdateInput!): WaitlistEntry
+  updateWaitlistEntries(data: [WaitlistEntryUpdateArgs!]!): [WaitlistEntry]
+  deleteWaitlistEntry(where: WaitlistEntryWhereUniqueInput!): WaitlistEntry
+  deleteWaitlistEntries(where: [WaitlistEntryWhereUniqueInput!]!): [WaitlistEntry]
   createRole(data: RoleCreateInput!): Role
   createRoles(data: [RoleCreateInput!]!): [Role]
   updateRole(where: RoleWhereUniqueInput!, data: RoleUpdateInput!): Role
@@ -5436,6 +5733,9 @@ type Mutation {
   completeTicketCheckout(orderNumber: String!, orderSecret: String!): JSON
   abandonTicketCheckout(orderNumber: String!, orderSecret: String!): JSON
   cancelMyTicketOrder(orderNumber: String!, email: String!, idempotencyKey: String!): JSON
+  joinWaitlist(showId: ID!, name: String!, email: String!, partySize: Int!, idempotencyKey: String!): JSON
+  offerWaitlist(showId: ID!, idempotencyKey: String!): JSON
+  removeWaitlistEntry(entryId: ID!, reason: String, idempotencyKey: String!): JSON
   openMicSignup(showId: ID!, name: String!, email: String!, comedianId: ID, idempotencyKey: String!): JSON
   generateShowsFromTemplate(templateId: ID!, from: String, idempotencyKey: String!): JSON
   publishShow(showId: ID!, nextStatus: String, idempotencyKey: String!): JSON
@@ -5459,6 +5759,7 @@ type Mutation {
   undoCheckIn(ticketId: ID!, showId: ID!, reason: String!, idempotencyKey: String!): JSON
   setSignupStatus(signupId: ID!, status: String!, idempotencyKey: String!): JSON
   updateSlotStatus(slotId: ID!, status: String!, idempotencyKey: String!): JSON
+  setSalesWindow(tierId: ID!, salesStartAt: String, salesEndAt: String, idempotencyKey: String!): JSON
   closeShow(showId: ID!, idempotencyKey: String!): JSON
   closeRun(runId: ID!, idempotencyKey: String!): JSON
   approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
@@ -5543,6 +5844,9 @@ type Query {
   oAuthToken(where: OAuthTokenWhereUniqueInput!): OAuthToken
   oAuthTokens(where: OAuthTokenWhereInput! = {}, orderBy: [OAuthTokenOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: OAuthTokenWhereUniqueInput): [OAuthToken!]
   oAuthTokensCount(where: OAuthTokenWhereInput! = {}): Int
+  notificationRecord(where: NotificationRecordWhereUniqueInput!): NotificationRecord
+  notificationRecords(where: NotificationRecordWhereInput! = {}, orderBy: [NotificationRecordOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: NotificationRecordWhereUniqueInput): [NotificationRecord!]
+  notificationRecordsCount(where: NotificationRecordWhereInput! = {}): Int
   openMicSignup(where: OpenMicSignupWhereUniqueInput!): OpenMicSignup
   openMicSignups(where: OpenMicSignupWhereInput! = {}, orderBy: [OpenMicSignupOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: OpenMicSignupWhereUniqueInput): [OpenMicSignup!]
   openMicSignupsCount(where: OpenMicSignupWhereInput! = {}): Int
@@ -5573,6 +5877,9 @@ type Query {
   refund(where: RefundWhereUniqueInput!): Refund
   refunds(where: RefundWhereInput! = {}, orderBy: [RefundOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: RefundWhereUniqueInput): [Refund!]
   refundsCount(where: RefundWhereInput! = {}): Int
+  waitlistEntry(where: WaitlistEntryWhereUniqueInput!): WaitlistEntry
+  waitlistEntries(where: WaitlistEntryWhereInput! = {}, orderBy: [WaitlistEntryOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: WaitlistEntryWhereUniqueInput): [WaitlistEntry!]
+  waitlistEntriesCount(where: WaitlistEntryWhereInput! = {}): Int
   role(where: RoleWhereUniqueInput!): Role
   roles(where: RoleWhereInput! = {}, orderBy: [RoleOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: RoleWhereUniqueInput): [Role!]
   rolesCount(where: RoleWhereInput! = {}): Int
@@ -5627,6 +5934,7 @@ type Query {
   redirectToInit: Boolean
   showsOnSale: JSON
   showAvailability(showId: ID!): JSON
+  waitlistOffer(holdKey: String!, cartToken: String!): JSON
   lookupTicketOrder(email: String!, orderNumber: String!): JSON
   ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
   openMicShows: JSON
