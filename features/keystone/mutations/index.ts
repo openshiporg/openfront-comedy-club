@@ -45,6 +45,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         showAvailability(showId: ID!): JSON
         waitlistOffer(holdKey: String!, cartToken: String!): JSON
         slotInvite(slotId: ID!, token: String!): JSON
+        holderTicket(ticketCode: String!, token: String!): JSON
         lookupTicketOrder(email: String!, orderNumber: String!): JSON
         ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
         openMicShows: JSON
@@ -116,6 +117,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         showAvailability: op(tickets.showAvailability),
         waitlistOffer: op(waitlist.waitlistOffer),
         slotInvite: op(slotLink.slotInvite),
+        holderTicket: op(transfer.holderTicket),
         lookupTicketOrder: op(tickets.lookupTicketOrder),
         ticketOrderConfirmation: op(checkout.ticketOrderConfirmation),
         openMicShows: op(tickets.openMicShows),

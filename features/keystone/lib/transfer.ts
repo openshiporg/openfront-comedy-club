@@ -24,9 +24,22 @@ export function transferDecision(i: TransferInput): TransferDecision {
   return { ok: true };
 }
 
-export function transferMessage(next: { name: string }, show: { title: string; startsAt: Date }, ticketCode: string, token: string, from: string, when: string) {
+export function transferMessage(next: { name: string }, show: { title: string; startsAt: Date }, ticketCode: string, link: string, from: string, when: string) {
   return {
     subject: `A ticket for ${show.title} was transferred to you`,
-    body: `Hi ${next.name}, ${from || 'a friend'} transferred a ticket for ${show.title} (${when}) to you. Your ticket code is ${ticketCode}. Show it at the door; the scan token is ${token}. The previous ticket no longer works.`,
+    body: `Hi ${next.name}, ${from || 'a friend'} transferred a ticket for ${show.title} (${when}) to you. Your ticket code is ${ticketCode}. Open your ticket here and show it at the door: ${link}\nThe previous ticket no longer works.`,
   };
+}
+
+export type HolderView = { ticketCode: string; status: string; holderName: string; transferredTo: boolean; history: { name: string; at: Date | null }[] };
+
+/** Earlier holders, oldest first, names only. `chain` runs oldest to newest and ends with the ticket being viewed; an entry's time is when the NEXT ticket was issued, i.e. the hand-off. */
+export function buildHistory(chain: { holderName: string; createdAt: Date | null }[]) {
+  return chain.slice(0, -1).map((t, i) => ({ name: t.holderName || 'Original buyer', at: chain[i + 1].createdAt }));
+}
+
+/** What a ticket page may reveal for a given ticket state. Void tickets only ever say they were transferred. */
+export function holderAccess(ticket: { status: string }, hasSuccessor: boolean): 'full' | 'transferred' | 'refused' {
+  if (ticket.status === 'void') return hasSuccessor ? 'transferred' : 'refused';
+  return 'full';
 }

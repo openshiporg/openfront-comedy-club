@@ -19,6 +19,8 @@ const RESPOND = `mutation($slotId: ID!, $token: String!, $response: String!, $k:
 
 const TRANSFER = `mutation($n: String!, $s: String!, $t: String!, $name: String!, $email: String!, $k: String!) { transferTicket(orderNumber: $n, orderSecret: $s, ticketCode: $t, name: $name, email: $email, idempotencyKey: $k) }`;
 
+const HOLDER = `query($c: String!, $t: String!) { holderTicket(ticketCode: $c, token: $t) }`;
+
 async function unwrap(p: ReturnType<typeof gqlCall>, key: string) { const r = await p; return r.ok ? { ok: true as const, data: (r.data as any)[key] } : { ok: false as const, error: r.error }; }
 
 export async function createHold(v: { showId: string; tierId: string; quantity: number; tableIds?: string[] }) { return unwrap(gqlCall(HOLD, { ...v, k: randomUUID() }), 'createTicketHold'); }
@@ -33,3 +35,4 @@ export async function claimWaitlistOffer(holdKey: string, cartToken: string) { r
 export async function loadSlotInvite(slotId: string, token: string) { return unwrap(gqlCall(INVITE, { slotId, token }), 'slotInvite'); }
 export async function answerSlot(slotId: string, token: string, response: 'confirm' | 'decline') { return unwrap(gqlCall(RESPOND, { slotId, token, response, k: randomUUID() }), 'respondToSlot'); }
 export async function transferTicket(v: { orderNumber: string; orderSecret: string; ticketCode: string; name: string; email: string }) { return unwrap(gqlCall(TRANSFER, { n: v.orderNumber, s: v.orderSecret, t: v.ticketCode, name: v.name, email: v.email, k: randomUUID() }), 'transferTicket'); }
+export async function loadHolderTicket(ticketCode: string, token: string) { return unwrap(gqlCall(HOLDER, { c: ticketCode, t: token }), 'holderTicket'); }
