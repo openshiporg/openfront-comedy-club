@@ -10,6 +10,8 @@ export const Show = domainList({
   room: relationship({ref:'Room.shows'}),
   template: relationship({ref:'ShowTemplate.shows'}),
   run: relationship({ref:'Run.shows'}),
+  group: relationship({ref:'ShowGroup.shows'}),
+  groupSources: relationship({ref:'ShowGroup.sourceShow',many:true}),
   title: text(),
   occurrenceKey: unique(),
   startsAt: timestamp(),

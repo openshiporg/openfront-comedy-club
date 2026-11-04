@@ -14,3 +14,9 @@ export async function exportPayStatement(comedianId: string, year: number) {
   if (!res.success) return { ok: false as const, error: res.error || 'Export failed' };
   return { ok: true as const, data: (res.data as any).exportPayStatement as { fileName: string; rows: number; paidCents: number; csv: string } };
 }
+
+export async function previewSeries(v: { sourceShowId: string; from: string; count: number; everyDays: number; startTime?: string; copyLineup: boolean }) {
+  const res = await keystoneClient(`query($s: ID!, $f: String, $c: Int, $e: Int, $t: String, $l: Boolean) { previewShowSeries(sourceShowId: $s, from: $f, count: $c, everyDays: $e, startTime: $t, copyLineup: $l) }`, { s: v.sourceShowId, f: v.from, c: v.count, e: v.everyDays, t: v.startTime || undefined, l: v.copyLineup });
+  if (!res.success) return { ok: false as const, error: res.error || 'Preview failed' };
+  return { ok: true as const, data: (res.data as any).previewShowSeries as { title: string; timezone: string; rows: { day: string; time: string; problem: string | null }[]; problems: number; tiers: number; lineupSlots: number } };
+}

@@ -7,6 +7,7 @@ import { ActionButton } from '../../components/ActionButton';
 import { CheckPanel } from '../components/CheckPanel';
 import { CompForm } from '../components/CompForm';
 import { SalesWindowForm } from '../components/SalesWindowForm';
+import { SeriesPanel } from '../components/SeriesPanel';
 import { saleState } from '../../../keystone/lib/saleWindow';
 
 export default async function ShowDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -15,7 +16,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
   const { show } = await q<any>(
     `query($id: ID!) { show(where: { id: $id }) {
       id title startsAt doorsAt status capacity ageRestriction soldCount heldCount checkedInCount remaining isOpenMic publicNote
-      room { name } template { title }
+      room { name } template { title } group { id name shows { id startsAt status } }
       tiers(orderBy: { priceCents: desc }) { id name priceCents feeCents capacity sold held status salesStartAt salesEndAt }
       lineup(orderBy: { position: asc }) { id role position setMinutes feeCents status comedian { stageName email } }
       notifications(where: { kind: { in: [show_reminder, lineup_confirmation] } }, orderBy: { createdAt: desc }, take: 30) { id kind status toEmail sendAfter sentAt }
@@ -79,6 +80,12 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         </Section>
       ) : null}
 
+      {show.room && (show.status !== 'cancelled' || show.group) ? (
+        <Section title="Repeat or series">
+          <SeriesPanel canRepeat={show.status !== 'cancelled'} showId={show.id} groupId={show.group?.id || null} groupName={show.group?.name || null} startTime={new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(show.startsAt))}
+            futureCount={show.group ? show.group.shows.filter((x: any) => x.startsAt && new Date(x.startsAt) > new Date() && !['cancelled', 'completed', 'settled', 'in_progress', 'doors_open'].includes(x.status)).length : 0} />
+        </Section>
+      ) : null}
       <Section title="Ticket tiers">
         {show.tiers.length ? show.tiers.map((t: any) => (
           <Row key={t.id}>

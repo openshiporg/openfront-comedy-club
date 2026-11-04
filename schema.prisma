@@ -729,6 +729,9 @@ model Show {
   templateId     String?              @map("template")
   run            Run?                 @relation("Show_run", fields: [runId], references: [id])
   runId          String?              @map("run")
+  group          ShowGroup?           @relation("Show_group", fields: [groupId], references: [id])
+  groupId        String?              @map("group")
+  groupSources   ShowGroup[]          @relation("ShowGroup_sourceShow")
   title          String               @default("")
   occurrenceKey  String               @unique @default("")
   startsAt       DateTime?
@@ -763,6 +766,7 @@ model Show {
   @@index([roomId])
   @@index([templateId])
   @@index([runId])
+  @@index([groupId])
 }
 
 model ShowSettlement {
@@ -805,6 +809,19 @@ model ShowTemplate {
   updatedAt             DateTime    @default(now()) @updatedAt
 
   @@index([roomId])
+}
+
+model ShowGroup {
+  id           String   @id @default(cuid())
+  name         String   @default("")
+  groupKey     String   @unique @default("")
+  sourceShow   Show?    @relation("ShowGroup_sourceShow", fields: [sourceShowId], references: [id])
+  sourceShowId String?  @map("sourceShow")
+  shows        Show[]   @relation("Show_group")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@index([sourceShowId])
 }
 
 model Table {

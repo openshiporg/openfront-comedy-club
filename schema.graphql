@@ -4055,6 +4055,9 @@ type Show {
   room: Room
   template: ShowTemplate
   run: Run
+  group: ShowGroup
+  groupSources(where: ShowGroupWhereInput! = {}, orderBy: [ShowGroupOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShowGroupWhereUniqueInput): [ShowGroup!]
+  groupSourcesCount(where: ShowGroupWhereInput! = {}): Int
   title: String
   occurrenceKey: String
   startsAt: DateTime
@@ -4126,6 +4129,8 @@ input ShowWhereInput {
   room: RoomWhereInput
   template: ShowTemplateWhereInput
   run: RunWhereInput
+  group: ShowGroupWhereInput
+  groupSources: ShowGroupManyRelationFilter
   title: StringFilter
   occurrenceKey: StringFilter
   startsAt: DateTimeNullableFilter
@@ -4155,6 +4160,12 @@ input ShowWhereInput {
   occupancies: TableOccupancyManyRelationFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
+}
+
+input ShowGroupManyRelationFilter {
+  every: ShowGroupWhereInput
+  some: ShowGroupWhereInput
+  none: ShowGroupWhereInput
 }
 
 input ShowStatusTypeNullableFilter {
@@ -4227,6 +4238,8 @@ input ShowUpdateInput {
   room: RoomRelateToOneForUpdateInput
   template: ShowTemplateRelateToOneForUpdateInput
   run: RunRelateToOneForUpdateInput
+  group: ShowGroupRelateToOneForUpdateInput
+  groupSources: ShowGroupRelateToManyForUpdateInput
   title: String
   occurrenceKey: String
   startsAt: DateTime
@@ -4256,6 +4269,19 @@ input ShowUpdateInput {
   occupancies: TableOccupancyRelateToManyForUpdateInput
   createdAt: DateTime
   updatedAt: DateTime
+}
+
+input ShowGroupRelateToOneForUpdateInput {
+  create: ShowGroupCreateInput
+  connect: ShowGroupWhereUniqueInput
+  disconnect: Boolean
+}
+
+input ShowGroupRelateToManyForUpdateInput {
+  disconnect: [ShowGroupWhereUniqueInput!]
+  set: [ShowGroupWhereUniqueInput!]
+  create: [ShowGroupCreateInput!]
+  connect: [ShowGroupWhereUniqueInput!]
 }
 
 input WaitlistEntryRelateToManyForUpdateInput {
@@ -4322,6 +4348,8 @@ input ShowCreateInput {
   room: RoomRelateToOneForCreateInput
   template: ShowTemplateRelateToOneForCreateInput
   run: RunRelateToOneForCreateInput
+  group: ShowGroupRelateToOneForCreateInput
+  groupSources: ShowGroupRelateToManyForCreateInput
   title: String
   occurrenceKey: String
   startsAt: DateTime
@@ -4351,6 +4379,16 @@ input ShowCreateInput {
   occupancies: TableOccupancyRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
+}
+
+input ShowGroupRelateToOneForCreateInput {
+  create: ShowGroupCreateInput
+  connect: ShowGroupWhereUniqueInput
+}
+
+input ShowGroupRelateToManyForCreateInput {
+  create: [ShowGroupCreateInput!]
+  connect: [ShowGroupWhereUniqueInput!]
 }
 
 input WaitlistEntryRelateToManyForCreateInput {
@@ -4599,6 +4637,66 @@ input ShowTemplateCreateInput {
   isOpenMic: Boolean
   shows: ShowRelateToManyForCreateInput
   promos: PromoCodeRelateToManyForCreateInput
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type ShowGroup {
+  id: ID!
+  name: String
+  groupKey: String
+  sourceShow: Show
+  shows(where: ShowWhereInput! = {}, orderBy: [ShowOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShowWhereUniqueInput): [Show!]
+  showsCount(where: ShowWhereInput! = {}): Int
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input ShowGroupWhereUniqueInput {
+  id: ID
+  groupKey: String
+}
+
+input ShowGroupWhereInput {
+  AND: [ShowGroupWhereInput!]
+  OR: [ShowGroupWhereInput!]
+  NOT: [ShowGroupWhereInput!]
+  id: IDFilter
+  name: StringFilter
+  groupKey: StringFilter
+  sourceShow: ShowWhereInput
+  shows: ShowManyRelationFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+}
+
+input ShowGroupOrderByInput {
+  id: OrderDirection
+  name: OrderDirection
+  groupKey: OrderDirection
+  createdAt: OrderDirection
+  updatedAt: OrderDirection
+}
+
+input ShowGroupUpdateInput {
+  name: String
+  groupKey: String
+  sourceShow: ShowRelateToOneForUpdateInput
+  shows: ShowRelateToManyForUpdateInput
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input ShowGroupUpdateArgs {
+  where: ShowGroupWhereUniqueInput!
+  data: ShowGroupUpdateInput!
+}
+
+input ShowGroupCreateInput {
+  name: String
+  groupKey: String
+  sourceShow: ShowRelateToOneForCreateInput
+  shows: ShowRelateToManyForCreateInput
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -5799,6 +5897,12 @@ type Mutation {
   updateShowTemplates(data: [ShowTemplateUpdateArgs!]!): [ShowTemplate]
   deleteShowTemplate(where: ShowTemplateWhereUniqueInput!): ShowTemplate
   deleteShowTemplates(where: [ShowTemplateWhereUniqueInput!]!): [ShowTemplate]
+  createShowGroup(data: ShowGroupCreateInput!): ShowGroup
+  createShowGroups(data: [ShowGroupCreateInput!]!): [ShowGroup]
+  updateShowGroup(where: ShowGroupWhereUniqueInput!, data: ShowGroupUpdateInput!): ShowGroup
+  updateShowGroups(data: [ShowGroupUpdateArgs!]!): [ShowGroup]
+  deleteShowGroup(where: ShowGroupWhereUniqueInput!): ShowGroup
+  deleteShowGroups(where: [ShowGroupWhereUniqueInput!]!): [ShowGroup]
   createTable(data: TableCreateInput!): Table
   createTables(data: [TableCreateInput!]!): [Table]
   updateTable(where: TableWhereUniqueInput!, data: TableUpdateInput!): Table
@@ -5891,6 +5995,9 @@ type Mutation {
   setSalesWindow(tierId: ID!, salesStartAt: String, salesEndAt: String, idempotencyKey: String!): JSON
   exportShowReport(from: String!, to: String!, idempotencyKey: String!): JSON
   exportPayStatement(comedianId: ID!, year: Int!, idempotencyKey: String!): JSON
+  createShowSeries(sourceShowId: ID!, name: String, dates: [String!], from: String, count: Int, everyDays: Int, startTime: String, copyLineup: Boolean, idempotencyKey: String!): JSON
+  editShowSeries(groupId: ID!, edit: JSON!, idempotencyKey: String!): JSON
+  cancelShowSeries(groupId: ID!, reason: String!, idempotencyKey: String!): JSON
   closeShow(showId: ID!, idempotencyKey: String!): JSON
   closeRun(runId: ID!, idempotencyKey: String!): JSON
   approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
@@ -6040,6 +6147,9 @@ type Query {
   showTemplate(where: ShowTemplateWhereUniqueInput!): ShowTemplate
   showTemplates(where: ShowTemplateWhereInput! = {}, orderBy: [ShowTemplateOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShowTemplateWhereUniqueInput): [ShowTemplate!]
   showTemplatesCount(where: ShowTemplateWhereInput! = {}): Int
+  showGroup(where: ShowGroupWhereUniqueInput!): ShowGroup
+  showGroups(where: ShowGroupWhereInput! = {}, orderBy: [ShowGroupOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShowGroupWhereUniqueInput): [ShowGroup!]
+  showGroupsCount(where: ShowGroupWhereInput! = {}): Int
   table(where: TableWhereUniqueInput!): Table
   tables(where: TableWhereInput! = {}, orderBy: [TableOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: TableWhereUniqueInput): [Table!]
   tablesCount(where: TableWhereInput! = {}): Int
@@ -6078,6 +6188,7 @@ type Query {
   openMicShows: JSON
   showReport(from: String!, to: String!): JSON
   payStatement(comedianId: ID!, year: Int!): JSON
+  previewShowSeries(sourceShowId: ID!, dates: [String!], from: String, count: Int, everyDays: Int, startTime: String, copyLineup: Boolean): JSON
   matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
 }
 

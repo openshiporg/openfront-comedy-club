@@ -33,6 +33,7 @@ import { Section } from './Section';
 import { Show } from './Show';
 import { ShowSettlement } from './ShowSettlement';
 import { ShowTemplate } from './ShowTemplate';
+import { ShowGroup } from './ShowGroup';
 import { Table } from './Table';
 import { TableOccupancy } from './TableOccupancy';
 import { Ticket } from './Ticket';
@@ -78,6 +79,7 @@ export const models = {
   Show,
   ShowSettlement,
   ShowTemplate,
+  ShowGroup,
   Table,
   TableOccupancy,
   Ticket,
