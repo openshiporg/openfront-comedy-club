@@ -50,18 +50,28 @@ export function buildShowRows(shows: ShowInput[], tickets: TicketInput[]): ShowR
   });
 }
 
-export function totals(rows: ShowRow[]) {
+/**
+ * Net = settled nights' net minus run fees. A show settlement never contains the headliner's run fee
+ * (closeShow pays that headliner only per-show bonuses; closeRun pays the fee once, as its own payout),
+ * so run fees are a separate line that is subtracted here, once.
+ */
+export function totals(rows: ShowRow[], runFeeCents = 0) {
   const sum = (f: (r: ShowRow) => number) => rows.reduce((n, r) => n + f(r), 0);
-  return { shows: rows.length, settledShows: rows.filter((r) => r.settled).length, sold: sum((r) => r.sold), comp: sum((r) => r.comp), checkedIn: sum((r) => r.checkedIn), noShow: sum((r) => r.noShow || 0), ticketCents: sum((r) => r.ticketCents), fbCents: sum((r) => r.fbCents), talentCents: sum((r) => r.talentCents), netCents: sum((r) => r.netCents) };
+  const nightsNetCents = sum((r) => r.netCents);
+  return { shows: rows.length, settledShows: rows.filter((r) => r.settled).length, sold: sum((r) => r.sold), comp: sum((r) => r.comp), checkedIn: sum((r) => r.checkedIn), noShow: sum((r) => r.noShow || 0), ticketCents: sum((r) => r.ticketCents), fbCents: sum((r) => r.fbCents), talentCents: sum((r) => r.talentCents), runFeeCents, nightsNetCents, netCents: nightsNetCents - runFeeCents };
 }
 
-export type RunInput = { id: string; headliner: string; shows: number; runFeeCents: number; paidRunFeeCents: number };
-/** A run's net is its settled nights minus the one run-level fee payout that closeRun creates. */
-export function runRollups(rows: ShowRow[], runs: RunInput[]) {
+export type RunInput = { id: string; headliner: string; payoutCents: number; lastShowAt: Date | null };
+/** A run's fee belongs to the period containing its last show, so it is counted exactly once across periods. */
+export function runFeeInPeriod(run: RunInput, start: Date, endExclusive: Date) {
+  return run.lastShowAt && run.lastShowAt >= start && run.lastShowAt < endExclusive ? run.payoutCents : 0;
+}
+export function runRollups(rows: ShowRow[], runs: RunInput[], start: Date, endExclusive: Date) {
   return runs.map((r) => {
     const mine = rows.filter((x) => x.runId === r.id);
-    const net = mine.reduce((n, x) => n + x.netCents, 0);
-    return { id: r.id, headliner: r.headliner, shows: mine.length, settled: mine.filter((x) => x.settled).length, nightsNetCents: net, runFeeCents: r.paidRunFeeCents, netCents: net - r.paidRunFeeCents };
+    const nights = mine.reduce((n, x) => n + x.netCents, 0);
+    const fee = runFeeInPeriod(r, start, endExclusive);
+    return { id: r.id, headliner: r.headliner, shows: mine.length, settled: mine.filter((x) => x.settled).length, nightsNetCents: nights, runFeeCents: fee, feeInLaterPeriod: r.payoutCents > 0 && fee === 0, netCents: nights - fee, lastShowAt: r.lastShowAt };
   });
 }
 
@@ -69,9 +79,11 @@ export function runRollups(rows: ShowRow[], runs: RunInput[]) {
 export function csvText(v: unknown) { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[",\n\r]/.test(s) ? '"' + s.replaceAll('"', '""') + '"' : s; }
 export const centsText = (c: number) => (c < 0 ? '-' : '') + Math.floor(Math.abs(c) / 100) + '.' + String(Math.abs(c) % 100).padStart(2, '0');
 
-export function reportCsv(rows: ShowRow[], tz: string) {
+export function reportCsv(rows: ShowRow[], tz: string, runFees: { headliner: string; at: Date; cents: number }[] = []) {
   const head = ['date', 'show', 'status', 'tickets_sold', 'comps', 'checked_in', 'no_shows', 'settled', 'ticket_revenue', 'food_beverage_revenue', 'talent_cost', 'net'];
   const day = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
   const lines = rows.map((r) => [day(r.startsAt), csvText(r.title), csvText(r.status), r.sold, r.comp, r.checkedIn, r.noShow ?? '', r.settled ? 'yes' : 'no', ...(r.settled ? [r.ticketCents, r.fbCents, r.talentCents, r.netCents].map(centsText) : ['', '', '', ''])].join(','));
+  // Run fees are their own rows so the net column sums to the report's net.
+  for (const f of runFees.filter((x) => x.cents > 0)) lines.push([day(f.at), csvText(`Run fee: ${f.headliner}`), 'run_fee', '', '', '', '', '', '', '', centsText(f.cents), centsText(-f.cents)].join(','));
   return [head.join(','), ...lines].join('\r\n') + '\r\n';
 }

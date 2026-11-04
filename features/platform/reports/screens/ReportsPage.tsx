@@ -2,7 +2,7 @@ import { q, venueTimezone } from '../../lib/server';
 import { money, when } from '../../lib/format';
 import { Page, Section, Row, Empty, Stat, Meta } from '../../components/ui';
 import { ExportReport } from '../components/ExportReport';
-import { pillClass } from '../../components/ActionButton';
+import { Button } from '@/components/ui/button';
 
 const ymd = (d: Date, tz: string) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
 const num = 'shrink-0 whitespace-nowrap text-right font-mono text-xs tabular-nums';
@@ -20,7 +20,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
       <form method="get" className="flex flex-wrap items-end gap-3">
         <label className="text-sm">From<input type="date" name="from" defaultValue={from} className="mt-1 block h-10 rounded-md border bg-background px-3 text-sm" /></label>
         <label className="text-sm">To<input type="date" name="to" defaultValue={to} className="mt-1 block h-10 rounded-md border bg-background px-3 text-sm" /></label>
-        <button type="submit" className={pillClass + ' h-10 border'}>Run report</button>
+        <Button type="submit" variant="outline">Run report</Button>
       </form>
       {error ? <p role="alert" className="text-sm text-red-600">{error}</p> : null}
       {report && t ? (
@@ -33,14 +33,15 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
             <Stat name="Ticket revenue" value={money(t.ticketCents)} />
             <Stat name="Food & drink" value={money(t.fbCents)} />
             <Stat name="Talent cost" value={money(t.talentCents)} />
+            <Stat name="Run fees" value={money(t.runFeeCents)} />
           </div>
-          <p className="text-xs text-muted-foreground">Revenue, talent cost and net count settled nights only. Attendance counts every show in the period.</p>
+          <p className="text-xs text-muted-foreground">Revenue, talent cost and net count settled nights only; attendance counts every show. Talent cost is the per-night pay. A headliner run fee is paid once for the whole run, never inside a night, so it is its own line, subtracted in the period holding the run's last show. Net = tickets + food &amp; drink − talent cost − run fees.</p>
           <ExportReport from={from} to={to} />
           {report.runs.length ? (
             <Section title="Headliner runs">
               {report.runs.map((r: any) => (
                 <Row key={r.id} className="flex-nowrap items-start gap-x-3">
-                  <span className="min-w-0 flex-1"><span className="font-medium">{r.headliner}</span> <Meta>{r.settled} of {r.shows} nights settled · run fee {money(r.runFeeCents)}</Meta></span>
+                  <span className="min-w-0 flex-1"><span className="font-medium">{r.headliner}</span> <Meta>{r.settled} of {r.shows} nights settled · nights {money(r.nightsNetCents)} · {r.runFeeCents ? `run fee ${money(r.runFeeCents)}` : r.feeInLaterPeriod ? 'run fee counted in a later period' : 'no run fee'}</Meta></span>
                   <span className={num}>{money(r.netCents)}</span>
                 </Row>
               ))}
