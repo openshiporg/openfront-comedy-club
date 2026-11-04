@@ -34,7 +34,11 @@ export async function checkInTicket(_:any,a:any,c:any) {requirePermission(c,'can
  const ticket=await tx.ticket.findFirst({where:{OR:[{ticketCode:a.tokenOrCode},{tokenHash:hash(a.tokenOrCode)}]}});if(!ticket) throw new Error('Ticket not found');
  const result=ticket.showId!==a.showId?'wrong_show':ticket.status==='checked_in'?'duplicate':ticket.status!=='valid'?'void':'admitted';
  let effective=result;if(result==='admitted'){const cas=await tx.ticket.updateMany({where:{id:ticket.id,status:'valid'},data:{status:'checked_in'}});if(cas.count!==1) effective='duplicate';}
- const scan=await tx.checkIn.create({data:{ticketId:ticket.id,showId:a.showId,scannedById:c.session.itemId,at:effectiveScanTime(a.scannedAt,new Date()),method:a.method||'manual',result:effective}});await audit(tx,c,effective,'Ticket',ticket.id,null,{status:effective});return scan;
+ const scan=await tx.checkIn.create({data:{ticketId:ticket.id,showId:a.showId,scannedById:c.session.itemId,at:effectiveScanTime(a.scannedAt,new Date()),method:a.method||'manual',result:effective}});await audit(tx,c,effective,'Ticket',ticket.id,null,{status:effective});
+ // a duplicate tells staff who admitted the ticket first and when, so a late replay is never a silent clear
+ if(effective!=='duplicate') return scan;
+ const first=await tx.checkIn.findFirst({where:{ticketId:ticket.id,result:'admitted',id:{not:scan.id}},orderBy:{at:'asc'},include:{scannedBy:{select:{name:true}}}});
+ return {...scan,admittedAt:first?.at||null,admittedBy:first?.scannedBy?.name||null,admittedMethod:first?.method||null,holderName:ticket.holderName||null};
 },'show:'+a.showId);}
 export async function seatParty(_:any,a:any,c:any) {requirePermission(c,'canManageDoor');return command(c,'seatParty',a,async tx=>{
  const order=await tx.ticketOrder.findUnique({where:{id:a.orderId},include:{show:true,tableAssignment:true,hold:true}});if(!order||!['paid','comp','partially_refunded'].includes(order.status)||order.tableAssignment) throw new Error('Party unavailable');

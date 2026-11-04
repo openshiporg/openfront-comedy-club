@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { signOut } from "@/features/dashboard/actions/auth";
+import { clearDoorQueues } from "@/features/platform/tonight/lib/doorStorage";
 
 interface User {
   id: string;
@@ -132,7 +133,7 @@ export function UserProfileClient({ user }: UserProfileClientProps) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <form action={signOut}>
+            <form action={signOut} onSubmit={() => { clearDoorQueues(); }}>
               <button type="submit" className="flex items-center gap-3 w-full px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
                 <LogOut className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">Log out</span>

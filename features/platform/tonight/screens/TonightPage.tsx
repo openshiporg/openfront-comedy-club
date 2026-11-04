@@ -64,7 +64,7 @@ export default async function TonightPage({ searchParams }: { searchParams?: Pro
         {show.status === 'in_progress' ? <ActionButton op="publishShow" vars={{ showId: show.id, nextStatus: 'completed' }}>End show</ActionButton> : null}
       </div>
 
-      <Section title="Door"><DoorScanner showId={show.id} /></Section>
+      <Section title="Door"><DoorScanner showId={show.id} startsAt={show.startsAt} endsAt={show.endsAt} /></Section>
 
       <Section title="Guest list">
         <GuestSearch showId={show.id} q={term} />
