@@ -18,10 +18,12 @@ export default async function PayoutsPage({ searchParams }: { searchParams?: Pro
       <Tabs active={tab} items={TABS.map((t) => ({ key: t, label: t, href: `/dashboard/platform/payouts?tab=${t}` }))} />
       <div>
         {comedianPayouts.length ? comedianPayouts.map((p: any) => (
-          <Row key={p.id}>
-            <span className="min-w-0"><span className="font-medium">{p.comedian?.stageName}</span> <Meta>{p.show ? `${p.show.title} · ${when(p.show.startsAt, tz, 'day')}` : p.run ? `Run fee · ${p.run.notes || ''} · ${when(p.run.startAt, tz, 'day')}` : 'Manual payout'} · {p.method}{p.reference ? ` ${p.reference}` : ''}</Meta></span>
-            <span className="font-mono text-xs">{money(p.amountCents)}</span>
-            <PayoutActions id={p.id} status={p.status} />
+          <Row key={p.id} className="flex-nowrap items-start gap-x-3">
+            <div className="min-w-0 flex-1 space-y-2">
+  <span className="block min-w-0"><span className="font-medium">{p.comedian?.stageName}</span> <Meta>{p.show ? `${p.show.title} · ${when(p.show.startsAt, tz, 'day')}` : p.run ? `Run fee · ${p.run.notes || ''} · ${when(p.run.startAt, tz, 'day')}` : 'Manual payout'} · {p.method}{p.reference ? ` ${p.reference}` : ''}</Meta></span>
+              <PayoutActions id={p.id} status={p.status} />
+            </div>
+            <span className="shrink-0 whitespace-nowrap text-right font-mono text-xs tabular-nums">{money(p.amountCents)}</span>
           </Row>
         )) : <Empty>No payouts here.</Empty>}
       </div>
