@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LayoutEditor } from '../components/LayoutEditor';
 import { q } from '../../lib/server';
 import { money } from '../../lib/format';
 import { Page, Section, Row, Status, Meta } from '../../components/ui';
@@ -20,7 +21,13 @@ export default async function FloorMenuPage() {
               </div>
             </div>
           ))}
-          {!r.sections.length ? <Meta>General admission, no tables.</Meta> : null}
+          {r.seatingMode === 'tables' ? (
+            <details className="mt-2 border-t pt-3">
+              <summary className="cursor-pointer text-sm underline underline-offset-4">Edit layout</summary>
+              <div className="mt-3"><LayoutEditor roomId={r.id} sections={r.sections.map((s: any) => ({ id: s.id, name: s.name, tables: s.tables.map((t: any) => ({ id: t.id, label: t.label, seats: t.seats, shape: t.shape || 'round' })) }))} /></div>
+            </details>
+          ) : null}
+          {!r.sections.length && r.seatingMode !== 'tables' ? <Meta>General admission, no tables.</Meta> : null}
         </Section>
       ))}
       <Section title="Menu" aside={<Link className="text-sm underline underline-offset-4" href="/dashboard/menu-items/create">Add item</Link>}>

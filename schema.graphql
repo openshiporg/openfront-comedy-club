@@ -5995,6 +5995,7 @@ type Mutation {
   setSalesWindow(tierId: ID!, salesStartAt: String, salesEndAt: String, idempotencyKey: String!): JSON
   exportShowReport(from: String!, to: String!, idempotencyKey: String!): JSON
   exportPayStatement(comedianId: ID!, year: Int!, idempotencyKey: String!): JSON
+  editRoomLayout(roomId: ID!, changes: JSON!, reason: String, idempotencyKey: String!): JSON
   createShowSeries(sourceShowId: ID!, name: String, dates: [String!], from: String, count: Int, everyDays: Int, startTime: String, copyLineup: Boolean, idempotencyKey: String!): JSON
   editShowSeries(groupId: ID!, edit: JSON!, idempotencyKey: String!): JSON
   cancelShowSeries(groupId: ID!, reason: String!, idempotencyKey: String!): JSON
@@ -6188,6 +6189,7 @@ type Query {
   openMicShows: JSON
   showReport(from: String!, to: String!): JSON
   payStatement(comedianId: ID!, year: Int!): JSON
+  previewRoomLayout(roomId: ID!, changes: JSON!): JSON
   previewShowSeries(sourceShowId: ID!, dates: [String!], from: String, count: Int, everyDays: Int, startTime: String, copyLineup: Boolean): JSON
   matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
 }

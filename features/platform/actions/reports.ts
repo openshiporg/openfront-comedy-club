@@ -20,3 +20,9 @@ export async function previewSeries(v: { sourceShowId: string; from: string; cou
   if (!res.success) return { ok: false as const, error: res.error || 'Preview failed' };
   return { ok: true as const, data: (res.data as any).previewShowSeries as { title: string; timezone: string; rows: { day: string; time: string; problem: string | null }[]; problems: number; tiers: number; lineupSlots: number } };
 }
+
+export async function previewLayout(roomId: string, changes: unknown[]) {
+  const res = await keystoneClient(`query($r: ID!, $c: JSON!) { previewRoomLayout(roomId: $r, changes: $c) }`, { r: roomId, c: changes });
+  if (!res.success) return { ok: false as const, error: res.error || 'Preview failed' };
+  return { ok: true as const, data: (res.data as any).previewRoomLayout as { room: string; changes: string[]; tables: number; capacityBefore: number; capacityAfter: number } };
+}

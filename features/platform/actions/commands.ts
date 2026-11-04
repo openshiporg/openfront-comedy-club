@@ -27,6 +27,7 @@ const OPS: Record<string, Record<string, string>> = {
   offerWaitlist: { showId: 'ID!' },
   removeWaitlistEntry: { entryId: 'ID!', reason: 'String' },
   setSalesWindow: { tierId: 'ID!', salesStartAt: 'String', salesEndAt: 'String' },
+  editRoomLayout: { roomId: 'ID!', changes: 'JSON!', reason: 'String' },
   createShowSeries: { sourceShowId: 'ID!', name: 'String', dates: '[String!]', from: 'String', count: 'Int', everyDays: 'Int', startTime: 'String', copyLineup: 'Boolean' },
   editShowSeries: { groupId: 'ID!', edit: 'JSON!' },
   cancelShowSeries: { groupId: 'ID!', reason: 'String!' },

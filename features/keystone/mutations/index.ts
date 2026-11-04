@@ -12,6 +12,7 @@ import * as waitlist from "./waitlist";
 import * as reports from "./reports";
 import * as payStatements from "./payStatements";
 import * as series from "./series";
+import * as layout from "./layout";
 import * as reminders from "./reminders";
 import * as slotLink from "./slotLink";
 import * as transfer from "./transfer";
@@ -53,6 +54,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         openMicShows: JSON
         showReport(from: String!, to: String!): JSON
         payStatement(comedianId: ID!, year: Int!): JSON
+        previewRoomLayout(roomId: ID!, changes: JSON!): JSON
         previewShowSeries(sourceShowId: ID!, dates: [String!], from: String, count: Int, everyDays: Int, startTime: String, copyLineup: Boolean): JSON
         matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
       }
@@ -101,6 +103,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         setSalesWindow(tierId: ID!, salesStartAt: String, salesEndAt: String, idempotencyKey: String!): JSON
         exportShowReport(from: String!, to: String!, idempotencyKey: String!): JSON
         exportPayStatement(comedianId: ID!, year: Int!, idempotencyKey: String!): JSON
+        editRoomLayout(roomId: ID!, changes: JSON!, reason: String, idempotencyKey: String!): JSON
         createShowSeries(sourceShowId: ID!, name: String, dates: [String!], from: String, count: Int, everyDays: Int, startTime: String, copyLineup: Boolean, idempotencyKey: String!): JSON
         editShowSeries(groupId: ID!, edit: JSON!, idempotencyKey: String!): JSON
         cancelShowSeries(groupId: ID!, reason: String!, idempotencyKey: String!): JSON
@@ -134,6 +137,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         showReport: op(reports.showReport),
         payStatement: op(payStatements.payStatement),
         previewShowSeries: op(series.previewShowSeries),
+        previewRoomLayout: op(layout.previewRoomLayout),
       },
       Mutation: {
         expireHolds: op(tickets.expireHolds),
@@ -177,6 +181,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         exportShowReport: op(reports.exportShowReport),
         exportPayStatement: op(payStatements.exportPayStatement),
         createShowSeries: op(series.createShowSeries),
+        editRoomLayout: op(layout.editRoomLayout),
         editShowSeries: op(series.editShowSeries),
         cancelShowSeries: op(series.cancelShowSeries),
         closeRun: op(night.closeRun),
