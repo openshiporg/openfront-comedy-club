@@ -270,7 +270,7 @@
     {
       "room": "Main Room",
       "section": "Bar rail",
-      "label": "B1",
+      "label": "R1",
       "seats": 4,
       "x": 40,
       "y": 310,
@@ -279,7 +279,7 @@
     {
       "room": "Main Room",
       "section": "Bar rail",
-      "label": "B2",
+      "label": "R2",
       "seats": 4,
       "x": 110,
       "y": 310,
@@ -288,7 +288,7 @@
     {
       "room": "Main Room",
       "section": "Bar rail",
-      "label": "B3",
+      "label": "R3",
       "seats": 4,
       "x": 180,
       "y": 310,
@@ -297,7 +297,7 @@
     {
       "room": "Main Room",
       "section": "Bar rail",
-      "label": "B4",
+      "label": "R4",
       "seats": 4,
       "x": 250,
       "y": 310,
@@ -306,7 +306,7 @@
     {
       "room": "Main Room",
       "section": "Bar rail",
-      "label": "B5",
+      "label": "R5",
       "seats": 4,
       "x": 320,
       "y": 310,
@@ -315,7 +315,7 @@
     {
       "room": "Main Room",
       "section": "Bar rail",
-      "label": "B6",
+      "label": "R6",
       "seats": 4,
       "x": 390,
       "y": 310,
@@ -324,7 +324,7 @@
     {
       "room": "Main Room",
       "section": "Bar rail",
-      "label": "B7",
+      "label": "R7",
       "seats": 6,
       "x": 460,
       "y": 310,
@@ -333,7 +333,7 @@
     {
       "room": "Main Room",
       "section": "Bar rail",
-      "label": "B8",
+      "label": "R8",
       "seats": 6,
       "x": 530,
       "y": 310,

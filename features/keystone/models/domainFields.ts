@@ -9,6 +9,6 @@ export const lifecycle = (values: string[], initial = values[0]) => select({ typ
 export const choice = (values: string[], initial = values[0]) => select({ type: values.some(value => /^\d/.test(value)) ? 'string' : 'enum', options: values.map(value => ({ label: value.replaceAll('_', ' '), value })), defaultValue: initial });
 export const unique = () => text({ isIndexed: 'unique', validation: { isRequired: true } });
 export const secret = () => text({ access: { read: () => false, create: () => false, update: () => false } });
-export function domainList(fields: Record<string, any>, permission: Permission, commandOnly = false, singleton = false) {
-  return list({ ...(singleton ? {isSingleton: true, graphql: {plural: 'VenueSettingsItems'}} : {}), access: { operation: { query: permissions[permission], create: commandOnly ? () => false : permissions[permission], update: commandOnly ? () => false : permissions[permission], delete: () => false } }, fields: { ...fields, ...trackingFields } });
+export function domainList(fields: Record<string, any>, permission: Permission, commandOnly = false, singleton = false, hooks?: any) {
+  return list({ ...(hooks ? { hooks } : {}), ...(singleton ? {isSingleton: true, graphql: {plural: 'VenueSettingsItems'}} : {}), access: { operation: { query: permissions[permission], create: commandOnly ? () => false : permissions[permission], update: commandOnly ? () => false : permissions[permission], delete: () => false } }, fields: { ...fields, ...trackingFields } });
 }

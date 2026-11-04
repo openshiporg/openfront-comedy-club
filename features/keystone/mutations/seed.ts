@@ -25,6 +25,7 @@ export async function ensureClubOnboardingRecord(_: any, { entity, data }: { ent
     case 'Room': { const venue = await db.venue.findFirst(); need(venue, 'Venue first'); return byName('room', { name: data.name, venueId: venue.id }, { ...data, active: true, venueId: venue.id }); }
     case 'Section': { const room = await db.room.findFirst({ where: { name: data.room } }); need(room, 'Missing room'); return byName('section', { name: data.name, roomId: room.id }, { name: data.name, sort: data.sort || 0, roomId: room.id }); }
     case 'Table': { const room = await db.room.findFirst({ where: { name: data.room } }); const section = room && await db.section.findFirst({ where: { name: data.section, roomId: room.id } }); need(section, 'Missing section');
+      const clash = await db.table.findFirst({ where: { label: data.label, sectionId: { not: section.id }, section: { roomId: room.id } } }); need(!clash, `Table label ${data.label} is already used in this room`);
       return byName('table', { label: data.label, sectionId: section.id }, { label: data.label, seats: data.seats, x: data.x, y: data.y, shape: data.shape, sectionId: section.id }); }
     case 'Comedian': need(data.stageName, 'Comedian needs a stage name'); return byName('comedian', { stageName: data.stageName }, data);
     case 'MenuItem': need(data.name && Number.isSafeInteger(data.priceCents) && data.priceCents >= 0, 'Invalid menu item'); return byName('menuItem', { name: data.name }, data);
