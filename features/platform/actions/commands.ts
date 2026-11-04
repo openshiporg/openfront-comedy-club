@@ -24,6 +24,7 @@ const OPS: Record<string, Record<string, string>> = {
   undoCheckIn: { ticketId: 'ID!', showId: 'ID!', reason: 'String!' },
   updatePromoLimit: { promoId: 'ID!', perOrderLimit: 'Int!' },
   addBringerSignup: { showId: 'ID!', name: 'String!', email: 'String!', guestsRequired: 'Int!' },
+  setSignupStatus: { signupId: 'ID!', status: 'String!' },
   recordBringerArrival: { signupId: 'ID!', guests: 'Int!' },
   closeShow: { showId: 'ID!' },
   closeRun: { runId: 'ID!' },

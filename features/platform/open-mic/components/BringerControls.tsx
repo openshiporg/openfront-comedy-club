@@ -28,3 +28,18 @@ export function BringerArrival({ signupId }: { signupId: string }) {
     if (r.ok) router.refresh(); else setMessage(r.error);
   })}>Guest arrived</button>{message ? <span role="alert" className="text-xs">{message}</span> : null}</span>;
 }
+
+const NEXT: Record<string, { status: string; label: string }[]> = {
+  waiting: [{ status: 'called', label: 'Call up' }, { status: 'skipped', label: 'Skip' }],
+  called: [{ status: 'performed', label: 'Done' }, { status: 'waiting', label: 'Back to list' }],
+  skipped: [{ status: 'waiting', label: 'Back to list' }],
+};
+export function SignupActions({ signupId, status, drawn }: { signupId: string; status: string; drawn: boolean }) {
+  const router = useRouter(); const [message, setMessage] = React.useState(''); const [pending, start] = React.useTransition();
+  const options = (NEXT[status] || []).filter(o => o.status !== 'called' || drawn);
+  if (!options.length) return null;
+  return <span className="inline-flex flex-wrap items-center gap-2">{options.map(o => <button key={o.status} className={pillClass} disabled={pending} onClick={() => start(async () => {
+    const r = await runCommand('setSignupStatus', { signupId, status: o.status });
+    if (r.ok) { setMessage(''); router.refresh(); } else setMessage(r.error);
+  })}>{o.label}</button>)}{message ? <span role="alert" className="text-xs">{message}</span> : null}</span>;
+}

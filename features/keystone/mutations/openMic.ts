@@ -1,4 +1,4 @@
-import { audit, command, requirePermission } from '../lib/commands';
+import { audit, command, lockTransactionKey, requirePermission } from '../lib/commands';
 
 export async function addBringerSignup(_: any, a: any, c: any) {
   requirePermission(c, 'canManageTalent');
@@ -27,6 +27,30 @@ export async function recordBringerArrival(_: any, a: any, c: any) {
     if (changed.count !== 1) throw new Error('Signup changed');
     const after = await tx.openMicSignup.findUnique({ where: { id: before.id } });
     await audit(tx, c, 'bringer_arrival', 'OpenMicSignup', before.id, before, after);
+    return after;
+  }, 'signup:' + a.signupId);
+}
+
+const SIGNUP_FLOW: Record<string, string[]> = { waiting: ['called', 'skipped', 'withdrawn'], called: ['performed', 'skipped', 'waiting'], skipped: ['waiting', 'withdrawn'] };
+/** Moves a performer through the list on the night. Only drawn performers (lottery number > 0) can be called. */
+export async function setSignupStatus(_: any, a: any, c: any) {
+  requirePermission(c, 'canManageTalent');
+  return command(c, 'setSignupStatus', a, async tx => {
+    const first = await tx.openMicSignup.findUnique({ where: { id: a.signupId } });
+    if (!first) throw new Error('Invalid state transition');
+    await lockTransactionKey(tx, 'show:' + first.showId);
+    const before = await tx.openMicSignup.findUnique({ where: { id: a.signupId } });
+    if (!before || !SIGNUP_FLOW[before.status]?.includes(a.status)) throw new Error('Invalid state transition');
+    const show = await tx.show.findUnique({ where: { id: before.showId } });
+    if (!show || ['cancelled', 'settled'].includes(show.status)) throw new Error('Show is closed');
+    if (a.status === 'called') {
+      if (!(before.lotteryNumber > 0)) throw new Error('Run the lottery before calling performers');
+      if (await tx.openMicSignup.count({ where: { showId: before.showId, status: 'called', id: { not: before.id } } })) throw new Error('Finish the performer on stage first');
+    }
+    const changed = await tx.openMicSignup.updateMany({ where: { id: before.id, status: before.status }, data: { status: a.status } });
+    if (changed.count !== 1) throw new Error('State changed');
+    const after = await tx.openMicSignup.findUnique({ where: { id: before.id } });
+    await audit(tx, c, 'signup_' + a.status, 'OpenMicSignup', before.id, before, after);
     return after;
   }, 'signup:' + a.signupId);
 }

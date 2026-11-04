@@ -76,6 +76,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         recordBringerArrival(signupId: ID!, guests: Int!, idempotencyKey: String!): JSON
         updatePromoLimit(promoId: ID!, perOrderLimit: Int!, idempotencyKey: String!): JSON
         undoCheckIn(ticketId: ID!, showId: ID!, reason: String!, idempotencyKey: String!): JSON
+        setSignupStatus(signupId: ID!, status: String!, idempotencyKey: String!): JSON
         closeShow(showId: ID!, idempotencyKey: String!): JSON
         closeRun(runId: ID!, idempotencyKey: String!): JSON
         approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
@@ -128,6 +129,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         updatePromoLimit: op(ops.updatePromoLimit),
         addBringerSignup: op(openMic.addBringerSignup),
         recordBringerArrival: op(openMic.recordBringerArrival),
+        setSignupStatus: op(openMic.setSignupStatus),
         closeShow: op(night.closeShow),
         closeRun: op(night.closeRun),
         approvePayout: op(payouts.approvePayout),
