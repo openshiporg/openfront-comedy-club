@@ -5,6 +5,20 @@ import { expireUnderLock } from './tickets';
 const showTransitions={draft:['on_sale','cancelled'],on_sale:['sold_out','doors_open','cancelled'],sold_out:['on_sale','doors_open','cancelled'],doors_open:['in_progress','cancelled'],in_progress:['completed','cancelled'],completed:['settled']};
 export async function publishShow(_:any,a:any,c:any) {requirePermission(c,'canManageShows');return command(c,'publishShow',a,tx=>transition(tx,c,'show',a.showId,a.nextStatus||'on_sale',showTransitions),'show:'+a.showId);}
 export async function pauseSales(_:any,a:any,c:any) {requirePermission(c,'canManageShows');return command(c,'pauseSales',a,async tx=>{const show=await tx.show.findUnique({where:{id:a.showId}});if(!show||!['on_sale','sold_out'].includes(show.status)) throw new Error('Sales are not open');await tx.priceTier.updateMany({where:{showId:a.showId},data:{status:'paused'}});await audit(tx,c,'sales_paused','Show',a.showId,null,null);return {paused:true};},'show:'+a.showId);}
+export async function resumeSales(_:any,a:any,c:any) {
+ requirePermission(c,'canManageShows');
+ return command(c,'resumeSales',a,async tx=>{
+  const show=await tx.show.findUnique({where:{id:a.showId}});
+  if(!show||!['on_sale','sold_out'].includes(show.status)) throw new Error('Sales cannot resume');
+  await expireUnderLock(tx,show.id,c);
+  const tiers=await tx.priceTier.findMany({where:{showId:show.id,status:'paused'}});
+  if(!tiers.length) throw new Error('No paused tiers');
+  for(const t of tiers) await tx.priceTier.update({where:{id:t.id},data:{status:t.sold+t.held>=t.capacity?'sold_out':'on_sale'}});
+  const totals=await tx.priceTier.aggregate({where:{showId:show.id},_sum:{sold:true,held:true}});
+  await tx.show.update({where:{id:show.id},data:{status:(totals._sum.sold||0)+(totals._sum.held||0)>=show.capacity?'sold_out':'on_sale'}});
+  await audit(tx,c,'sales_resumed','Show',show.id,null,{tiers:tiers.map((t:any)=>t.id)});return {resumed:tiers.length};
+ },'show:'+a.showId);
+}
 export async function offerSlot(_:any,a:any,c:any) {requirePermission(c,'canManageTalent');return command(c,'offerSlot',a,async tx=>{
   const comedian=await tx.comedian.findUnique({where:{id:a.comedianId}});const show=await tx.show.findUnique({where:{id:a.showId}});if(!comedian||!show||['cancelled','completed','settled'].includes(show.status)) throw new Error('Show or comedian unavailable');
   if(['headliner','host'].includes(a.role)&&await tx.lineupSlot.count({where:{showId:a.showId,role:a.role,status:{notIn:['cancelled','declined']}}})) throw new Error('Only one host and headliner allowed');

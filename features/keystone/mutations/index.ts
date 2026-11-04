@@ -57,6 +57,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         generateShowsFromTemplate(templateId: ID!, from: String, idempotencyKey: String!): JSON
         publishShow(showId: ID!, nextStatus: String, idempotencyKey: String!): JSON
         pauseSales(showId: ID!, idempotencyKey: String!): JSON
+        resumeSales(showId: ID!, idempotencyKey: String!): JSON
         cancelShow(showId: ID!, reason: String!, idempotencyKey: String!): JSON
         setLineup(showId: ID!, slots: [SlotOrderInput!]!, idempotencyKey: String!): JSON
         offerSlot(showId: ID!, comedianId: ID!, role: String!, position: Int, setMinutes: Int, feeCents: Int, idempotencyKey: String!): JSON
@@ -102,6 +103,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         generateShowsFromTemplate: op(night.generateShowsFromTemplate),
         publishShow: op(ops.publishShow),
         pauseSales: op(ops.pauseSales),
+        resumeSales: op(ops.resumeSales),
         cancelShow: op(night.cancelShow),
         setLineup: op(ops.setLineup),
         offerSlot: op(ops.offerSlot),

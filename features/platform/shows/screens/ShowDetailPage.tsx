@@ -38,6 +38,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
       </div>
       <div className="flex flex-wrap gap-2">
         {show.status === 'draft' ? <ActionButton op="publishShow" vars={{ showId: show.id }}>Publish</ActionButton> : null}
+        {['on_sale', 'sold_out'].includes(show.status) && show.tiers.some((t: any) => t.status === 'paused') ? <ActionButton op="resumeSales" vars={{ showId: show.id }}>Resume sales</ActionButton> : null}
         {['on_sale', 'sold_out'].includes(show.status) ? <ActionButton op="pauseSales" vars={{ showId: show.id }} confirm="Pause ticket sales for this show?">Pause sales</ActionButton> : null}
         {['doors_open', 'in_progress', 'completed'].includes(show.status) ? <ActionButton op="closeShow" vars={{ showId: show.id }} confirm="Close the night? This creates payouts and freezes the settlement.">Close night</ActionButton> : null}
         {!['cancelled', 'completed', 'settled'].includes(show.status) ? <ActionButton op="cancelShow" vars={{ showId: show.id, reason: 'Cancelled by venue' }} confirm="Cancel this show and refund every order?">Cancel show</ActionButton> : null}

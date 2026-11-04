@@ -8,6 +8,7 @@ import { keystoneClient } from '@/features/dashboard/lib/keystoneClient';
 const OPS: Record<string, Record<string, string>> = {
   publishShow: { showId: 'ID!', nextStatus: 'String' },
   pauseSales: { showId: 'ID!' },
+  resumeSales: { showId: 'ID!' },
   cancelShow: { showId: 'ID!', reason: 'String!' },
   generateShowsFromTemplate: { templateId: 'ID!' },
   offerSlot: { showId: 'ID!', comedianId: 'ID!', role: 'String!', position: 'Int', setMinutes: 'Int', feeCents: 'Int' },
