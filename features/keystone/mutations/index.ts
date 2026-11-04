@@ -80,7 +80,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         offerSlot(showId: ID!, comedianId: ID!, role: String!, position: Int, setMinutes: Int, feeCents: Int, idempotencyKey: String!): JSON
         confirmSlot(slotId: ID!, idempotencyKey: String!): JSON
         issueComp(showId: ID!, tierId: ID!, quantity: Int!, recipientName: String!, recipientEmail: String, reason: String!, approvalId: ID, idempotencyKey: String!): JSON
-        checkInTicket(tokenOrCode: String!, showId: ID!, method: String, idempotencyKey: String!): JSON
+        checkInTicket(tokenOrCode: String!, showId: ID!, method: String, scannedAt: String, idempotencyKey: String!): JSON
         seatParty(orderId: ID!, tableIds: [ID!]!, showId: ID!, serverId: ID, idempotencyKey: String!): JSON
         openCheck(seatingAssignmentId: ID!, idempotencyKey: String!): JSON
         addCheckItem(checkId: ID!, menuItemId: ID!, qty: Int!, idempotencyKey: String!): JSON

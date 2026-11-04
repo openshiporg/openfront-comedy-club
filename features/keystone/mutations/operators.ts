@@ -1,3 +1,4 @@
+import { effectiveScanTime } from '../lib/doorQueue';
 import { queueLineupConfirmation, cancelQueued } from './reminders';
 import { lineupConfirmationKey } from '../lib/reminders';
 import crypto from 'node:crypto';
@@ -33,7 +34,7 @@ export async function checkInTicket(_:any,a:any,c:any) {requirePermission(c,'can
  const ticket=await tx.ticket.findFirst({where:{OR:[{ticketCode:a.tokenOrCode},{tokenHash:hash(a.tokenOrCode)}]}});if(!ticket) throw new Error('Ticket not found');
  const result=ticket.showId!==a.showId?'wrong_show':ticket.status==='checked_in'?'duplicate':ticket.status!=='valid'?'void':'admitted';
  let effective=result;if(result==='admitted'){const cas=await tx.ticket.updateMany({where:{id:ticket.id,status:'valid'},data:{status:'checked_in'}});if(cas.count!==1) effective='duplicate';}
- const scan=await tx.checkIn.create({data:{ticketId:ticket.id,showId:a.showId,scannedById:c.session.itemId,at:new Date(),method:a.method||'manual',result:effective}});await audit(tx,c,effective,'Ticket',ticket.id,null,{status:effective});return scan;
+ const scan=await tx.checkIn.create({data:{ticketId:ticket.id,showId:a.showId,scannedById:c.session.itemId,at:effectiveScanTime(a.scannedAt,new Date()),method:a.method||'manual',result:effective}});await audit(tx,c,effective,'Ticket',ticket.id,null,{status:effective});return scan;
 },'show:'+a.showId);}
 export async function seatParty(_:any,a:any,c:any) {requirePermission(c,'canManageDoor');return command(c,'seatParty',a,async tx=>{
  const order=await tx.ticketOrder.findUnique({where:{id:a.orderId},include:{show:true,tableAssignment:true,hold:true}});if(!order||!['paid','comp','partially_refunded'].includes(order.status)||order.tableAssignment) throw new Error('Party unavailable');

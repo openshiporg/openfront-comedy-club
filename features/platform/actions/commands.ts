@@ -17,7 +17,7 @@ const OPS: Record<string, Record<string, string>> = {
   scheduleShowReminders: { showId: 'ID!' },
   issueSlotLink: { slotId: 'ID!' },
   issueComp: { showId: 'ID!', tierId: 'ID!', quantity: 'Int!', recipientName: 'String!', recipientEmail: 'String', reason: 'String!', approvalId: 'ID' },
-  checkInTicket: { tokenOrCode: 'String!', showId: 'ID!', method: 'String' },
+  checkInTicket: { tokenOrCode: 'String!', showId: 'ID!', method: 'String', scannedAt: 'String' },
   seatParty: { orderId: 'ID!', tableIds: '[ID!]!', showId: 'ID!' },
   openCheck: { seatingAssignmentId: 'ID!' },
   addCheckItem: { checkId: 'ID!', menuItemId: 'ID!', qty: 'Int!' },
@@ -54,7 +54,7 @@ export async function runCommand(op: string, variables: Record<string, unknown>,
   const decl = keys.map((k) => `$${k}: ${spec[k]}`);
   const args = keys.map((k) => `${k}: $${k}`);
   const vars: Record<string, unknown> = Object.fromEntries(keys.map((k) => [k, variables[k]]));
-  if (!NO_KEY.has(op)) { decl.push('$idempotencyKey: String!'); args.push('idempotencyKey: $idempotencyKey'); vars.idempotencyKey = randomUUID(); }
+  if (!NO_KEY.has(op)) { decl.push('$idempotencyKey: String!'); args.push('idempotencyKey: $idempotencyKey'); vars.idempotencyKey = typeof variables.idempotencyKey === 'string' && variables.idempotencyKey ? variables.idempotencyKey : randomUUID(); }
   const res = await keystoneClient(`mutation Run(${decl.join(', ')}) { ${op}(${args.join(', ')}) }`, vars);
   if (!res.success) return { ok: false as const, error: res.error || 'Action failed' };
   for (const p of paths) revalidatePath(p);
