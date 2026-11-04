@@ -8,6 +8,8 @@ export const Ticket = domainList({
   ticketCode: unique(),
   tokenHash: secret(),
   holderName: text(),
+  holderEmail: text(),
+  transferredFromCode: text(),
   status: lifecycle(['valid', 'checked_in', 'void', 'refunded']),
   checkIns: relationship({ref:'CheckIn.ticket',many:true}),
 }, 'canManageDoor', true);

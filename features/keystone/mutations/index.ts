@@ -12,6 +12,7 @@ import * as waitlist from "./waitlist";
 import * as reports from "./reports";
 import * as reminders from "./reminders";
 import * as slotLink from "./slotLink";
+import * as transfer from "./transfer";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
 import { matchingManagerApproval } from '../utils/managerApproval';
@@ -61,6 +62,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         completeTicketCheckout(orderNumber: String!, orderSecret: String!): JSON
         abandonTicketCheckout(orderNumber: String!, orderSecret: String!): JSON
         cancelMyTicketOrder(orderNumber: String!, email: String!, idempotencyKey: String!): JSON
+        transferTicket(orderNumber: String!, orderSecret: String!, ticketCode: String!, name: String!, email: String!, idempotencyKey: String!): JSON
         issueSlotLink(slotId: ID!, idempotencyKey: String!): JSON
         respondToSlot(slotId: ID!, token: String!, response: String!, idempotencyKey: String!): JSON
         joinWaitlist(showId: ID!, name: String!, email: String!, partySize: Int!, idempotencyKey: String!): JSON
@@ -130,6 +132,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         cancelMyTicketOrder: op(checkout.cancelMyTicketOrder),
         openMicSignup: op(tickets.openMicSignup),
         joinWaitlist: op(waitlist.joinWaitlist),
+        transferTicket: op(transfer.transferTicket),
         issueSlotLink: op(slotLink.issueSlotLink),
         respondToSlot: op(slotLink.respondToSlot),
         offerWaitlist: op(waitlist.offerWaitlist),

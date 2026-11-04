@@ -832,20 +832,22 @@ model TableOccupancy {
 }
 
 model Ticket {
-  id         String            @id @default(cuid())
-  order      TicketOrder?      @relation("Ticket_order", fields: [orderId], references: [id])
-  orderId    String?           @map("order")
-  show       Show?             @relation("Ticket_show", fields: [showId], references: [id])
-  showId     String?           @map("show")
-  line       TicketOrderLine?  @relation("Ticket_line", fields: [lineId], references: [id])
-  lineId     String?           @map("line")
-  ticketCode String            @unique @default("")
-  tokenHash  String            @default("")
-  holderName String            @default("")
-  status     TicketStatusType? @default(valid)
-  checkIns   CheckIn[]         @relation("CheckIn_ticket")
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @default(now()) @updatedAt
+  id                  String            @id @default(cuid())
+  order               TicketOrder?      @relation("Ticket_order", fields: [orderId], references: [id])
+  orderId             String?           @map("order")
+  show                Show?             @relation("Ticket_show", fields: [showId], references: [id])
+  showId              String?           @map("show")
+  line                TicketOrderLine?  @relation("Ticket_line", fields: [lineId], references: [id])
+  lineId              String?           @map("line")
+  ticketCode          String            @unique @default("")
+  tokenHash           String            @default("")
+  holderName          String            @default("")
+  holderEmail         String            @default("")
+  transferredFromCode String            @default("")
+  status              TicketStatusType? @default(valid)
+  checkIns            CheckIn[]         @relation("CheckIn_ticket")
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @default(now()) @updatedAt
 
   @@index([orderId])
   @@index([showId])
@@ -1048,6 +1050,7 @@ enum NotificationRecordKindType {
   show_reminder
   lineup_confirmation
   lineup_invite
+  ticket_transfer
 }
 
 enum NotificationRecordChannelType {

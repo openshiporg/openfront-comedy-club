@@ -159,7 +159,7 @@ export async function sweepPendingCheckouts(_: any, { secret }: { secret: string
 
 export async function ticketOrderConfirmation(_: any, input: any, context: any) {
   const order = await orderForProof(context, input.orderNumber, input.orderSecret);
-  const full = await context.prisma.ticketOrder.findUnique({ where: { id: order.id }, select: { orderNumber: true, status: true, name: true, totalCents: true, subtotalCents: true, feesCents: true, taxCents: true, discountCents: true, currencyCode: true, partySize: true, show: { select: { title: true, startsAt: true, doorsAt: true, ageRestriction: true, room: { select: { name: true } } } }, lines: { select: { tierName: true, quantity: true, unitPriceCents: true, lineTotalCents: true } }, tickets: { select: { ticketCode: true, status: true, holderName: true } } } });
+  const full = await context.prisma.ticketOrder.findUnique({ where: { id: order.id }, select: { orderNumber: true, status: true, name: true, totalCents: true, subtotalCents: true, feesCents: true, taxCents: true, discountCents: true, currencyCode: true, partySize: true, show: { select: { title: true, startsAt: true, doorsAt: true, ageRestriction: true, room: { select: { name: true } } } }, lines: { select: { tierName: true, quantity: true, unitPriceCents: true, lineTotalCents: true } }, tickets: { orderBy: { createdAt: "asc" }, select: { ticketCode: true, status: true, holderName: true, transferredFromCode: true } } } });
   return { ...full, tickets: full.tickets.map((t: any) => ({ ...t, token: ticketToken(t.ticketCode) })) };
 }
 
@@ -175,7 +175,7 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     if (!tickets.length || tickets.some((t: any) => t.status !== 'valid')) throw new Error('Only valid tickets can be refunded');
     const remaining = payment.amount - payment.refundedAmount;
     const full = tickets.length === order.tickets.filter((t: any) => t.status === 'valid').length;
-    const amount = a.amountCents ?? (full ? remaining : Math.floor(order.totalCents * tickets.length / order.tickets.length));
+    const amount = a.amountCents ?? (full ? remaining : Math.floor(order.totalCents * tickets.length / (order.tickets.length - order.tickets.filter((t: any) => t.transferredFromCode).length)));
     if (!Number.isSafeInteger(amount) || amount < 1 || amount > remaining) throw new Error('Invalid refund amount');
     if (a.actorId && amount > a.threshold) await consumeManagerApproval(tx, { approvalId: a.approvalId, actorId: a.actorId, actionType: 'refund_payment', targetId: order.id, reason: a.reason, amount, entityType: 'TicketOrder', entityId: order.id });
     const refund = await tx.refund.create({ data: { idempotencyKey: 'refund:' + a.idempotencyKey, amount, currencyCode: payment.currencyCode, status: 'processing', reason: a.reason, paymentId: payment.id, orderId: order.id, requestedById: a.actorId } });

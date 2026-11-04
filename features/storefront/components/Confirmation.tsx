@@ -4,13 +4,17 @@ import * as React from 'react';
 import { loadConfirmation } from '../lib/clientActions';
 import { completeCheckout } from '../lib/actions';
 import { price, showTime, ageLabel } from '../lib/format';
+import { TransferTicket } from './TransferTicket';
 
 /** QR codes are drawn from the opaque ticket token with a small inline encoder-free fallback: the code is also printed. */
 export function Confirmation({ orderNumber }: { orderNumber: string }) {
   const [order, setOrder] = React.useState<any>(null);
   const [error, setError] = React.useState('');
+  const [secret, setSecret] = React.useState('');
+  const load = React.useCallback(async (s: string) => { const r = await loadConfirmation(orderNumber, s); if (r.ok) setOrder(r.order); }, [orderNumber]);
   React.useEffect(() => {
     const secret = window.location.hash.slice(1) || sessionStorage.getItem(`order:${orderNumber}`) || '';
+    setSecret(secret);
     if (!secret) { setError('Open this page from your confirmation link, or use Find my order.'); return; }
     (async () => {
       let r = await loadConfirmation(orderNumber, secret);
@@ -36,7 +40,9 @@ export function Confirmation({ orderNumber }: { orderNumber: string }) {
             <li key={t.ticketCode} className="flex flex-wrap items-center justify-between gap-2 border-b py-3 last:border-b-0">
               <span className="font-mono text-sm break-all">{t.ticketCode}</span>
               <span className="font-mono text-xs uppercase tracking-wide">{t.status.replace('_', ' ')}</span>
-              <span className="w-full break-all font-mono text-xs text-muted-foreground" aria-label="Scan token">{t.token}</span>
+              {t.holderName && t.transferredFromCode ? <span className="w-full text-xs text-muted-foreground">Transferred to {t.holderName}</span> : null}
+              {t.status === 'valid' ? <span className="w-full break-all font-mono text-xs text-muted-foreground" aria-label="Scan token">{t.token}</span> : null}
+              {t.status === 'valid' && paid && new Date() < new Date(order.show.doorsAt || order.show.startsAt) ? <TransferTicket orderNumber={orderNumber} secret={secret} ticketCode={t.ticketCode} onDone={() => load(secret)} /> : null}
             </li>
           ))}
         </ul>

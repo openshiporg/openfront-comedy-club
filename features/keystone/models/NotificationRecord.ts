@@ -4,7 +4,7 @@ import { domainList, lifecycle, choice, unique } from './domainFields';
 // Outbound message queued for a transport to deliver. Nothing is sent from here; a transport delivers rows whose sendAfter has passed.
 export const NotificationRecord = domainList({
   notificationKey: unique(),
-  kind: choice(['waitlist_offer', 'show_reminder', 'lineup_confirmation', 'lineup_invite']),
+  kind: choice(['waitlist_offer', 'show_reminder', 'lineup_confirmation', 'lineup_invite', 'ticket_transfer']),
   channel: choice(['email']),
   toEmail: text(),
   subject: text(),
