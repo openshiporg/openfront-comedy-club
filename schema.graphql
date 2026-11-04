@@ -5456,6 +5456,7 @@ type Mutation {
   addBringerSignup(showId: ID!, name: String!, email: String!, guestsRequired: Int!, idempotencyKey: String!): JSON
   recordBringerArrival(signupId: ID!, guests: Int!, idempotencyKey: String!): JSON
   updatePromoLimit(promoId: ID!, perOrderLimit: Int!, idempotencyKey: String!): JSON
+  undoCheckIn(ticketId: ID!, showId: ID!, reason: String!, idempotencyKey: String!): JSON
   closeShow(showId: ID!, idempotencyKey: String!): JSON
   closeRun(runId: ID!, idempotencyKey: String!): JSON
   approvePayout(payoutId: ID!, idempotencyKey: String!): JSON

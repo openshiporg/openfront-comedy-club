@@ -6,10 +6,11 @@ import { ActionButton } from '../../components/ActionButton';
 import { DoorScanner } from '../components/DoorScanner';
 import { SeatingBoard } from '../components/SeatingBoard';
 import { ShowSwitcher } from '../components/ShowSwitcher';
+import { GuestSearch, GuestTicketRow } from '../components/GuestList';
 
 const LIVE = ['on_sale', 'sold_out', 'doors_open', 'in_progress', 'completed'];
 
-export default async function TonightPage({ searchParams }: { searchParams?: Promise<{ show?: string }> }) {
+export default async function TonightPage({ searchParams }: { searchParams?: Promise<{ show?: string; q?: string }> }) {
   const tz = await venueTimezone();
   const params = (await searchParams) || {};
   const since = new Date(Date.now() - 6 * 3600000).toISOString();
@@ -34,6 +35,8 @@ export default async function TonightPage({ searchParams }: { searchParams?: Pro
     } }`,
     { id: current.id },
   );
+  const term = (params.q || '').trim().slice(0, 80);
+  const found = term ? (await q<any>(`query($id: ID!, $term: String!) { tickets(where: { show: { id: { equals: $id } }, OR: [{ holderName: { contains: $term, mode: insensitive } }, { ticketCode: { contains: $term, mode: insensitive } }, { order: { OR: [{ name: { contains: $term, mode: insensitive } }, { email: { contains: $term, mode: insensitive } }, { orderNumber: { contains: $term, mode: insensitive } }] } }] }, orderBy: { holderName: asc }, take: 25) { id ticketCode status holderName order { orderNumber name } } }`, { id: show.id, term })).tickets : [];
   const seated = new Set<string>(); const held = new Set<string>();
   for (const o of show.occupancies) { if (o.assignment) seated.add(o.table.id); else held.add(o.table.id); }
   const tables = show.room.sections.flatMap((s: any) => s.tables.map((t: any) => ({ ...t, section: s.name, state: seated.has(t.id) ? 'seated' : held.has(t.id) ? 'held' : 'free' })));
@@ -62,6 +65,11 @@ export default async function TonightPage({ searchParams }: { searchParams?: Pro
       </div>
 
       <Section title="Door"><DoorScanner showId={show.id} /></Section>
+
+      <Section title="Guest list">
+        <GuestSearch showId={show.id} q={term} />
+        {term ? (found.length ? found.map((t: any) => <GuestTicketRow key={t.id} ticket={t} showId={show.id} orderNumber={t.order?.orderNumber || ''} orderName={t.order?.name || ''} />) : <Empty>No guest matches.</Empty>) : <Meta>Search to check in a guest without a code, or undo a mistaken check-in.</Meta>}
+      </Section>
 
       <Section title="Running order" aside={<Meta>{setTotal} min of sets</Meta>}>
         {show.lineup.length ? show.lineup.map((l: any) => (

@@ -58,3 +58,19 @@ export async function updatePromoLimit(_:any,a:any,c:any){
   return {id:after.id,perOrderLimit:after.perOrderLimit};
  },'promo:'+a.promoId);
 }
+
+/** Door correction: puts a mistakenly admitted ticket back to valid. The scan history stays; the audit trail records who and why. */
+export async function undoCheckIn(_:any,a:any,c:any){
+ requirePermission(c,'canManageDoor');
+ if(!a.reason?.trim()||a.reason.length>200) throw new Error('Reason required');
+ return command(c,'undoCheckIn',a,async tx=>{
+  const ticket=await tx.ticket.findUnique({where:{id:a.ticketId}});
+  if(!ticket||ticket.showId!==a.showId) throw new Error('Ticket not found');
+  const show=await tx.show.findUnique({where:{id:a.showId}});
+  if(!show||['completed','settled','cancelled'].includes(show.status)) throw new Error('Show is closed to door changes');
+  const cas=await tx.ticket.updateMany({where:{id:ticket.id,status:'checked_in'},data:{status:'valid'}});
+  if(cas.count!==1) throw new Error('Ticket is not checked in');
+  await audit(tx,c,'check_in_undone','Ticket',ticket.id,{status:'checked_in'},{status:'valid'},a.reason.trim());
+  return {ticketId:ticket.id,status:'valid'};
+ },'show:'+a.showId);
+}
