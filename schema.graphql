@@ -5981,6 +5981,7 @@ type Query {
   showAvailability(showId: ID!): JSON
   waitlistOffer(holdKey: String!, cartToken: String!): JSON
   slotInvite(slotId: ID!, token: String!): JSON
+  holderTicket(ticketCode: String!, token: String!): JSON
   lookupTicketOrder(email: String!, orderNumber: String!): JSON
   ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
   openMicShows: JSON
