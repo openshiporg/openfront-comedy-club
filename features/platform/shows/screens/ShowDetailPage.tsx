@@ -18,7 +18,8 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
       lineup(orderBy: { position: asc }) { id role position setMinutes feeCents status comedian { stageName } }
       holds(where: { status: { equals: active } }) { id holdKey quantity expiresAt }
       orders(orderBy: { createdAt: desc }, take: 50) { id orderNumber name status totalCents partySize }
-      checks { id status guestCount minimumItemsRequired minimumItemsMet seatingAssignment { tables { label } } items { id name qty priceCents voided countsTowardMinimum } }
+      assignments { id status tables { label } }
+      checks { id status guestCount minimumItemsRequired minimumItemsMet seatingAssignment { id tables { label } } items { id name qty priceCents voided countsTowardMinimum } }
       settlement { status netCents }
     } }`, { id },
   );
@@ -73,6 +74,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         )) : <Empty>No orders.</Empty>}
       </Section>
 
+      <Section title="Table service">{show.assignments.filter((a: any) => a.status === 'seated' && !show.checks.some((c: any) => c.seatingAssignment?.id === a.id)).map((a: any) => <Row key={a.id}><span>{a.tables.map((t: any) => t.label).join(', ')}</span><ActionButton op="openCheck" vars={{ seatingAssignmentId: a.id }}>Open check</ActionButton></Row>)}</Section>
       {show.checks.length ? (
         <Section title="Checks">
           <div className="space-y-3">

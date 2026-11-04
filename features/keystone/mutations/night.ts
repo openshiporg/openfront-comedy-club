@@ -68,7 +68,7 @@ export async function voidCheckItem(_: any, a: any, c: any) {
   requirePermission(c, 'canManageChecks');
   return command(c, 'voidCheckItem', a, async tx => {
     const item = await tx.checkItem.findUnique({ where: { id: a.itemId }, include: { check: true } });
-    if (!item || item.voided || item.check.status !== 'open') throw new Error('Item cannot be voided');
+    if (!item || item.checkId !== a.checkId || item.voided || item.check.status !== 'open') throw new Error('Item cannot be voided');
     await consumeManagerApproval(tx, { approvalId: a.approvalId, actorId: c.session.itemId, actionType: 'void_item', targetId: item.id, reason: a.reason, amount: item.priceCents * item.qty, entityType: 'CheckItem', entityId: item.id });
     const changed = await tx.checkItem.updateMany({ where: { id: item.id, voided: false }, data: { voided: true, voidReason: a.reason, approvalId: a.approvalId } });
     if (changed.count !== 1) throw new Error('Item changed');
