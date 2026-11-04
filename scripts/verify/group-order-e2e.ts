@@ -46,18 +46,18 @@ async function main() { let showId = ''; try {
 
   // 4) outcome: one payment, tickets per line, held -> sold per tier, hold converted
   const payments = await p.payment.findMany({ where: { orderId: order.id } }); assert.equal(payments.length, 1, 'exactly one payment'); assert.equal(payments[0].amount, order.totalCents); assert.equal(payments[0].providerPaymentId, intentId);
-  const fresh = await p.ticketOrder.findUnique({ where: { id: order.id }, include: { lines: true, tickets: true } }); assert.equal(fresh!.status, 'paid');
-  const perLine = Object.fromEntries(fresh!.lines.map((l: any) => [l.tierName, fresh!.tickets.filter((t: any) => t.lineId === l.id).length])); assert.deepEqual(perLine, { GA: 3, VIP: 2 });
-  assert.equal(fresh!.tickets.length, 5); assert(fresh!.tickets.every((t: any) => t.status === 'valid'));
+  const fresh0 = await p.ticketOrder.findUnique({ where: { id: order.id }, include: { lines: true, tickets: true } }); assert(fresh0); const fresh = fresh0; assert.equal(fresh.status, 'paid'); const total = fresh.totalCents as number; assert(total > 0);
+  const perLine = Object.fromEntries(fresh.lines.map((l: any) => [l.tierName, fresh.tickets.filter((t: any) => t.lineId === l.id).length])); assert.deepEqual(perLine, { GA: 3, VIP: 2 });
+  assert.equal(fresh.tickets.length, 5); assert(fresh.tickets.every((t: any) => t.status === 'valid'));
   assert.deepEqual(await tiers(), { GA: [3, 0], VIP: [2, 0] }, 'held became sold in each tier');
   assert.equal((await p.inventoryHold.findUnique({ where: { holdKey: hold.holdKey } }))!.status, 'converted');
-  assert.equal(fresh!.lines.reduce((n: number, l: any) => n + l.lineTotalCents, 0), fresh!.subtotalCents); assert.equal(fresh!.lines.reduce((n: number, l: any) => n + l.taxCents, 0), fresh!.taxCents);
+  assert.equal(fresh.lines.reduce((n: number, l: any) => n + l.lineTotalCents, 0), fresh.subtotalCents); assert.equal(fresh.lines.reduce((n: number, l: any) => n + l.taxCents, 0), fresh.taxCents);
   assert.equal(await p.paymentWebhookEvent.count({ where: { providerEventId: JSON.parse(raw).id, status: 'processed' } }), 1);
 
   // 5) one partial refund of ONE VIP ticket: weighted by price, not by count
-  const weights = 3 * 2500 + 2 * 6000; const expectVip = Math.floor(fresh!.totalCents * 6000 / weights); const countShare = Math.floor(fresh!.totalCents / 5);
+  const weights = 3 * 2500 + 2 * 6000; const expectVip = Math.floor(total * 6000 / weights); const countShare = Math.floor(total / 5);
   assert.notEqual(expectVip, countShare, 'the test would not tell weighting from counting');
-  const vipTicket = fresh!.tickets.find((t: any) => t.lineId === fresh!.lines.find((l: any) => l.tierName === 'VIP')!.id)!;
+  const vipTicket = fresh.tickets.find((t: any) => t.lineId === fresh.lines.find((l: any) => l.tierName === 'VIP')!.id)!;
   const rk = k(); const r: any = await refundTicketOrder(null, { orderId: order.id, ticketIds: [vipTicket.id], reason: 'Group e2e partial refund', idempotencyKey: rk }, staff);
   assert.equal(r.status, 'succeeded'); assert.equal(r.amountCents, expectVip, 'refund is the VIP line share of the total');
   const refunds = await p.refund.findMany({ where: { orderId: order.id } }); assert.equal(refunds.length, 1); assert.equal(refunds[0].amount, expectVip); assert(refunds[0].providerRefundId.startsWith('re_'));
@@ -69,10 +69,10 @@ async function main() { let showId = ''; try {
   await refundTicketOrder(null, { orderId: order.id, ticketIds: [vipTicket.id], reason: 'Group e2e partial refund', idempotencyKey: rk }, staff).catch(() => {});
   assert.equal((await stripe.refunds.list({ payment_intent: intentId })).data.length, 1, 'still one refund at Stripe after replay');
   // a GA ticket refund is the GA share
-  const gaTicket = fresh!.tickets.find((t: any) => t.lineId === fresh!.lines.find((l: any) => l.tierName === 'GA')!.id)!;
+  const gaTicket = fresh.tickets.find((t: any) => t.lineId === fresh.lines.find((l: any) => l.tierName === 'GA')!.id)!;
   const r2: any = await refundTicketOrder(null, { orderId: order.id, ticketIds: [gaTicket.id], reason: 'Group e2e GA refund', idempotencyKey: k() }, staff);
   // each ticket carries its own line price's share of the order total, so a GA ticket is 2500/21000 of it
-  assert.equal(r2.amountCents, Math.floor(fresh!.totalCents * 2500 / weights)); assert(r2.amountCents < expectVip, 'a GA ticket refunds less than a VIP ticket');
+  assert.equal(r2.amountCents, Math.floor(total * 2500 / weights)); assert(r2.amountCents < expectVip, 'a GA ticket refunds less than a VIP ticket');
   assert.deepEqual(await tiers(), { GA: [2, 0], VIP: [1, 0] });
   console.log('PASS group order e2e', intentId, 'vip refund', expectVip, 'vs count share', countShare, 'ga refund', r2.amountCents);
 } finally {
