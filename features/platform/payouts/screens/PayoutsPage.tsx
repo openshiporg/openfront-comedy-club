@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, venueTimezone } from '../../lib/server';
 import { money, when } from '../../lib/format';
 import { Page, Tabs, Section, Row, Empty, Stat, Status, Meta } from '../../components/ui';
@@ -15,6 +16,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams?: Pro
   ]);
   return (
     <Page title="Payouts">
+      <p className="text-sm"><Link href="/dashboard/platform/payouts/statements" className="underline">Pay statements by year</Link></p>
       <Tabs active={tab} items={TABS.map((t) => ({ key: t, label: t, href: `/dashboard/platform/payouts?tab=${t}` }))} />
       <div>
         {comedianPayouts.length ? comedianPayouts.map((p: any) => (

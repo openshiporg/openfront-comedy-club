@@ -5890,6 +5890,7 @@ type Mutation {
   updateSlotStatus(slotId: ID!, status: String!, idempotencyKey: String!): JSON
   setSalesWindow(tierId: ID!, salesStartAt: String, salesEndAt: String, idempotencyKey: String!): JSON
   exportShowReport(from: String!, to: String!, idempotencyKey: String!): JSON
+  exportPayStatement(comedianId: ID!, year: Int!, idempotencyKey: String!): JSON
   closeShow(showId: ID!, idempotencyKey: String!): JSON
   closeRun(runId: ID!, idempotencyKey: String!): JSON
   approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
@@ -6076,6 +6077,7 @@ type Query {
   ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
   openMicShows: JSON
   showReport(from: String!, to: String!): JSON
+  payStatement(comedianId: ID!, year: Int!): JSON
   matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
 }
 

@@ -10,6 +10,7 @@ import * as payouts from "./payouts";
 import * as openMic from "./openMic";
 import * as waitlist from "./waitlist";
 import * as reports from "./reports";
+import * as payStatements from "./payStatements";
 import * as reminders from "./reminders";
 import * as slotLink from "./slotLink";
 import * as transfer from "./transfer";
@@ -50,6 +51,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
         openMicShows: JSON
         showReport(from: String!, to: String!): JSON
+        payStatement(comedianId: ID!, year: Int!): JSON
         matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
       }
       input UserUpdateProfileInput { name: String, email: String, password: String, onboardingStatus: String, notificationPreference: Boolean }
@@ -96,6 +98,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         updateSlotStatus(slotId: ID!, status: String!, idempotencyKey: String!): JSON
         setSalesWindow(tierId: ID!, salesStartAt: String, salesEndAt: String, idempotencyKey: String!): JSON
         exportShowReport(from: String!, to: String!, idempotencyKey: String!): JSON
+        exportPayStatement(comedianId: ID!, year: Int!, idempotencyKey: String!): JSON
         closeShow(showId: ID!, idempotencyKey: String!): JSON
         closeRun(runId: ID!, idempotencyKey: String!): JSON
         approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
@@ -124,6 +127,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         openMicShows: op(tickets.openMicShows),
         matchingManagerApproval: op(matchingManagerApproval),
         showReport: op(reports.showReport),
+        payStatement: op(payStatements.payStatement),
       },
       Mutation: {
         expireHolds: op(tickets.expireHolds),
@@ -165,6 +169,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         setSignupStatus: op(openMic.setSignupStatus),
         closeShow: op(night.closeShow),
         exportShowReport: op(reports.exportShowReport),
+        exportPayStatement: op(payStatements.exportPayStatement),
         closeRun: op(night.closeRun),
         approvePayout: op(payouts.approvePayout),
         recordPayoutPaid: op(payouts.recordPayoutPaid),
