@@ -8,6 +8,7 @@ import * as checkout from "./checkout";
 import * as night from "./night";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
+import { matchingManagerApproval } from '../utils/managerApproval';
 
 const graphql = String.raw;
 
@@ -38,6 +39,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         lookupTicketOrder(email: String!, orderNumber: String!): JSON
         ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
         openMicShows: JSON
+        matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
       }
       input UserUpdateProfileInput { name: String, email: String, password: String, onboardingStatus: String, notificationPreference: Boolean }
       input CustomerInput { name: String!, email: String!, phone: String }
@@ -86,6 +88,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         lookupTicketOrder: op(tickets.lookupTicketOrder),
         ticketOrderConfirmation: op(checkout.ticketOrderConfirmation),
         openMicShows: op(tickets.openMicShows),
+        matchingManagerApproval: op(matchingManagerApproval),
       },
       Mutation: {
         expireHolds: op(tickets.expireHolds),

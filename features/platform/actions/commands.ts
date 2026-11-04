@@ -26,6 +26,11 @@ const OPS: Record<string, Record<string, string>> = {
   requestApproval: { actionType: 'String!', targetId: 'String!', reason: 'String!', amount: 'Int' },
   approveRequest: { approvalId: 'ID!' },
 };
+export async function findApproval(input: { actionType: string; targetId: string; reason: string; amount: number | null }) {
+  const res = await keystoneClient(`query($actionType: String!, $targetId: String!, $reason: String!, $amount: Int) { matchingManagerApproval(actionType: $actionType, targetId: $targetId, reason: $reason, amount: $amount) }`, input);
+  if (!res.success) return { id: '', error: res.error || 'Approval lookup failed' };
+  return { id: (res.data as any)?.matchingManagerApproval?.id || '', error: '' };
+}
 const NO_KEY = new Set(['requestApproval', 'approveRequest']);
 
 export async function runCommand(op: string, variables: Record<string, unknown>, paths: string[] = []) {

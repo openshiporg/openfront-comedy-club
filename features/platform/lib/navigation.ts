@@ -22,6 +22,7 @@ export interface PlatformNavGroup {
 export const platformNavItems: PlatformNavItem[] = [
   { title: 'Tonight',        href: '/platform/tonight',           color: 'amber',  description: 'Door check-in, seating, checks and running order.', icon: Radio,           group: 'standalone' },
   { title: 'Shows',          href: '/platform/shows',             color: 'blue',   description: 'Calendar and list of shows with tiers and orders.',  icon: CalendarDays,    group: 'standalone' },
+  { title: 'Approvals', href: '/platform/approvals', color: 'amber', description: 'Independent manager approvals.', icon: Users, group: 'standalone' },
   { title: 'Orders',         href: '/platform/orders',            color: 'green',  description: 'Ticket orders, refunds and comps.',                 icon: Ticket,          group: 'standalone' },
 
   { title: 'Lineups & talent', href: '/platform/talent',          color: 'purple', description: 'Comedians, booking grid and offers.',               icon: Clapperboard,    group: 'booking' },

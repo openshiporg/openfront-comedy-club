@@ -4,14 +4,16 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { runCommand } from '../../actions/commands';
 import { pillClass } from '../../components/ActionButton';
+import { ApprovalControl } from '../../approvals/components/ApprovalControl';
 
-export function RefundPanel({ orderId, remainingTickets }: { orderId: string; remainingTickets: { id: string; code: string }[] }) {
+export function RefundPanel({ orderId, remainingTickets, totalCents, ticketCount, remainingCents, threshold }: { orderId: string; remainingTickets: { id: string; code: string }[]; totalCents: number; ticketCount: number; remainingCents: number; threshold: number }) {
   const router = useRouter();
   const [reason, setReason] = React.useState('');
   const [approval, setApproval] = React.useState('');
   const [picked, setPicked] = React.useState<string[]>([]);
   const [msg, setMsg] = React.useState('');
   const [pending, start] = React.useTransition();
+  const amount = !picked.length || picked.length === remainingTickets.length ? remainingCents : Math.floor(totalCents * picked.length / ticketCount);
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-1.5">
@@ -21,8 +23,9 @@ export function RefundPanel({ orderId, remainingTickets }: { orderId: string; re
       </div>
       <p className="text-xs text-muted-foreground">{picked.length ? `${picked.length} tickets selected` : 'No tickets selected refunds every remaining ticket.'}</p>
       <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason" className="h-10 w-full rounded-md border bg-background px-3 text-sm" />
-      <input value={approval} onChange={(e) => setApproval(e.target.value)} placeholder="Approval ID (needed above the threshold)" className="h-10 w-full rounded-md border bg-background px-3 font-mono text-sm" />
-      <button type="button" disabled={pending || !reason.trim()} className={pillClass + ' border'} onClick={() => start(async () => {
+      <p className="text-sm">Refund amount: ${(amount / 100).toFixed(2)}</p>
+      {amount > threshold ? <ApprovalControl actionType="refund_payment" targetId={orderId} amount={amount} reason={reason} onApproval={setApproval} /> : null}
+      <button type="button" disabled={pending || !reason.trim() || amount < 1 || (amount > threshold && !approval)} className={pillClass + ' border'} onClick={() => start(async () => {
         setMsg('');
         const r = await runCommand('refundTicketOrder', { orderId, reason, ticketIds: picked.length ? picked : undefined, approvalId: approval || undefined });
         if (!r.ok) setMsg(r.error); else { setMsg(`Refund ${r.data?.status}`); router.refresh(); }

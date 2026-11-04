@@ -21,10 +21,22 @@ function normalizedRequest(input: ManagerApprovalRequest) {
 }
 
 function canRequestAction(context: Context, actionType: ManagerApprovalAction) {
+  if (!['void_item', 'comp_tickets', 'waive_minimum', 'refund_payment'].includes(actionType)) return false;
   const s = { session: context.session };
   if (actionType === "refund_payment") return permissions.canIssueRefunds(s);
   if (actionType === "comp_tickets") return permissions.canManageOrders(s);
   return permissions.canManageChecks(s);
+}
+
+export async function matchingManagerApproval(_root: unknown, input: ManagerApprovalRequest, context: Context) {
+  if (!context.session?.itemId || !canRequestAction(context, input.actionType)) throw new Error('Not authorized');
+  const fingerprint = idempotencyFingerprint(normalizedRequest(input));
+  const row = await (context.prisma as any).managerApproval.findFirst({ where: {
+    requestedById: context.session.itemId, actionType: input.actionType, targetId: input.targetId,
+    requestFingerprint: fingerprint, status: 'approved', expiresAt: { gt: new Date() },
+    approvedById: { not: context.session.itemId },
+  }, select: { id: true } });
+  return row;
 }
 
 export async function requestManagerApproval(

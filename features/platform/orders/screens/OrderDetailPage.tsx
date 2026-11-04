@@ -13,8 +13,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     lines { id tierName unitPriceCents unitFeeCents quantity lineTotalCents }
     tickets { id ticketCode status holderName }
     refunds { id amount status reason }
+    payments { amount refundedAmount status }
   } }`, { id });
   if (!o) notFound();
+  const { venueSettingsItems } = await q<any>(`{ venueSettingsItems(take: 1) { approvalThresholdCents } }`);
+  const payment = o.payments.find((p: any) => ['succeeded', 'partially_refunded'].includes(p.status));
   return (
     <Page title={o.orderNumber} crumbs={[{ label: 'Orders', href: '/dashboard/platform/orders' }]}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1"><Status value={o.status} /><Meta>{o.name} · {o.email} · {o.show?.title} · {when(o.show?.startsAt, tz)}</Meta></div>
@@ -22,7 +25,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <Section title="Lines">{o.lines.map((l: any) => <Row key={l.id}><span>{l.quantity} × {l.tierName}</span><span className="font-mono text-xs">{money(l.lineTotalCents)}</span></Row>)}</Section>
       <Section title="Tickets">{o.tickets.map((t: any) => <Row key={t.id}><span className="font-mono text-xs">{t.ticketCode}</span><Status value={t.status} /></Row>)}</Section>
       {o.refunds.length ? <Section title="Refunds">{o.refunds.map((r: any) => <Row key={r.id}><span className="min-w-0 break-words">{r.reason}</span><span className="inline-flex gap-3"><Meta>{money(r.amount)}</Meta><Status value={r.status} /></span></Row>)}</Section> : null}
-      {['paid', 'partially_refunded'].includes(o.status) ? <Section title="Refund"><RefundPanel orderId={o.id} remainingTickets={o.tickets.filter((t: any) => t.status === 'valid').map((t: any) => ({ id: t.id, code: t.ticketCode }))} /></Section> : null}
+      {['paid', 'partially_refunded'].includes(o.status) ? <Section title="Refund"><RefundPanel orderId={o.id} totalCents={o.totalCents} ticketCount={o.tickets.length} remainingCents={payment ? payment.amount - payment.refundedAmount : 0} threshold={venueSettingsItems[0]?.approvalThresholdCents ?? 10000} remainingTickets={o.tickets.filter((t: any) => t.status === 'valid').map((t: any) => ({ id: t.id, code: t.ticketCode }))} /></Section> : null}
     </Page>
   );
 }

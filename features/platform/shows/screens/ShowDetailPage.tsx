@@ -5,6 +5,7 @@ import { money, when } from '../../lib/format';
 import { Page, Section, Row, Empty, Stat, Status, Meta } from '../../components/ui';
 import { ActionButton } from '../../components/ActionButton';
 import { CheckPanel } from '../components/CheckPanel';
+import { CompForm } from '../components/CompForm';
 
 export default async function ShowDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,6 +24,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
   );
   if (!show) notFound();
   const { menuItems } = await q<any>(`{ menuItems(where: { active: { equals: true } }, orderBy: { name: asc }, take: 100) { id name priceCents } }`);
+  const { venueSettingsItems } = await q<any>(`{ venueSettingsItems(take: 1) { compApprovalQuantity } }`);
   const open = ['draft', 'on_sale', 'sold_out'].includes(show.status);
   return (
     <Page title={show.title} crumbs={[{ label: 'Shows', href: '/dashboard/platform/shows' }]}>
@@ -61,6 +63,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
 
       {show.holds.length ? <Section title="Active holds">{show.holds.map((h: any) => <Row key={h.id}><span className="font-mono text-xs">{h.holdKey}</span><Meta>{h.quantity} tickets · expires {when(h.expiresAt, tz, 'time')}</Meta></Row>)}</Section> : null}
 
+      {!['draft', 'cancelled', 'completed', 'settled'].includes(show.status) ? <Section title="Issue comp"><CompForm showId={show.id} tiers={show.tiers} threshold={venueSettingsItems[0]?.compApprovalQuantity ?? 4} /></Section> : null}
       <Section title="Orders">
         {show.orders.length ? show.orders.map((o: any) => (
           <Row key={o.id} href={`/dashboard/platform/orders/${o.id}`}>
