@@ -9,6 +9,7 @@ import * as night from "./night";
 import * as payouts from "./payouts";
 import * as openMic from "./openMic";
 import * as waitlist from "./waitlist";
+import * as reports from "./reports";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
 import { matchingManagerApproval } from '../utils/managerApproval';
@@ -43,6 +44,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         lookupTicketOrder(email: String!, orderNumber: String!): JSON
         ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
         openMicShows: JSON
+        showReport(from: String!, to: String!): JSON
         matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
       }
       input UserUpdateProfileInput { name: String, email: String, password: String, onboardingStatus: String, notificationPreference: Boolean }
@@ -84,6 +86,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         setSignupStatus(signupId: ID!, status: String!, idempotencyKey: String!): JSON
         updateSlotStatus(slotId: ID!, status: String!, idempotencyKey: String!): JSON
         setSalesWindow(tierId: ID!, salesStartAt: String, salesEndAt: String, idempotencyKey: String!): JSON
+        exportShowReport(from: String!, to: String!, idempotencyKey: String!): JSON
         closeShow(showId: ID!, idempotencyKey: String!): JSON
         closeRun(runId: ID!, idempotencyKey: String!): JSON
         approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
@@ -107,6 +110,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         ticketOrderConfirmation: op(checkout.ticketOrderConfirmation),
         openMicShows: op(tickets.openMicShows),
         matchingManagerApproval: op(matchingManagerApproval),
+        showReport: op(reports.showReport),
       },
       Mutation: {
         expireHolds: op(tickets.expireHolds),
@@ -144,6 +148,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         recordBringerArrival: op(openMic.recordBringerArrival),
         setSignupStatus: op(openMic.setSignupStatus),
         closeShow: op(night.closeShow),
+        exportShowReport: op(reports.exportShowReport),
         closeRun: op(night.closeRun),
         approvePayout: op(payouts.approvePayout),
         recordPayoutPaid: op(payouts.recordPayoutPaid),

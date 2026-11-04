@@ -5760,6 +5760,7 @@ type Mutation {
   setSignupStatus(signupId: ID!, status: String!, idempotencyKey: String!): JSON
   updateSlotStatus(slotId: ID!, status: String!, idempotencyKey: String!): JSON
   setSalesWindow(tierId: ID!, salesStartAt: String, salesEndAt: String, idempotencyKey: String!): JSON
+  exportShowReport(from: String!, to: String!, idempotencyKey: String!): JSON
   closeShow(showId: ID!, idempotencyKey: String!): JSON
   closeRun(runId: ID!, idempotencyKey: String!): JSON
   approvePayout(payoutId: ID!, idempotencyKey: String!): JSON
@@ -5938,6 +5939,7 @@ type Query {
   lookupTicketOrder(email: String!, orderNumber: String!): JSON
   ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
   openMicShows: JSON
+  showReport(from: String!, to: String!): JSON
   matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
 }
 

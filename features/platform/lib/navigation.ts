@@ -1,6 +1,6 @@
 import {
   Mic2, CalendarDays, Ticket, Users, UtensilsCrossed, Wallet, Tag, CreditCard, Settings, Clapperboard, Radio, UserRound,
-  LucideIcon, Store, RefreshCw,
+  LucideIcon, Store, RefreshCw, BarChart3,
 } from 'lucide-react'
 
 export interface PlatformNavItem {
@@ -30,6 +30,7 @@ export const platformNavItems: PlatformNavItem[] = [
 
   { title: 'Floor & menu',   href: '/platform/floor-menu',        color: 'cyan',   description: 'Rooms, sections, tables and menu items.',           icon: UtensilsCrossed, group: 'venue' },
   { title: 'Payouts',        href: '/platform/payouts',           color: 'emerald',description: 'Comedian payouts and nightly settlements.',         icon: Wallet,          group: 'venue' },
+  { title: 'Reports',        href: '/platform/reports',           color: 'emerald',description: 'Attendance, revenue, talent cost and CSV export.',         icon: BarChart3,          group: 'venue' },
   { title: 'Promo codes',    href: '/platform/promo-codes',       color: 'rose',   description: 'Discount and comp codes.',                          icon: Tag,             group: 'venue' },
   { title: 'Customers',      href: '/platform/customers',         color: 'slate',  description: 'People who bought tickets.',                        icon: UserRound,       group: 'venue' },
 
