@@ -2,7 +2,7 @@ import type { Context } from ".keystone/types";
 import { permissions } from "../access";
 import { canonicalIdempotencyParams, idempotencyFingerprint } from "./idempotency";
 
-export type ManagerApprovalAction = "void_item" | "comp_tickets" | "waive_minimum" | "refund_payment";
+export type ManagerApprovalAction = "void_item" | "void_check" | "comp_tickets" | "waive_minimum" | "refund_payment";
 
 export type ManagerApprovalRequest = {
   actionType: ManagerApprovalAction;
@@ -21,7 +21,7 @@ function normalizedRequest(input: ManagerApprovalRequest) {
 }
 
 function canRequestAction(context: Context, actionType: ManagerApprovalAction) {
-  if (!['void_item', 'comp_tickets', 'waive_minimum', 'refund_payment'].includes(actionType)) return false;
+  if (!['void_item', 'void_check', 'comp_tickets', 'waive_minimum', 'refund_payment'].includes(actionType)) return false;
   const s = { session: context.session };
   if (actionType === "refund_payment") return permissions.canIssueRefunds(s);
   if (actionType === "comp_tickets") return permissions.canManageOrders(s);

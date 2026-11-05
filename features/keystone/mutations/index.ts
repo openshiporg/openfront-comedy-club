@@ -96,6 +96,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         openCheck(seatingAssignmentId: ID!, idempotencyKey: String!): JSON
         addCheckItem(checkId: ID!, menuItemId: ID!, qty: Int!, idempotencyKey: String!): JSON
         voidCheckItem(itemId: ID!, checkId: ID!, reason: String!, approvalId: ID!, idempotencyKey: String!): JSON
+        voidCheck(checkId: ID!, reason: String!, approvalId: ID!, leftVenue: Boolean, idempotencyKey: String!): JSON
         closeCheck(checkId: ID!, tipCents: Int, waive: Boolean, reason: String, approvalId: ID, idempotencyKey: String!): JSON
         runOpenMicLottery(showId: ID!, idempotencyKey: String!): JSON
         addBringerSignup(showId: ID!, name: String!, email: String!, guestsRequired: Int!, idempotencyKey: String!): JSON
@@ -176,6 +177,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         openCheck: op(ops.openCheck),
         addCheckItem: op(ops.addCheckItem),
         voidCheckItem: op(night.voidCheckItem),
+        voidCheck: op(night.voidCheck),
         closeCheck: op(night.closeCheck),
         runOpenMicLottery: op(ops.runOpenMicLottery),
         setSalesWindow: op(ops.setSalesWindow),

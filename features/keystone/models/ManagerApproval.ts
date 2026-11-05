@@ -18,6 +18,7 @@ export const ManagerApproval = list({
       type: "string",
       options: [
         { label: "Void check item", value: "void_item" },
+        { label: "Void check", value: "void_check" },
         { label: "Comp tickets", value: "comp_tickets" },
         { label: "Waive minimum", value: "waive_minimum" },
         { label: "Refund payment", value: "refund_payment" },

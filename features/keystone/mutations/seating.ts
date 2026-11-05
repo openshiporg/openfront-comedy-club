@@ -50,7 +50,7 @@ export async function moveParty(_: any, a: any, c: any) {
 
 /**
  * Unseats a party that was seated by mistake or left without ordering: the tables are freed and the party waits to be seated again.
- * Refused while the party has an open check, so a bar tab is never orphaned; close or void the check first.
+ * Refused while the party has an open check, so a bar tab is never orphaned; close or void the check first. A voided check does not block it.
  */
 export async function unseatParty(_: any, a: any, c: any) {
   requirePermission(c, 'canManageDoor');
@@ -60,7 +60,7 @@ export async function unseatParty(_: any, a: any, c: any) {
     await lockTransactionKey(tx, 'show:' + first.showId);
     const s = await loadSeated(tx, a.assignmentId);
     if (s.checks.length) throw new Error('This party has an open check. Close it first');
-    const paid = await tx.check.count({ where: { seatingAssignmentId: s.id } });
+    const paid = await tx.check.count({ where: { seatingAssignmentId: s.id, status: 'paid' } });
     if (paid) throw new Error('This party already paid a check. Their table is freed when the check closes');
     await tx.tableOccupancy.updateMany({ where: { assignmentId: s.id, occupancyKey: { not: null } }, data: { occupancyKey: null } });
     // the row stays as history (unseated, no tables); the order is detached so it is back on the waiting list

@@ -80,6 +80,33 @@ export async function voidCheckItem(_: any, a: any, c: any) {
   }, 'check:' + a.checkId);
 }
 
+/**
+ * Voids a whole open check (opened for the wrong party, or the party walked out) with an independent manager approval for its exact
+ * live subtotal. No payment is taken. leftVenue frees the party's tables (walkout); otherwise the party stays seated and can get a new check.
+ */
+export async function voidCheck(_: any, a: any, c: any) {
+  requirePermission(c, 'canManageChecks');
+  const reason = String(a.reason || '').trim();
+  if (!reason || reason.length > 200) throw new Error('Reason required');
+  return command(c, 'voidCheck', a, async tx => {
+    const check = await tx.check.findUnique({ where: { id: String(a.checkId || '') }, include: { items: true } });
+    if (!check || !['open', 'presented'].includes(check.status)) throw new Error('Check cannot be voided');
+    if (await tx.payment.count({ where: { checkId: check.id, status: { notIn: ['failed', 'cancelled'] } } })) throw new Error('This check has a payment. Refund it instead');
+    const live = check.items.filter((i: any) => !i.voided);
+    const subtotal = live.reduce((n: number, i: any) => n + i.qty * i.priceCents, 0);
+    await consumeManagerApproval(tx, { approvalId: a.approvalId, actorId: c.session.itemId, actionType: 'void_check', targetId: check.id, reason, amount: subtotal, entityType: 'Check', entityId: check.id });
+    const changed = await tx.check.updateMany({ where: { id: check.id, status: check.status }, data: { status: 'voided', minimumShortfallCents: 0, subtotalCents: 0, taxCents: 0, tipCents: 0, totalCents: 0 } });
+    if (changed.count !== 1) throw new Error('Check changed');
+    const leftVenue = a.leftVenue === true;
+    if (leftVenue) {
+      await tx.seatingAssignment.updateMany({ where: { id: check.seatingAssignmentId, status: 'seated' }, data: { status: 'closed' } });
+      await tx.tableOccupancy.updateMany({ where: { assignmentId: check.seatingAssignmentId }, data: { occupancyKey: null } });
+    }
+    await audit(tx, c, 'voided', 'Check', check.id, { status: check.status, items: live.length, subtotal }, { status: 'voided', leftVenue }, reason);
+    return { checkId: check.id, voided: true, voidedCents: subtotal, leftVenue };
+  }, 'check:' + a.checkId);
+}
+
 /** Computes the minimum shortfall from the check's snapshot, then closes it. waive requires an approval. */
 export async function closeCheck(_: any, a: any, c: any) {
   requirePermission(c, 'canManageChecks');

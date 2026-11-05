@@ -24,6 +24,7 @@ const OPS: Record<string, Record<string, string>> = {
   openCheck: { seatingAssignmentId: 'ID!' },
   addCheckItem: { checkId: 'ID!', menuItemId: 'ID!', qty: 'Int!' },
   closeCheck: { checkId: 'ID!', tipCents: 'Int', waive: 'Boolean', reason: 'String', approvalId: 'ID' },
+  voidCheck: { checkId: 'ID!', reason: 'String!', approvalId: 'ID!', leftVenue: 'Boolean' },
   voidCheckItem: { itemId: 'ID!', checkId: 'ID!', reason: 'String!', approvalId: 'ID!' },
   runOpenMicLottery: { showId: 'ID!' },
   offerWaitlist: { showId: 'ID!' },
