@@ -4,8 +4,9 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { runCommand } from '../../actions/commands';
-import { MAX_QUEUE, describeScan, drainQueue, enqueueScan, normalizeCode, queueExpiry, readStored, type QueuedScan, type ScanAnswer } from '@/features/keystone/lib/doorQueue';
+import { MAX_QUEUE, describeScan, drainQueue, enqueueScan, normalizeCode, shortCode, queueExpiry, readStored, type QueuedScan, type ScanAnswer } from '@/features/keystone/lib/doorQueue';
 import { DOOR_QUEUE_PREFIX, sweepExpiredDoorQueues } from '../lib/doorStorage';
+import { CameraScan } from './CameraScan';
 
 /** Server answers that mean "this scan is dealt with". Anything else (session expired, server error) pauses the queue and keeps the scans. */
 const FINAL_ERRORS = [/ticket not found/i];
@@ -39,7 +40,7 @@ export function DoorScanner({ showId, startsAt, endsAt }: { showId: string; star
     let lastError: string | null = null;
     const { outcomes, rest } = await drainQueue(queueRef.current, async (s) => { try { return await send(s); } catch (e: any) { lastError = e?.message || null; throw e; } });
     save(rest);
-    const done = outcomes.filter((o) => o.kind !== 'offline').map((o) => o.kind === 'done' ? describeScan(o.scan.code, o.answer || { result: o.detail }) : { text: `${o.scan.code}: ${o.detail || 'rejected'}`, tone: 'warn' as const });
+    const done = outcomes.filter((o) => o.kind !== 'offline').map((o) => o.kind === 'done' ? describeScan(o.scan.code, o.answer || { result: o.detail }) : { text: `${shortCode(o.scan.code)}: ${o.detail || 'rejected'}`, tone: 'warn' as const });
     if (done.length) setNotes((n) => [...done, ...n].slice(0, 8));
     if (rest.length) setPaused(lastError && !/fetch|network|failed to/i.test(lastError) ? lastError : 'Offline. Scans are saved on this device.');
     busy.current = false; router.refresh();
@@ -57,27 +58,24 @@ export function DoorScanner({ showId, startsAt, endsAt }: { showId: string; star
     return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down); };
   }, [storeKey, drain]);
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const code = normalizeCode(value);
-    if (!code) return;
-    setValue('');
+  const submit = (e: React.FormEvent) => { e.preventDefault(); const code = normalizeCode(value); if (!code) return; setValue(''); checkIn(code); };
+  const checkIn = (code: string) => {
     const scan: QueuedScan = { key: crypto.randomUUID(), code, scannedAt: new Date().toISOString() };
     void (async () => {
       setPending(true);
       try {
       if (queueRef.current.length || !navigator.onLine) {
         const r = enqueueScan(queueRef.current, scan);
-        if (r.duplicate) { setFeedback({ error: `${code} is already waiting on this device` }); return; }
+        if (r.duplicate) { setFeedback({ error: `${shortCode(code)} is already waiting on this device` }); return; }
         if (r.full) { setFeedback({ error: `The saved-scan limit of ${MAX_QUEUE} is reached. Get back online before scanning more.` }); return; }
-        save(r.queue); setFeedback({ text: `Saved offline: ${code}. It will be checked in when you are back online.`, tone: 'ok' }); if (navigator.onLine) void drain(); return;
+        save(r.queue); setFeedback({ text: `Saved offline: ${shortCode(code)}. It will be checked in when you are back online.`, tone: 'ok' }); if (navigator.onLine) void drain(); return;
       }
       try {
         const r = await send(scan);
         setFeedback(r.ok ? describeScan(code, r.answer || { result: r.result }) : { error: r.error });
         router.refresh();
       } catch {
-        save(enqueueScan(queueRef.current, scan).queue); setFeedback({ text: `Saved offline: ${code}. It will be checked in when you are back online.`, tone: 'ok' });
+        save(enqueueScan(queueRef.current, scan).queue); setFeedback({ text: `Saved offline: ${shortCode(code)}. It will be checked in when you are back online.`, tone: 'ok' });
       }
       } finally { setPending(false); }
     })();
@@ -86,12 +84,13 @@ export function DoorScanner({ showId, startsAt, endsAt }: { showId: string; star
     <form onSubmit={submit} className="space-y-2">
       <div className="flex gap-2">
         <input
-          autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder="Ticket code or scan"
+          autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder="Ticket code or scan QR"
           className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           autoCapitalize="characters" autoComplete="off" spellCheck={false}
         />
         <Button type="submit" variant="outline" disabled={pending} className="h-10">Check in</Button>
       </div>
+      <CameraScan onCode={checkIn} />
       {!online || queue.length ? (
         <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs uppercase tracking-wide" data-testid="door-queue">
           <span>{!online ? 'Offline' : 'Online'} · {queue.length} of {MAX_QUEUE} saved scan{queue.length === 1 ? '' : 's'} waiting</span>

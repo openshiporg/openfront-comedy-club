@@ -43,3 +43,11 @@ test('a late duplicate names who admitted first and when; other refusals are exp
   assert.equal(describeScan('ABC', { result: 'admitted' }).tone, 'ok');
   assert.match(describeScan('ABC', { result: 'void' }).text, /void/); assert.match(describeScan('ABC', { result: 'wrong_show' }).text, /different show/);
 });
+test('a scanned QR token is named by the ticket code the server resolved, or cut short before that', async () => {
+  const { shortCode, isScanToken } = await import('./doorQueue');
+  const tok = 'a'.repeat(64);
+  assert.equal(isScanToken(tok), true); assert.equal(isScanToken('T-ABC123'), false); assert.equal(isScanToken('g'.repeat(64)), false);
+  assert.equal(shortCode(tok), 'QR aaaaaaaa'); assert.equal(shortCode('T-ABC123'), 'T-ABC123');
+  assert.equal(describeScan(tok, { result: 'admitted', ticketCode: 'T-ABC123', holderName: 'Ann' }).text, 'T-ABC123 (Ann): admitted');
+  assert.equal(describeScan(tok, { result: 'void' }).text, 'QR aaaaaaaa: ticket is void, do not admit');
+});

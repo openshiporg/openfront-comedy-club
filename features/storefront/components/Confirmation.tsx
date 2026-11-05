@@ -5,8 +5,9 @@ import { loadConfirmation } from '../lib/clientActions';
 import { completeCheckout } from '../lib/actions';
 import { price, showTime, ageLabel } from '../lib/format';
 import { TransferTicket } from './TransferTicket';
+import { TicketQr } from './TicketQr';
 
-/** QR codes are drawn from the opaque ticket token with a small inline encoder-free fallback: the code is also printed. */
+/** Each valid ticket shows a QR code of its opaque scan token; the ticket code is printed too, for typing at the door. */
 export function Confirmation({ orderNumber }: { orderNumber: string }) {
   const [order, setOrder] = React.useState<any>(null);
   const [error, setError] = React.useState('');
@@ -41,7 +42,7 @@ export function Confirmation({ orderNumber }: { orderNumber: string }) {
               <span className="font-mono text-sm break-all">{t.ticketCode}</span>
               <span className="font-mono text-xs uppercase tracking-wide">{t.status.replace('_', ' ')}</span>
               {t.holderName && t.transferredFromCode ? <span className="w-full text-xs text-muted-foreground">Transferred to {t.holderName}</span> : null}
-              {t.status === 'valid' ? <span className="w-full break-all font-mono text-xs text-muted-foreground" aria-label="Scan token">{t.token}</span> : null}
+              {t.status === 'valid' && paid && t.token ? <div className="w-full"><TicketQr token={t.token} label={`QR code for ticket ${t.ticketCode}`} /></div> : null}
               {t.status === 'valid' && paid && new Date() < new Date(order.show.doorsAt || order.show.startsAt) ? <TransferTicket orderNumber={orderNumber} secret={secret} ticketCode={t.ticketCode} onDone={() => load(secret)} /> : null}
             </li>
           ))}
@@ -54,7 +55,7 @@ export function Confirmation({ orderNumber }: { orderNumber: string }) {
         <div className="flex justify-between"><span>Tax</span><span>{price(order.taxCents)}</span></div>
         <div className="flex justify-between border-t pt-2 font-medium"><span>Total</span><span>{price(order.totalCents)}</span></div>
       </section>
-      <p className="text-sm text-muted-foreground">Show your ticket code at the door. Two-item minimum per guest applies at your table.</p>
+      <p className="text-sm text-muted-foreground">Show the QR code or your ticket code at the door. Two-item minimum per guest applies at your table.</p>
     </div>
   );
 }

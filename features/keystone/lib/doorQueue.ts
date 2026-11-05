@@ -35,6 +35,10 @@ export function readStored(raw: string | null, now: number): QueuedScan[] {
 export type QueuedScan = { key: string; code: string; scannedAt: string };
 
 export const normalizeCode = (v: string) => v.trim();
+/** A scanned QR is the 64-character hex scan token rather than a typed ticket code. */
+export const isScanToken = (v: string) => /^[0-9a-f]{64}$/i.test(v);
+/** How a saved scan is named before the server has resolved it: tokens are cut short so they fit a phone screen. */
+export const shortCode = (v: string) => (isScanToken(v) ? `QR ${v.slice(0, 8)}` : v);
 
 /** Add a scan unless the same code is already waiting on this device. */
 export function enqueueScan(queue: QueuedScan[], scan: QueuedScan): { queue: QueuedScan[]; duplicate: boolean; full: boolean } {
@@ -43,11 +47,13 @@ export function enqueueScan(queue: QueuedScan[], scan: QueuedScan): { queue: Que
   return { queue: [...queue, scan], duplicate: false, full: false };
 }
 
-export type ScanAnswer = { result?: string; admittedAt?: string | null; admittedBy?: string | null; admittedMethod?: string | null; holderName?: string | null };
+export type ScanAnswer = { result?: string; ticketCode?: string | null; admittedAt?: string | null; admittedBy?: string | null; admittedMethod?: string | null; holderName?: string | null };
 
 /** The sentence staff read for a server answer. A duplicate always says who admitted the ticket first and when. */
 export function describeScan(code: string, a: ScanAnswer, fmt: (iso: string) => string = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })): { text: string; tone: 'ok' | 'warn' } {
-  const who = a.holderName ? `${code} (${a.holderName})` : code;
+  // a QR scan sends the opaque token; staff read the ticket code the server resolved it to
+  const shown = a.ticketCode || shortCode(code);
+  const who = a.holderName ? `${shown} (${a.holderName})` : shown;
   switch (a.result) {
     case 'admitted': return { text: `${who}: admitted`, tone: 'ok' };
     case 'duplicate': {

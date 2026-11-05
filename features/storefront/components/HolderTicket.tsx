@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { loadHolderTicket } from '../lib/actions';
 import { ageLabel, showTime } from '../lib/format';
+import { TicketQr } from './TicketQr';
 
 /** The scan token travels in the URL fragment, so it never reaches a server log. */
 export function HolderTicket({ ticketCode }: { ticketCode: string }) {
@@ -35,7 +36,7 @@ export function HolderTicket({ ticketCode }: { ticketCode: string }) {
         {row('Seating', t.seating ? t.seating.tables.join(', ') : 'Assigned at the door')}
         {t.checkedInAt ? row('Checked in', showTime(t.checkedInAt, 'time')) : null}
       </dl>
-      {t.status === 'valid' ? <p className="break-all font-mono text-xs text-muted-foreground" aria-label="Scan token">{token}</p> : null}
+      {t.status === 'valid' ? <TicketQr token={token} label={`QR code for ticket ${t.ticketCode}`} /> : null}
       {t.history.length ? (
         <section>
           <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">Transfer history</h2>
