@@ -6008,6 +6008,7 @@ type Mutation {
   openCheck(seatingAssignmentId: ID!, idempotencyKey: String!): JSON
   addCheckItem(checkId: ID!, menuItemId: ID!, qty: Int!, idempotencyKey: String!): JSON
   voidCheckItem(itemId: ID!, checkId: ID!, reason: String!, approvalId: ID!, idempotencyKey: String!): JSON
+  voidCheck(checkId: ID!, reason: String!, approvalId: ID!, leftVenue: Boolean, idempotencyKey: String!): JSON
   closeCheck(checkId: ID!, tipCents: Int, waive: Boolean, reason: String, approvalId: ID, idempotencyKey: String!): JSON
   runOpenMicLottery(showId: ID!, idempotencyKey: String!): JSON
   addBringerSignup(showId: ID!, name: String!, email: String!, guestsRequired: Int!, idempotencyKey: String!): JSON
