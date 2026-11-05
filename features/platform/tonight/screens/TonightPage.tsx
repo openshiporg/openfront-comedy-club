@@ -28,7 +28,7 @@ export default async function TonightPage({ searchParams }: { searchParams?: Pro
       room { name seatingMode sections { name tables { id label seats x y } } }
       lineup(orderBy: { position: asc }) { id role position setMinutes status comedian { stageName } }
       tickets(where: { status: { in: [valid, checked_in] } }, take: 500) { id }
-      assignments { id status tables { id } }
+      assignments(where: { status: { equals: seated } }) { id status partySize tables { id label } ticketOrder { name orderNumber } checks(where: { status: { in: [open, presented] } }) { id } }
       occupancies(where: { occupancyKey: { not: null } }) { table { id } hold { id } assignment { id } }
       orders(where: { status: { in: [paid, partially_refunded, comp] }, tableAssignment: null }, take: 100) { id name partySize orderNumber }
       checks(where: { status: { in: [open, presented] } }) { id status guestCount totalCents minimumItemsMet seatingAssignment { tables { label } } }
@@ -81,7 +81,7 @@ export default async function TonightPage({ searchParams }: { searchParams?: Pro
       </Section>
 
       <Section title="Seating">
-        {show.room.seatingMode === 'tables' ? <SeatingBoard showId={show.id} tables={tables} orders={show.orders} /> : <Empty>General admission room: no table assignments.</Empty>}
+        {show.room.seatingMode === 'tables' ? <SeatingBoard showId={show.id} tables={tables} orders={show.orders} seated={show.assignments.map((x: any) => ({ id: x.id, partySize: x.partySize, name: x.ticketOrder?.name || 'Party', orderNumber: x.ticketOrder?.orderNumber || '', tableIds: x.tables.map((t: any) => t.id), tableLabels: x.tables.map((t: any) => t.label), openCheck: x.checks.length > 0 }))} /> : <Empty>General admission room: no table assignments.</Empty>}
       </Section>
 
       <Section title="Open checks">

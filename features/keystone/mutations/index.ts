@@ -18,6 +18,7 @@ import * as slotLink from "./slotLink";
 import * as transfer from "./transfer";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
+import * as seating from "./seating";
 import { matchingManagerApproval } from '../utils/managerApproval';
 
 const graphql = String.raw;
@@ -90,6 +91,8 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         issueComp(showId: ID!, tierId: ID!, quantity: Int!, recipientName: String!, recipientEmail: String, reason: String!, approvalId: ID, idempotencyKey: String!): JSON
         checkInTicket(tokenOrCode: String!, showId: ID!, method: String, scannedAt: String, idempotencyKey: String!): JSON
         seatParty(orderId: ID!, tableIds: [ID!]!, showId: ID!, serverId: ID, idempotencyKey: String!): JSON
+        moveParty(assignmentId: ID!, tableIds: [ID!]!, reason: String, idempotencyKey: String!): JSON
+        unseatParty(assignmentId: ID!, reason: String, idempotencyKey: String!): JSON
         openCheck(seatingAssignmentId: ID!, idempotencyKey: String!): JSON
         addCheckItem(checkId: ID!, menuItemId: ID!, qty: Int!, idempotencyKey: String!): JSON
         voidCheckItem(itemId: ID!, checkId: ID!, reason: String!, approvalId: ID!, idempotencyKey: String!): JSON
@@ -168,6 +171,8 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         issueComp: op(night.issueComp),
         checkInTicket: op(ops.checkInTicket),
         seatParty: op(ops.seatParty),
+        moveParty: op(seating.moveParty),
+        unseatParty: op(seating.unseatParty),
         openCheck: op(ops.openCheck),
         addCheckItem: op(ops.addCheckItem),
         voidCheckItem: op(night.voidCheckItem),

@@ -19,6 +19,8 @@ const OPS: Record<string, Record<string, string>> = {
   issueComp: { showId: 'ID!', tierId: 'ID!', quantity: 'Int!', recipientName: 'String!', recipientEmail: 'String', reason: 'String!', approvalId: 'ID' },
   checkInTicket: { tokenOrCode: 'String!', showId: 'ID!', method: 'String', scannedAt: 'String' },
   seatParty: { orderId: 'ID!', tableIds: '[ID!]!', showId: 'ID!' },
+  moveParty: { assignmentId: 'ID!', tableIds: '[ID!]!', reason: 'String' },
+  unseatParty: { assignmentId: 'ID!', reason: 'String' },
   openCheck: { seatingAssignmentId: 'ID!' },
   addCheckItem: { checkId: 'ID!', menuItemId: 'ID!', qty: 'Int!' },
   closeCheck: { checkId: 'ID!', tipCents: 'Int', waive: 'Boolean', reason: 'String', approvalId: 'ID' },
