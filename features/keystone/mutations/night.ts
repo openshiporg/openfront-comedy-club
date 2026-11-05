@@ -113,6 +113,7 @@ export async function closeCheck(_: any, a: any, c: any) {
   return command(c, 'closeCheck', a, async tx => {
     const check = await tx.check.findUnique({ where: { id: a.checkId }, include: { items: true } });
     if (!check || !['open', 'presented'].includes(check.status)) throw new Error('Check cannot be closed');
+    if (await tx.payment.count({ where: { checkId: check.id, status: { in: ['pending', 'processing', 'authorized', 'unknown'] } } })) throw new Error('A card payment is in progress on this check. Finish or cancel it first');
     const live = check.items.filter((i: any) => !i.voided);
     const qualifying = live.filter((i: any) => i.countsTowardMinimum);
     const waived = a.waive === true;

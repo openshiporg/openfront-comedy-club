@@ -24,7 +24,7 @@ async function main() { const shows: string[] = []; try {
   const sa = await party('Alpha', twos[0]); const sb = await party('Bravo', twos[1]); const sc = await party('Charlie', twos[2]);
   const ca: any = await openCheck(null, { seatingAssignmentId: sa.id, idempotencyKey: k() }, staff);
   for (const m of menu) await addCheckItem(null, { checkId: ca.id, menuItemId: m.id, qty: 2, idempotencyKey: k() }, staff);
-  const sub = menu.reduce((n, m) => n + m.priceCents * 2, 0);
+  const sub = menu.reduce((n, m) => n + (m.priceCents ?? 0) * 2, 0);
   // refusals
   await assert.rejects(voidCheck(null, { checkId: ca.id, reason: '', approvalId: 'x', idempotencyKey: k() }, staff), /Reason required/);
   await assert.rejects(voidCheck(null, { checkId: ca.id, reason: 'Wrong party', idempotencyKey: k() }, staff), /approval is required/);
@@ -45,7 +45,7 @@ async function main() { const shows: string[] = []; try {
   // walkout: tables freed, assignment closed
   const cb: any = await openCheck(null, { seatingAssignmentId: sb.id, idempotencyKey: k() }, staff);
   await addCheckItem(null, { checkId: cb.id, menuItemId: menu[0].id, qty: 1, idempotencyKey: k() }, staff);
-  const okb = await approve(staff, mgr, cb.id, 'Walked out', menu[0].priceCents);
+  const okb = await approve(staff, mgr, cb.id, 'Walked out', menu[0].priceCents ?? 0);
   const rb: any = await voidCheck(null, { checkId: cb.id, reason: 'Walked out', approvalId: okb, leftVenue: true, idempotencyKey: k() }, staff); assert.equal(rb.leftVenue, true);
   assert.equal((await p.seatingAssignment.findUnique({ where: { id: sb.id } }))!.status, 'closed');
   assert.equal(await p.tableOccupancy.count({ where: { assignmentId: sb.id, occupancyKey: { not: null } } }), 0, 'tables freed');

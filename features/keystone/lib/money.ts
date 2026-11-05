@@ -16,6 +16,14 @@ export function minimum(input: {requiredItems:number; qualifyingItems:number; ch
   for(const n of [input.requiredItems,input.qualifyingItems,input.cheapestCents,input.floorCents||0,input.qualifyingCents||0]) cents(n);
   return input.waived ? 0 : Math.max(Math.max(0,input.requiredItems-input.qualifyingItems)*input.cheapestCents,Math.max(0,(input.floorCents||0)-(input.qualifyingCents||0)));
 }
+/** A check's bill from its live items: minimum shortfall, tax on subtotal (tips are not taxed), total. */
+export function checkBill(input:{items:{qty:number;priceCents:number;countsTowardMinimum:boolean;voided?:boolean}[];requiredItems:number;cheapestCents:number;floorCents?:number;taxBps:number;tipCents?:number;waived?:boolean}) {
+  const live=input.items.filter(i=>!i.voided); const q=live.filter(i=>i.countsTowardMinimum);
+  const shortfall=minimum({requiredItems:input.requiredItems,qualifyingItems:q.reduce((n,i)=>n+i.qty,0),cheapestCents:input.cheapestCents,floorCents:input.floorCents||0,qualifyingCents:q.reduce((n,i)=>n+i.qty*i.priceCents,0),waived:input.waived});
+  const subtotal=cents(live.reduce((n,i)=>n+cents(i.qty)*cents(i.priceCents),0)+shortfall);
+  const tax=basisPoints(subtotal,input.taxBps); const tip=input.tipCents&&Number.isSafeInteger(input.tipCents)&&input.tipCents>0?input.tipCents:0;
+  return {minimumShortfallCents:shortfall,subtotalCents:subtotal,taxCents:tax,tipCents:tip,totalCents:subtotal+tax+tip};
+}
 export function payout(slots:{feeCents:number;bonusCents:number}[], runFeeCents=0) { cents(runFeeCents); return cents((runFeeCents || slots.reduce((sum,s)=>sum+cents(s.feeCents),0))+slots.reduce((sum,s)=>sum+cents(s.bonusCents),0)); }
 export function settlement(input:{ticketGrossCents:number;feesCents:number;discountsCents:number;refundsCents:number;foodBeverageGrossCents:number;minimumShortfallRevenueCents:number;talentCostCents:number}) {
   Object.values(input).forEach(cents);

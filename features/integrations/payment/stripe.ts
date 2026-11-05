@@ -16,10 +16,12 @@ export async function createPaymentFunction({ order, amount, currency, idempoten
     {
       amount,
       currency: currency.toLowerCase(),
-      automatic_payment_methods: { enabled: true },
+      // a check is paid with a card keyed at the table: no bank debit or Link
+      ...(order?.checkPaymentId ? { payment_method_types: ["card"] } : { automatic_payment_methods: { enabled: true } }),
       metadata: {
         orderId: order?.id || "",
         orderNumber: order?.orderNumber || "",
+        ...(order?.checkPaymentId ? { checkPaymentId: order.checkPaymentId } : {}),
       },
     },
     idempotencyKey ? { idempotencyKey } : undefined

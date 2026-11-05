@@ -8,6 +8,7 @@ import { Status } from '../../components/ui';
 import { ApprovalControl } from '../../approvals/components/ApprovalControl';
 import { money } from '../../lib/format';
 import { ClientOnly } from '../../components/ClientOnly';
+import { CardTender } from './CardTender';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandItem, CommandList, CommandInput, CommandEmpty } from '@/components/ui/command';
 
@@ -36,6 +37,7 @@ export function CheckPanel({ check, menu }: { check: { id: string; status: strin
       <div>{live.map((i) => <div key={i.id} className="flex justify-between gap-3 py-1 text-sm"><span className="min-w-0 break-words">{i.qty} × {i.name}</span><span className="font-mono text-xs">{money(i.qty * i.priceCents)}</span>{check.status === 'open' ? <button className="text-xs underline" onClick={() => setCorrection(i.id)}>Void</button> : null}</div>)}</div>
       {['open', 'presented'].includes(check.status) ? (
         <div className="flex flex-wrap items-center gap-2">
+          {check.status === 'open' ? <>
           <ClientOnly placeholder={<button type="button" className={pillClass + ' border'}>Add item</button>}>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild><button type="button" className={pillClass + ' border'}>Add item</button></PopoverTrigger>
@@ -56,9 +58,11 @@ export function CheckPanel({ check, menu }: { check: { id: string; status: strin
           </ClientOnly>
           <input value={tip} onChange={(e) => setTip(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" placeholder="Tip" aria-label="Tip in dollars" className="h-8 w-20 rounded-md border bg-background px-2 text-sm" />
           <button type="button" disabled={pending} className={pillClass + ' border'} onClick={() => start(async () => { setError(''); const r = await runCommand('closeCheck', { checkId: check.id, tipCents: Math.round(Number(tip || 0) * 100) }); if (!r.ok) setError(r.error); else router.refresh(); })}>Close check</button>
+          </> : null}
+          <CardTender checkId={check.id} presented={check.status === 'presented'} tipCents={Math.round(Number(tip || 0) * 100)} onError={setError} />
         </div>
       ) : null}
-      {['open', 'presented'].includes(check.status) ? <div className="flex flex-wrap gap-2"><button className={pillClass} onClick={() => setCorrection('waive')}>Waive minimum</button><button className={pillClass} onClick={() => setCorrection('check')}>Void check</button></div> : null}
+      {check.status === 'open' ? <div className="flex flex-wrap gap-2"><button className={pillClass} onClick={() => setCorrection('waive')}>Waive minimum</button><button className={pillClass} onClick={() => setCorrection('check')}>Void check</button></div> : null}
       {correction ? <div className="space-y-2 border-t pt-3"><p className="text-sm">{correction === 'waive' ? 'Waive minimum' : correction === 'check' ? `Void check · ${money(subtotal)}` : 'Void item'}</p><input aria-label="Correction reason" placeholder="Reason" value={reason} onChange={e => setReason(e.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm" />
         {correction === 'check' ? <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1" role="group" aria-label="Party">
           <button type="button" aria-pressed={!left} className={seg(!left)} onClick={() => setLeft(false)}>Party stays</button>

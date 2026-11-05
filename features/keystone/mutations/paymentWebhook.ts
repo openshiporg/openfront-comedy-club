@@ -1,5 +1,6 @@
 import { handleWebhookFunction } from '../../integrations/payment/stripe';
 import { verifyAndFinalize } from './checkout';
+import { settleCheckCard } from './checkPay';
 
 /** Signed (raw-byte) Stripe TEST webhook with a durable, deduplicated inbox. Settlement re-reads the provider, never trusts the payload. */
 export async function handlePaymentWebhook(context: any, rawBody: string, headers: Record<string, string>) {
@@ -19,6 +20,15 @@ export async function handlePaymentWebhook(context: any, rawBody: string, header
   }
   try {
     const intent = verified.resource as any;
+    const checkPaymentId = intent?.metadata?.checkPaymentId;
+    if (checkPaymentId) {
+      const payment = await db.payment.findUnique({ where: { id: checkPaymentId } });
+      if (intent?.status !== 'succeeded' || !payment?.checkId || payment.providerPaymentId !== intent.id) throw new Error('Payment does not match the check');
+      const result = await settleCheckCard(context, payment.id);
+      if (result.status !== 'paid') throw new Error('Check not settled: ' + result.status);
+      await db.paymentWebhookEvent.update({ where: { id: inbox.id }, data: { status: 'processed', paymentId: payment.id, processedAt: new Date(), error: '' } });
+      return { success: true, status: 'processed' };
+    }
     const orderId = intent?.metadata?.orderId;
     if (intent?.status !== 'succeeded' || !orderId) throw new Error('Order correlation missing');
     const order = await db.ticketOrder.findUnique({ where: { id: orderId }, include: { paymentCollection: { include: { paymentSessions: true } } } });

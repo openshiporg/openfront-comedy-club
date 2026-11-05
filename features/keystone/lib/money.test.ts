@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { basisPoints,quote,minimum,payout,settlement,selfRefundAllowed,runClosePlan } from './money';
+import { basisPoints,quote,minimum,checkBill,payout,settlement,selfRefundAllowed,runClosePlan } from './money';
 test('basis point rounding uses integer arithmetic',()=>{assert.equal(basisPoints(101,500),5);assert.equal(basisPoints(1,5000),1);});
 test('quote snapshots all charges',()=>{assert.deepEqual(quote({priceCents:2500,feeCents:200,quantity:2,serviceFeeBps:100,taxBps:825,discountType:'percent_bps',discountValue:1000}),{subtotalCents:5000,feesCents:450,discountCents:500,taxCents:371,totalCents:5321});});
 test('discount cannot make subtotal negative',()=>{assert.equal(quote({priceCents:100,feeCents:0,quantity:1,serviceFeeBps:0,taxBps:0,discountType:'amount_cents',discountValue:200}).totalCents,0);});
@@ -28,4 +28,11 @@ test('zero run fee creates no payout; empty and invalid runs are rejected', () =
   assert.equal((runClosePlan({ ...base, runFeeCents: 0 }) as any).createPayout, false);
   assert.equal((runClosePlan({ ...base, showStatuses: [] }) as any).ok, false);
   assert.throws(() => runClosePlan({ ...base, runFeeCents: 10.5 }));
+});
+
+test('check bill: voided items ignored, shortfall billed, tax excludes tip, waiver drops shortfall',()=>{
+  const items=[{qty:1,priceCents:800,countsTowardMinimum:true},{qty:2,priceCents:500,countsTowardMinimum:false},{qty:3,priceCents:900,countsTowardMinimum:true,voided:true}];
+  assert.deepEqual(checkBill({items,requiredItems:4,cheapestCents:400,taxBps:1000,tipCents:300}),{minimumShortfallCents:1200,subtotalCents:3000,taxCents:300,tipCents:300,totalCents:3600});
+  assert.equal(checkBill({items,requiredItems:4,cheapestCents:400,taxBps:1000,waived:true}).totalCents,1980);
+  assert.equal(checkBill({items,requiredItems:0,cheapestCents:0,taxBps:0,tipCents:-5}).tipCents,0);
 });

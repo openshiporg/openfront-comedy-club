@@ -19,6 +19,7 @@ import * as transfer from "./transfer";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
 import * as seating from "./seating";
+import * as checkPay from "./checkPay";
 import { matchingManagerApproval } from '../utils/managerApproval';
 
 const graphql = String.raw;
@@ -96,6 +97,9 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         openCheck(seatingAssignmentId: ID!, idempotencyKey: String!): JSON
         addCheckItem(checkId: ID!, menuItemId: ID!, qty: Int!, idempotencyKey: String!): JSON
         voidCheckItem(itemId: ID!, checkId: ID!, reason: String!, approvalId: ID!, idempotencyKey: String!): JSON
+        startCheckCardPayment(checkId: ID!, tipCents: Int, idempotencyKey: String!): JSON
+        completeCheckCardPayment(checkId: ID!, paymentId: ID!): JSON
+        cancelCheckCardPayment(checkId: ID!, paymentId: ID!, reason: String, idempotencyKey: String!): JSON
         voidCheck(checkId: ID!, reason: String!, approvalId: ID!, leftVenue: Boolean, idempotencyKey: String!): JSON
         closeCheck(checkId: ID!, tipCents: Int, waive: Boolean, reason: String, approvalId: ID, idempotencyKey: String!): JSON
         runOpenMicLottery(showId: ID!, idempotencyKey: String!): JSON
@@ -178,6 +182,9 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         addCheckItem: op(ops.addCheckItem),
         voidCheckItem: op(night.voidCheckItem),
         voidCheck: op(night.voidCheck),
+        startCheckCardPayment: op(checkPay.startCheckCardPayment),
+        completeCheckCardPayment: op(checkPay.completeCheckCardPayment),
+        cancelCheckCardPayment: op(checkPay.cancelCheckCardPayment),
         closeCheck: op(night.closeCheck),
         runOpenMicLottery: op(ops.runOpenMicLottery),
         setSalesWindow: op(ops.setSalesWindow),

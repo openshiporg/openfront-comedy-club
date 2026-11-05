@@ -24,6 +24,9 @@ const OPS: Record<string, Record<string, string>> = {
   openCheck: { seatingAssignmentId: 'ID!' },
   addCheckItem: { checkId: 'ID!', menuItemId: 'ID!', qty: 'Int!' },
   closeCheck: { checkId: 'ID!', tipCents: 'Int', waive: 'Boolean', reason: 'String', approvalId: 'ID' },
+  startCheckCardPayment: { checkId: 'ID!', tipCents: 'Int' },
+  completeCheckCardPayment: { checkId: 'ID!', paymentId: 'ID!' },
+  cancelCheckCardPayment: { checkId: 'ID!', paymentId: 'ID!', reason: 'String' },
   voidCheck: { checkId: 'ID!', reason: 'String!', approvalId: 'ID!', leftVenue: 'Boolean' },
   voidCheckItem: { itemId: 'ID!', checkId: 'ID!', reason: 'String!', approvalId: 'ID!' },
   runOpenMicLottery: { showId: 'ID!' },
@@ -52,7 +55,7 @@ export async function findApproval(input: { actionType: string; targetId: string
   if (!res.success) return { id: '', error: res.error || 'Approval lookup failed' };
   return { id: (res.data as any)?.matchingManagerApproval?.id || '', error: '' };
 }
-const NO_KEY = new Set(['requestApproval', 'approveRequest']);
+const NO_KEY = new Set(['requestApproval', 'approveRequest', 'completeCheckCardPayment']);
 
 export async function runCommand(op: string, variables: Record<string, unknown>, paths: string[] = []) {
   const spec = OPS[op];

@@ -14,7 +14,7 @@ export function paymentAdapterPayload(provider: any, args: any) {
   for (const key of ["cart", "order"]) {
     const record = input[key] as Record<string, unknown> | undefined;
     if (record && typeof record === "object") {
-      input[key] = Object.fromEntries(["id", "orderNumber", "orderType", "currencyCode", "subtotal", "tax", "tip", "discount", "total", "customerName", "customerEmail", "email"].filter(field => record[field] !== undefined).map(field => [field, record[field]]));
+      input[key] = Object.fromEntries(["id", "orderNumber", "orderType", "currencyCode", "subtotal", "tax", "tip", "discount", "total", "customerName", "customerEmail", "email", "checkPaymentId"].filter(field => record[field] !== undefined).map(field => [field, record[field]]));
     }
   }
   // Never forward an application's session cookies/authorization to an adapter.
