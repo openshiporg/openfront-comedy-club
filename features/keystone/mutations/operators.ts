@@ -24,7 +24,7 @@ export async function resumeSales(_:any,a:any,c:any) {
  },'show:'+a.showId);
 }
 export async function offerSlot(_:any,a:any,c:any) {requirePermission(c,'canManageTalent');return command(c,'offerSlot',a,async tx=>{
-  const comedian=await tx.comedian.findUnique({where:{id:a.comedianId}});const show=await tx.show.findUnique({where:{id:a.showId}});if(!comedian||!show||['cancelled','completed','settled'].includes(show.status)) throw new Error('Show or comedian unavailable');
+  const comedian=await tx.comedian.findUnique({where:{id:a.comedianId}});const show=await tx.show.findUnique({where:{id:a.showId}});if(!comedian||!show||['cancelled','completed','settled'].includes(show.status)) throw new Error('Show or comedian unavailable');if(comedian.status==='inactive') throw new Error(`${comedian.stageName} is retired; reactivate them under Lineups & talent first`);
   if(['headliner','host'].includes(a.role)&&await tx.lineupSlot.count({where:{showId:a.showId,role:a.role,status:{notIn:['cancelled','declined']}}})) throw new Error('Only one host and headliner allowed');
   const slot=await tx.lineupSlot.create({data:{showId:a.showId,comedianId:a.comedianId,role:a.role,position:a.position||0,setMinutes:a.setMinutes||10,feeCents:a.feeCents??comedian.defaultFeeCents,bonusCents:0,status:'offered'}});await audit(tx,c,'offered','LineupSlot',slot.id,null,slot);return slot;
 },'show:'+a.showId);}
@@ -116,4 +116,18 @@ export async function setSalesWindow(_:any,a:any,c:any){
   await audit(tx,c,'sales_window_set','PriceTier',tier.id,{salesStartAt:tier.salesStartAt,salesEndAt:tier.salesEndAt},{salesStartAt:after.salesStartAt,salesEndAt:after.salesEndAt});
   return {tierId:after.id,salesStartAt:after.salesStartAt,salesEndAt:after.salesEndAt};
  });
+}
+
+/** Retire (inactive) or reactivate a comedian. History (slots, payouts, statements) is kept; retired comics leave booking pickers.
+ *  Retiring is refused while they still hold an offered or confirmed slot on a show that has not happened yet. */
+export async function setComedianStatus(_:any,a:any,c:any) {
+ requirePermission(c,'canManageTalent');
+ if(!['active','inactive'].includes(a.status)) throw new Error('Status must be active or inactive');
+ return command(c,'setComedianStatus',a,async tx=>{
+  if(a.status==='inactive'){
+   const live=await tx.lineupSlot.findMany({where:{comedianId:a.comedianId,status:{in:['offered','confirmed']},show:{status:{notIn:['cancelled','completed','settled']},startsAt:{gte:new Date()}}},include:{show:{select:{title:true,startsAt:true}}},orderBy:{show:{startsAt:'asc'}}});
+   if(live.length) throw new Error(`Still booked on ${live.length} upcoming show${live.length===1?'':'s'} (${live.slice(0,3).map((l:any)=>l.show.title+' '+l.show.startsAt.toISOString().slice(0,10)).join(', ')}). Decline or cancel those slots first.`);
+  }
+  return transition(tx,c,'comedian',a.comedianId,a.status,{active:['inactive'],inactive:['active']});
+ },'comedian:'+a.comedianId);
 }

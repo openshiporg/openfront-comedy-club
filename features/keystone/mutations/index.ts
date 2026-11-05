@@ -89,6 +89,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         setLineup(showId: ID!, slots: [SlotOrderInput!]!, idempotencyKey: String!): JSON
         offerSlot(showId: ID!, comedianId: ID!, role: String!, position: Int, setMinutes: Int, feeCents: Int, idempotencyKey: String!): JSON
         confirmSlot(slotId: ID!, idempotencyKey: String!): JSON
+        setComedianStatus(comedianId: ID!, status: String!, idempotencyKey: String!): JSON
         issueComp(showId: ID!, tierId: ID!, quantity: Int!, recipientName: String!, recipientEmail: String, reason: String!, approvalId: ID, idempotencyKey: String!): JSON
         checkInTicket(tokenOrCode: String!, showId: ID!, method: String, scannedAt: String, idempotencyKey: String!): JSON
         seatParty(orderId: ID!, tableIds: [ID!]!, showId: ID!, serverId: ID, idempotencyKey: String!): JSON
@@ -173,6 +174,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         setLineup: op(ops.setLineup),
         offerSlot: op(ops.offerSlot),
         confirmSlot: op(ops.confirmSlot),
+        setComedianStatus: op(ops.setComedianStatus),
         issueComp: op(night.issueComp),
         checkInTicket: op(ops.checkInTicket),
         seatParty: op(ops.seatParty),

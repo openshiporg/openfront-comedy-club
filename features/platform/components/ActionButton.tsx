@@ -20,7 +20,7 @@ export function ActionButton({ op, vars, children, paths, confirm, onDone, class
   const [pending, start] = React.useTransition();
   const [error, setError] = React.useState('');
   return (
-    <span className="inline-flex max-w-full flex-col gap-1">
+    <span className="inline-flex max-w-full flex-col items-start gap-1">
       <button
         type="button"
         disabled={pending}

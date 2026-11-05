@@ -13,6 +13,7 @@ const OPS: Record<string, Record<string, string>> = {
   generateShowsFromTemplate: { templateId: 'ID!' },
   offerSlot: { showId: 'ID!', comedianId: 'ID!', role: 'String!', position: 'Int', setMinutes: 'Int', feeCents: 'Int' },
   confirmSlot: { slotId: 'ID!' },
+  setComedianStatus: { comedianId: 'ID!', status: 'String!' },
   updateSlotStatus: { slotId: 'ID!', status: 'String!' },
   scheduleShowReminders: { showId: 'ID!' },
   issueSlotLink: { slotId: 'ID!' },

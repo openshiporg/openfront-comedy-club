@@ -51,7 +51,7 @@ export async function createShowSeries(_: any, a: any, c: any) {
     const bad = planProblems(rows);
     if (bad.length) throw new Error(`${bad.length} date${bad.length === 1 ? '' : 's'} cannot be created: ${bad.slice(0, 3).map((r) => `${r.day} (${r.problem})`).join('; ')}`);
     const tiers = await tx.priceTier.findMany({ where: { showId: source.id } });
-    const slots = a.copyLineup ? await tx.lineupSlot.findMany({ where: { showId: source.id, status: { notIn: ['cancelled', 'declined'] } } }) : [];
+    const slots = a.copyLineup ? await tx.lineupSlot.findMany({ where: { showId: source.id, status: { notIn: ['cancelled', 'declined'] }, comedian: { status: { not: 'inactive' } } } }) : [];
     const group = await tx.showGroup.create({ data: { name: name || source.title, groupKey, sourceShow: { connect: { id: source.id } } } });
     const ids: string[] = [];
     for (const r of rows) {
