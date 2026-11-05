@@ -812,16 +812,23 @@ model ShowTemplate {
 }
 
 model ShowGroup {
-  id           String   @id @default(cuid())
-  name         String   @default("")
-  groupKey     String   @unique @default("")
-  sourceShow   Show?    @relation("ShowGroup_sourceShow", fields: [sourceShowId], references: [id])
-  sourceShowId String?  @map("sourceShow")
-  shows        Show[]   @relation("Show_group")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
+  id                  String    @id @default(cuid())
+  name                String    @default("")
+  groupKey            String    @unique @default("")
+  sourceShow          Show?     @relation("ShowGroup_sourceShow", fields: [sourceShowId], references: [id])
+  sourceShowId        String?   @map("sourceShow")
+  shows               Show[]    @relation("Show_group")
+  cancelRequestedAt   DateTime?
+  cancelRequestedBy   User?     @relation("ShowGroup_cancelRequestedBy", fields: [cancelRequestedById], references: [id])
+  cancelRequestedById String?   @map("cancelRequestedBy")
+  cancelReason        String    @default("")
+  cancelShowIds       Json?
+  cancelCompletedAt   DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @default(now()) @updatedAt
 
   @@index([sourceShowId])
+  @@index([cancelRequestedById])
 }
 
 model Table {
@@ -972,6 +979,7 @@ model User {
   from_Payment_processedBy         Payment[]           @relation("Payment_processedBy")
   from_Refund_requestedBy          Refund[]            @relation("Refund_requestedBy")
   from_Refund_approvedBy           Refund[]            @relation("Refund_approvedBy")
+  from_ShowGroup_cancelRequestedBy ShowGroup[]         @relation("ShowGroup_cancelRequestedBy")
 
   @@index([roleId])
 }

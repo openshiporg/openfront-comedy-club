@@ -107,8 +107,12 @@ export async function closeCheck(_: any, a: any, c: any) {
 export async function cancelShow(_: any, a: any, c: any) {
   requirePermission(c, 'canManageShows');
   requirePermission(c, 'canIssueRefunds');
-  const settings = await c.prisma.venueSettings.findFirst();
-  const first = await command(c, 'cancelShow', a, async tx => {
+  return cancelShowCore(c, a, c.session.itemId);
+}
+
+/** Cancels the show, then refunds its orders. Safe to call again for the same show: a cancelled show skips the first step and only finishes refunds. */
+export async function cancelShowCore(c: any, a: { showId: string; reason: string; idempotencyKey: string }, actorId: string | null) {
+  await command(c, 'cancelShow', a, async tx => {
     const show = await tx.show.findUnique({ where: { id: a.showId } });
     if (!show || ['completed', 'settled', 'cancelled'].includes(show.status)) throw new Error('Show cannot be cancelled');
     await tx.show.update({ where: { id: show.id }, data: { status: 'cancelled' } });
@@ -119,12 +123,17 @@ export async function cancelShow(_: any, a: any, c: any) {
     const holds = await tx.inventoryHold.findMany({ where: { showId: show.id, status: 'active', order: null } });
     for (const h of holds) { await tx.inventoryHold.update({ where: { id: h.id }, data: { status: 'released' } }); await releaseHoldSeats(tx, h); await tx.tableOccupancy.updateMany({ where: { holdId: h.id }, data: { occupancyKey: null } }); }
     await audit(tx, c, 'cancelled', 'Show', show.id, show, { status: 'cancelled' }, a.reason);
-    const orders = await tx.ticketOrder.findMany({ where: { showId: show.id, status: { in: ['paid', 'partially_refunded'] } }, select: { id: true } });
-    return { orderIds: orders.map((o: any) => o.id) };
+    return { ok: true };
   }, 'show:' + a.showId);
+  return refundCancelledShow(c, a.showId, a.reason, actorId);
+}
+
+/** Refunds every paid order of a cancelled show. Keys are stable per show and order, so a retry never refunds twice. */
+export async function refundCancelledShow(c: any, showId: string, _reason: string, actorId: string | null) {
+  const orders = await c.prisma.ticketOrder.findMany({ where: { showId, status: { in: ['paid', 'partially_refunded'] } }, select: { id: true } });
   let refunded = 0, failed = 0;
-  for (const id of first.orderIds) {
-    try { await refundOrderInternal(c, { orderId: id, reason: 'Show cancelled', idempotencyKey: `cancel:${a.showId}:${id}`, actorId: c.session.itemId, threshold: Number.MAX_SAFE_INTEGER }); refunded++; } catch { failed++; }
+  for (const o of orders) {
+    try { await refundOrderInternal(c, { orderId: o.id, reason: 'Show cancelled', idempotencyKey: `cancel:${showId}:${o.id}`, actorId, threshold: Number.MAX_SAFE_INTEGER }); refunded++; } catch { failed++; }
   }
   return { cancelled: true, refunded, failed };
 }

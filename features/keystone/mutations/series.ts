@@ -3,7 +3,7 @@ import { audit, command, lockTransactionKey, requirePermission } from '../lib/co
 import { showCapacity } from '../lib/capacity';
 import { editable, localTime, normalizeEdit, overlaps, planProblems, planSeries, type Existing, type Pattern } from '../lib/series';
 import { zonedTime } from '../lib/time';
-import { cancelShow } from './night';
+import { cancelShowCore, refundCancelledShow } from './night';
 
 const SOURCE_SELECT = { id: true, title: true, startsAt: true, doorsAt: true, endsAt: true, roomId: true, capacity: true, ageRestriction: true, publicNote: true, isOpenMic: true, status: true, room: { select: { capacity: true, venue: { select: { timezone: true } } } } };
 
@@ -82,6 +82,7 @@ export async function editShowSeries(_: any, a: any, c: any) {
     await lockTransactionKey(tx, 'group:' + a.groupId);
     const now = new Date();
     const { group, live, skipped } = await inScope(tx, a.groupId, now);
+    if (group.cancelRequestedAt && !group.cancelCompletedAt) throw new Error('This series is being cancelled');
     if (!live.length) throw new Error('No future shows in this series');
     const roomId = live[0].roomId;
     if (roomId) await lockTransactionKey(tx, 'room:' + roomId);
@@ -127,22 +128,106 @@ export async function editShowSeries(_: any, a: any, c: any) {
 }
 
 /**
- * Cancels the future shows of a series, a few per call (each show runs the full cancellation: refunds, holds, lineup, waitlist, so a
- * long series would outlive one request). The caller repeats until `remaining` is 0; shows already cancelled are skipped, and refunds
- * carry stable per-order keys, so a retry never refunds twice.
+ * How far a recorded series cancellation has got. A show is done when it is cancelled and none of its orders is still waiting for a refund,
+ * or when it ran anyway (completed or settled) before the cancellation reached it: those keep their orders and are reported as `ran`.
  */
-export const SERIES_CANCEL_BATCH = 1;
-export async function cancelShowSeries(_: any, a: any, c: any) {
-  requirePermission(c, 'canManageShows'); requirePermission(c, 'canIssueRefunds');
-  if (!String(a.reason || '').trim()) throw new Error('A reason is required');
-  const { group, live, skipped } = await inScope(c.prisma, a.groupId, new Date());
-  if (!live.length) throw new Error('No future shows in this series');
-  const batch = live.slice(0, SERIES_CANCEL_BATCH);
-  let cancelled = 0, refunded = 0, failed = 0; const problems: string[] = [];
-  for (const s of batch) {
-    try { const r: any = await cancelShow(null, { showId: s.id, reason: a.reason, idempotencyKey: `${a.idempotencyKey}:${s.id}` }, c); cancelled++; refunded += r.refunded || 0; failed += r.failed || 0; }
-    catch (e: any) { problems.push(`${s.title}: ${e.message}`); }
+export async function seriesCancelStatus(db: any, group: { id: string; cancelRequestedAt: Date | null; cancelCompletedAt: Date | null; cancelShowIds: any }) {
+  const ids: string[] = Array.isArray(group.cancelShowIds) ? group.cancelShowIds : [];
+  if (!group.cancelRequestedAt) return { requested: false, completed: false, total: 0, done: 0, ran: 0, refundsWaiting: 0, pending: [] as string[] };
+  const shows = ids.length ? await db.show.findMany({ where: { id: { in: ids } }, select: { id: true, status: true } }) : [];
+  const owed = ids.length ? await db.ticketOrder.groupBy({ by: ['showId'], where: { showId: { in: ids }, status: { in: ['paid', 'partially_refunded'] } }, _count: { _all: true } }) : [];
+  const owing = new Map<string, number>(owed.map((o: any) => [o.showId, o._count._all]));
+  const ran = shows.filter((x: any) => ['completed', 'settled'].includes(x.status)).map((x: any) => x.id as string);
+  const pending = ids.filter((id) => { const sh = shows.find((x: any) => x.id === id); return !!sh && !ran.includes(id) && (sh.status !== 'cancelled' || (owing.get(id) || 0) > 0); });
+  const refundsWaiting = ids.filter((id) => !ran.includes(id)).reduce((n, id) => n + (owing.get(id) || 0), 0);
+  return { requested: true, completed: !!group.cancelCompletedAt, total: ids.length, done: ids.length - pending.length, ran: ran.length, refundsWaiting, pending };
+}
+
+/**
+ * Finishes a recorded series cancellation, working for at most `budgetMs` (at least one show). Called by the operator's screen and by the sweep:
+ * both use the same per-show and per-order keys, so running them at once, or again after an interruption, never cancels or refunds twice.
+ */
+export async function advanceSeriesCancel(c: any, groupId: string, actorId: string | null, budgetMs: number) {
+  const started = Date.now();
+  const load = () => c.prisma.showGroup.findUnique({ where: { id: groupId }, select: { id: true, name: true, cancelRequestedAt: true, cancelCompletedAt: true, cancelReason: true, cancelShowIds: true } });
+  let group = await load();
+  if (!group?.cancelRequestedAt) throw new Error('No cancellation was requested for this series');
+  const problems: string[] = []; let refunded = 0, failed = 0, worked = 0, last = 0;
+  if (!group.cancelCompletedAt) {
+    const st = await seriesCancelStatus(c.prisma, group);
+    for (const showId of st.pending) {
+      if (worked > 0 && Date.now() - started + last >= budgetMs) break; // never start a show we expect to outlive the budget
+      const t0 = Date.now();
+      try {
+        const show = await c.prisma.show.findUnique({ where: { id: showId }, select: { status: true, title: true } });
+        // a show whose doors opened before the cancellation reached it is left to run; it counts as ran once it closes
+        if (show && ['doors_open', 'in_progress'].includes(show.status)) { problems.push(`${show.title}: already running, not cancelled`); continue; }
+        const r: any = show?.status === 'cancelled'
+          ? await refundCancelledShow(c, showId, group.cancelReason, actorId)
+          : await cancelShowCore({ ...c, session: c.session || { itemId: actorId } }, { showId, reason: group.cancelReason, idempotencyKey: `series-cancel:${group.id}:${showId}` }, actorId);
+        refunded += r.refunded; failed += r.failed; worked++;
+      } catch (e: any) { problems.push(e.message); worked++; }
+      last = Math.max(last, Date.now() - t0);
+    }
+    group = await load();
+    const after = await seriesCancelStatus(c.prisma, group);
+    if (after.requested && after.done === after.total && !group.cancelCompletedAt) {
+      await c.prisma.$transaction(async (tx: any) => {
+        await lockTransactionKey(tx, 'group:' + groupId);
+        const moved = await tx.showGroup.updateMany({ where: { id: groupId, cancelCompletedAt: null }, data: { cancelCompletedAt: new Date() } });
+        if (moved.count) await audit(tx, { session: { itemId: actorId } }, 'series_cancelled', 'ShowGroup', groupId, null, { shows: after.total }, group.cancelReason);
+      });
+      group = await load();
+    }
   }
-  await command(c, 'cancelShowSeriesAudit', { groupId: group.id, idempotencyKey: a.idempotencyKey + ':audit' }, async tx => audit(tx, c, 'series_cancelled', 'ShowGroup', group.id, null, { batch: batch.length, cancelled, refunded, failed, problems, remaining: live.length - cancelled }, a.reason));
-  return { cancelled, refunded, failed, skipped, problems, remaining: problems.length ? live.length - cancelled : live.length - batch.length };
+  const status = await seriesCancelStatus(c.prisma, group);
+  return { ...status, refunded, failed, problems };
+}
+
+/**
+ * Records the intent to cancel every future show in the series (once, audited), then starts working through them. The work continues from
+ * the operator's screen or, if they close the tab, from the sweep; the intent and the exact list of shows are stored on the series.
+ */
+export async function recordSeriesCancel(c: any, a: any) {
+  requirePermission(c, 'canManageShows'); requirePermission(c, 'canIssueRefunds');
+  const reason = String(a.reason || '').trim();
+  if (!reason) throw new Error('A reason is required');
+  const groupId = String(a.groupId || '');
+  await command(c, 'cancelShowSeries', { ...a, reason }, async tx => {
+    await lockTransactionKey(tx, 'group:' + groupId);
+    const { group, live } = await inScope(tx, groupId, new Date());
+    if (group.cancelRequestedAt) return { recorded: false };
+    if (!live.length) throw new Error('No future shows in this series');
+    await tx.showGroup.update({ where: { id: group.id }, data: { cancelRequestedAt: new Date(), cancelRequestedBy: { connect: { id: c.session.itemId } }, cancelReason: reason, cancelShowIds: live.map((s: any) => s.id), cancelCompletedAt: null } });
+    await audit(tx, c, 'series_cancel_requested', 'ShowGroup', group.id, null, { shows: live.length, showIds: live.map((s: any) => s.id) }, reason);
+    return { recorded: true, shows: live.length };
+  }, 'group:' + groupId);
+  return groupId;
+}
+
+export async function cancelShowSeries(_: any, a: any, c: any) {
+  const groupId = await recordSeriesCancel(c, a);
+  return advanceSeriesCancel(c, groupId, c.session.itemId, 6000);
+}
+
+/** Read-only progress for the series screen. */
+export async function seriesCancelProgress(_: any, a: any, c: any) {
+  requirePermission(c, 'canManageShows');
+  const group = await c.prisma.showGroup.findUnique({ where: { id: String(a.groupId || '') }, select: { id: true, cancelRequestedAt: true, cancelCompletedAt: true, cancelShowIds: true, cancelReason: true } });
+  if (!group) throw new Error('Series not found');
+  const { pending, ...rest } = await seriesCancelStatus(c.prisma, group);
+  return { ...rest, reason: group.cancelReason, requestedAt: group.cancelRequestedAt };
+}
+
+/** Cron: finish every series whose cancellation was requested but not completed (for example because the operator closed the tab). Same secret rule as the other sweeps. */
+export async function sweepSeriesCancellations(_: any, { secret }: { secret: string }, c: any) {
+  const expected = process.env.CRON_SECRET;
+  if (!expected || secret !== expected) throw new Error('Not authorized');
+  const groups = await c.prisma.showGroup.findMany({ where: { cancelRequestedAt: { not: null }, cancelCompletedAt: null }, select: { id: true, cancelRequestedById: true }, orderBy: { cancelRequestedAt: 'asc' }, take: 10 });
+  const started = Date.now(); let finished = 0, stillOpen = 0, refunded = 0, errors = 0;
+  for (const g of groups) {
+    if (Date.now() - started > 20000) { stillOpen++; continue; }
+    try { const r = await advanceSeriesCancel(c, g.id, g.cancelRequestedById || null, 15000); refunded += r.refunded; r.completed ? finished++ : stillOpen++; } catch { errors++; }
+  }
+  return { groups: groups.length, finished, stillOpen, refunded, errors };
 }

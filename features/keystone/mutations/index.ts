@@ -55,6 +55,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         showReport(from: String!, to: String!): JSON
         payStatement(comedianId: ID!, year: Int!): JSON
         previewRoomLayout(roomId: ID!, changes: JSON!): JSON
+        seriesCancelProgress(groupId: ID!): JSON
         previewShowSeries(sourceShowId: ID!, dates: [String!], from: String, count: Int, everyDays: Int, startTime: String, copyLineup: Boolean): JSON
         matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
       }
@@ -116,6 +117,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         approveRequest(approvalId: ID!): JSON
         sweepPendingCheckouts(secret: String!): JSON
         sweepShowReminders(secret: String!): JSON
+        sweepSeriesCancellations(secret: String!): JSON
         scheduleShowReminders(showId: ID!, idempotencyKey: String!): JSON
         updateActiveUser(data: UserUpdateProfileInput!): User
         ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
@@ -138,6 +140,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         payStatement: op(payStatements.payStatement),
         previewShowSeries: op(series.previewShowSeries),
         previewRoomLayout: op(layout.previewRoomLayout),
+        seriesCancelProgress: op(series.seriesCancelProgress),
       },
       Mutation: {
         expireHolds: op(tickets.expireHolds),
@@ -192,6 +195,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         approveRequest: op(night.approveRequest),
         sweepPendingCheckouts: op(checkout.sweepPendingCheckouts),
         sweepShowReminders: op(reminders.sweepShowReminders),
+        sweepSeriesCancellations: op(series.sweepSeriesCancellations),
         scheduleShowReminders: op(reminders.scheduleShowReminders),
         updateActiveUser,
         ensureClubOnboardingRecord: op(seed.ensureClubOnboardingRecord),

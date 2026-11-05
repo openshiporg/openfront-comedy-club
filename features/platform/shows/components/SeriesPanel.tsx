@@ -3,14 +3,14 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { runCommand } from '../../actions/commands';
-import { previewSeries } from '../../actions/reports';
+import { previewSeries, seriesProgress } from '../../actions/reports';
 import { Button } from '@/components/ui/button';
 
 type Preview = { rows: { day: string; time: string; problem: string | null }[]; problems: number; tiers: number; lineupSlots: number };
 const input = 'mt-1 block h-10 w-full rounded-md border bg-background px-3 text-sm';
 
 /** Repeat this show on later dates (preview first; all or nothing), and edit or cancel the future shows of its series together. */
-export function SeriesPanel({ canRepeat, showId, groupId, groupName, futureCount, startTime }: { canRepeat: boolean; showId: string; groupId: string | null; groupName: string | null; futureCount: number; startTime: string }) {
+export function SeriesPanel({ cancelling, cancelDone, canRepeat, showId, groupId, groupName, futureCount, startTime }: { cancelling: boolean; cancelDone: boolean; canRepeat: boolean; showId: string; groupId: string | null; groupName: string | null; futureCount: number; startTime: string }) {
   const router = useRouter();
   const [pending, start] = React.useTransition();
   const [from, setFrom] = React.useState(''); const [count, setCount] = React.useState('4'); const [every, setEvery] = React.useState('7');
@@ -20,6 +20,22 @@ export function SeriesPanel({ canRepeat, showId, groupId, groupName, futureCount
   const [reason, setReason] = React.useState('');
   const [message, setMessage] = React.useState(''); const [firstId, setFirstId] = React.useState(''); const [error, setError] = React.useState('');
   const pattern = () => ({ sourceShowId: showId, from, count: Number(count), everyDays: Number(every), startTime: time || undefined, copyLineup: lineup });
+  /** Starts (first=true) or resumes the recorded cancellation, one call at a time, until the server says every show is done. The intent is saved on the first call, so closing the tab does not lose it: the scheduled sweep finishes the rest. */
+  const finishCancel = async (first: boolean) => {
+    let refunded = 0, failed = 0, lastDone = -1; const problems: string[] = [];
+    for (let i = 0; i < 60; i++) {
+      const r = await runCommand('cancelShowSeries', { groupId, reason: reason.trim() || 'Series cancelled' }, ['/dashboard/platform/shows']);
+      if (!r.ok) { if (i === 0 && first) { fail(r.error); return; } problems.push(r.error); break; }
+      refunded += r.data.refunded; failed += r.data.failed; problems.push(...r.data.problems);
+      setMessage(`Cancelling: ${r.data.done} of ${r.data.total} done`);
+      if (r.data.completed || r.data.problems.length) break;
+      if (r.data.done === lastDone && r.data.failed) break; // a refund keeps failing: stop here, the sweep keeps retrying
+      lastDone = r.data.done;
+    }
+    const p = await seriesProgress(groupId!);
+    setMessage(p.ok ? `${p.data.completed ? 'Cancelled' : 'Cancelling'}: ${p.data.done} of ${p.data.total} done${p.data.ran ? ` · ${p.data.ran} ran before it was reached` : ''}${p.data.refundsWaiting ? ` · ${p.data.refundsWaiting} refunds waiting` : ''} · ${refunded} refunded${failed ? ` · ${failed} refunds need attention` : ''}${problems.length ? ` · ${problems.join('; ')}` : ''}${p.data.completed ? '' : ' · it will finish on its own, or press Continue'}` : '');
+    setError(''); router.refresh();
+  };
   const reset = () => { setPreview(null); setMessage(''); setError(''); setFirstId(''); };
   const fail = (e: string) => { setError(e); setMessage(''); };
   return (
@@ -49,7 +65,15 @@ export function SeriesPanel({ canRepeat, showId, groupId, groupName, futureCount
           </div>
         ) : null}
       </div> : null}
-      {groupId && futureCount > 0 ? (
+      {groupId && cancelling ? (
+        <div className="space-y-2 border-t pt-4">
+          <p className="font-mono text-xs uppercase tracking-wide">Cancelling this series</p>
+          <p className="text-sm text-muted-foreground">The cancellation is recorded and will finish even if you leave this page.</p>
+          <Button type="button" variant="outline" disabled={pending} onClick={() => start(async () => { await finishCancel(false); })}>Continue cancelling</Button>
+        </div>
+      ) : null}
+      {groupId && cancelDone && !futureCount ? <p className="border-t pt-4 font-mono text-xs uppercase tracking-wide">Series cancelled</p> : null}
+      {groupId && futureCount > 0 && !cancelling ? (
         <div className="space-y-3 border-t pt-4">
           <p className="font-medium">{groupName || 'Series'} <span className="text-sm font-normal text-muted-foreground">· {futureCount} future show{futureCount === 1 ? '' : 's'}</span></p>
           <p className="text-xs text-muted-foreground">Changes apply to every future show in the series, or to none. Time and age rules cannot change once tickets are sold or held on any of them.</p>
@@ -69,15 +93,7 @@ export function SeriesPanel({ canRepeat, showId, groupId, groupName, futureCount
           <div className="space-y-2 border-t pt-3">
             <label className="block text-sm">Reason for cancelling the series<input className={input} value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} /></label>
             <Button type="button" variant="outline" disabled={pending || !reason.trim()} onClick={() => { if (!window.confirm(`Cancel ${futureCount} future show${futureCount === 1 ? '' : 's'} and refund every order?`)) return; start(async () => {
-              let total = 0, refunded = 0, failed = 0; const problems: string[] = [];
-              for (let i = 0; i < 30; i++) {
-                const r = await runCommand('cancelShowSeries', { groupId, reason: reason.trim() }, ['/dashboard/platform/shows']);
-                if (!r.ok) { if (i === 0) { fail(r.error); return; } if (!/No future shows/.test(r.error)) problems.push(r.error); break; }
-                total += r.data.cancelled; refunded += r.data.refunded; failed += r.data.failed; problems.push(...r.data.problems);
-                setMessage(`Cancelling… ${total} done`);
-                if (!r.data.remaining || r.data.problems.length) break;
-              }
-              setMessage(`${total} cancelled · ${refunded} refunded${failed ? ` · ${failed} refunds need attention` : ''}${problems.length ? ` · ${problems.join('; ')} — run it again to finish` : ''}`); setError(''); router.refresh();
+              await finishCancel(true);
             }); }}>Cancel future shows in this series</Button>
           </div>
         </div>

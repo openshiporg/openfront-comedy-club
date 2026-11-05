@@ -26,3 +26,9 @@ export async function previewLayout(roomId: string, changes: unknown[]) {
   if (!res.success) return { ok: false as const, error: res.error || 'Preview failed' };
   return { ok: true as const, data: (res.data as any).previewRoomLayout as { room: string; changes: string[]; tables: number; capacityBefore: number; capacityAfter: number } };
 }
+
+export async function seriesProgress(groupId: string) {
+  const res = await keystoneClient(`query($g: ID!) { seriesCancelProgress(groupId: $g) }`, { g: groupId });
+  if (!res.success) return { ok: false as const, error: res.error || 'Could not read progress' };
+  return { ok: true as const, data: (res.data as any).seriesCancelProgress as { requested: boolean; completed: boolean; total: number; done: number; ran: number; refundsWaiting: number; reason: string } };
+}

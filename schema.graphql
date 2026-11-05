@@ -4648,6 +4648,11 @@ type ShowGroup {
   sourceShow: Show
   shows(where: ShowWhereInput! = {}, orderBy: [ShowOrderByInput!]! = [], take: Int, skip: Int! = 0, cursor: ShowWhereUniqueInput): [Show!]
   showsCount(where: ShowWhereInput! = {}): Int
+  cancelRequestedAt: DateTime
+  cancelRequestedBy: User
+  cancelReason: String
+  cancelShowIds: JSON
+  cancelCompletedAt: DateTime
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -4666,6 +4671,10 @@ input ShowGroupWhereInput {
   groupKey: StringFilter
   sourceShow: ShowWhereInput
   shows: ShowManyRelationFilter
+  cancelRequestedAt: DateTimeNullableFilter
+  cancelRequestedBy: UserWhereInput
+  cancelReason: StringFilter
+  cancelCompletedAt: DateTimeNullableFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
@@ -4674,6 +4683,9 @@ input ShowGroupOrderByInput {
   id: OrderDirection
   name: OrderDirection
   groupKey: OrderDirection
+  cancelRequestedAt: OrderDirection
+  cancelReason: OrderDirection
+  cancelCompletedAt: OrderDirection
   createdAt: OrderDirection
   updatedAt: OrderDirection
 }
@@ -4683,6 +4695,11 @@ input ShowGroupUpdateInput {
   groupKey: String
   sourceShow: ShowRelateToOneForUpdateInput
   shows: ShowRelateToManyForUpdateInput
+  cancelRequestedAt: DateTime
+  cancelRequestedBy: UserRelateToOneForUpdateInput
+  cancelReason: String
+  cancelShowIds: JSON
+  cancelCompletedAt: DateTime
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -4697,6 +4714,11 @@ input ShowGroupCreateInput {
   groupKey: String
   sourceShow: ShowRelateToOneForCreateInput
   shows: ShowRelateToManyForCreateInput
+  cancelRequestedAt: DateTime
+  cancelRequestedBy: UserRelateToOneForCreateInput
+  cancelReason: String
+  cancelShowIds: JSON
+  cancelCompletedAt: DateTime
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -6008,6 +6030,7 @@ type Mutation {
   approveRequest(approvalId: ID!): JSON
   sweepPendingCheckouts(secret: String!): JSON
   sweepShowReminders(secret: String!): JSON
+  sweepSeriesCancellations(secret: String!): JSON
   scheduleShowReminders(showId: ID!, idempotencyKey: String!): JSON
   updateActiveUser(data: UserUpdateProfileInput!): User
   ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
@@ -6190,6 +6213,7 @@ type Query {
   showReport(from: String!, to: String!): JSON
   payStatement(comedianId: ID!, year: Int!): JSON
   previewRoomLayout(roomId: ID!, changes: JSON!): JSON
+  seriesCancelProgress(groupId: ID!): JSON
   previewShowSeries(sourceShowId: ID!, dates: [String!], from: String, count: Int, everyDays: Int, startTime: String, copyLineup: Boolean): JSON
   matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
 }
