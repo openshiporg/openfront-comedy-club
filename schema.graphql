@@ -5645,6 +5645,8 @@ type VenueSettings {
   approvalThresholdCents: Int
   compApprovalQuantity: Int
   currencyCode: String
+  logoIcon: String
+  logoColor: String
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -5663,6 +5665,8 @@ input VenueSettingsWhereInput {
   approvalThresholdCents: IntNullableFilter
   compApprovalQuantity: IntNullableFilter
   currencyCode: StringFilter
+  logoIcon: StringFilter
+  logoColor: StringFilter
   createdAt: DateTimeFilter
   updatedAt: DateTimeFilter
 }
@@ -5674,6 +5678,8 @@ input VenueSettingsOrderByInput {
   approvalThresholdCents: OrderDirection
   compApprovalQuantity: OrderDirection
   currencyCode: OrderDirection
+  logoIcon: OrderDirection
+  logoColor: OrderDirection
   createdAt: OrderDirection
   updatedAt: OrderDirection
 }
@@ -5684,6 +5690,8 @@ input VenueSettingsUpdateInput {
   approvalThresholdCents: Int
   compApprovalQuantity: Int
   currencyCode: String
+  logoIcon: String
+  logoColor: String
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -5699,6 +5707,8 @@ input VenueSettingsCreateInput {
   approvalThresholdCents: Int
   compApprovalQuantity: Int
   currencyCode: String
+  logoIcon: String
+  logoColor: String
   createdAt: DateTime
   updatedAt: DateTime
 }
@@ -6223,6 +6233,7 @@ type Query {
   seriesCancelProgress(groupId: ID!): JSON
   previewShowSeries(sourceShowId: ID!, dates: [String!], from: String, count: Int, everyDays: Int, startTime: String, copyLineup: Boolean): JSON
   matchingManagerApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
+  storeLogo: StoreLogo!
 }
 
 union AuthenticatedItem = User
@@ -6387,4 +6398,9 @@ input SlotOrderInput {
   id: ID!
   position: Int!
   setMinutes: Int!
+}
+
+type StoreLogo {
+  logoIcon: String!
+  logoColor: String!
 }

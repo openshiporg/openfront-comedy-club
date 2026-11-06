@@ -36,6 +36,7 @@ export const platformNavItems: PlatformNavItem[] = [
 
   { title: 'Payment providers', href: '/platform/payment-providers', color: 'slate', description: 'Payment gateways.',                              icon: CreditCard,      group: 'integrations' },
   { title: 'Settings',       href: '/platform/settings',          color: 'slate',  description: 'Venue, minimum, fees and policies.',                icon: Settings,        group: 'integrations' },
+  { title: 'Store',       href: '/platform/store',          color: 'slate',  description: 'Configure store settings, logo, and branding.',                icon: Store,        group: 'integrations' },
 ]
 
 export const platformStandaloneItems = platformNavItems.filter((item) => item.group === 'standalone')

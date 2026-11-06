@@ -2,6 +2,7 @@ import { mergeSchemas } from "@graphql-tools/schema";
 import type { GraphQLSchema } from 'graphql';
 import { GraphQLError } from "graphql";
 import redirectToInit from "./redirectToInit";
+import { storeLogoTypeDefs, storeLogo } from "./storeLogo";
 import * as tickets from "./tickets";
 import * as ops from "./operators";
 import * as checkout from "./checkout";
@@ -132,9 +133,10 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
         seedClubOperations(template: String!): JSON
       }
-    `,
+    ` + storeLogoTypeDefs,
     resolvers: {
       Query: {
+        storeLogo,
         redirectToInit,
         showsOnSale: op(tickets.showsOnSale),
         showAvailability: op(tickets.showAvailability),

@@ -4,6 +4,7 @@ import { generateShowsFromTemplate, closeShow } from './night';
 import { ticketToken } from './checkout';
 import { zonedTime } from '../lib/time';
 import seedData from '../../platform/onboarding/lib/seed.json';
+import { DEFAULT_STORE_LOGO_COLOR, DEFAULT_STORE_LOGO_ICON } from '../../platform/store-settings/lib/store-logo';
 
 const ADAPTERS = new Set(['stripe', 'manual']);
 const need = (ok: any, message: string) => { if (!ok) throw new Error(message); };
@@ -21,7 +22,7 @@ export async function ensureClubOnboardingRecord(_: any, { entity, data }: { ent
   switch (entity) {
     case 'Venue': need(data.name && data.timezone, 'Venue needs name and timezone'); new Intl.DateTimeFormat('en', { timeZone: data.timezone });
       return byName('venue', { name: data.name }, data);
-    case 'VenueSettings': { const found = await db.venueSettings.findFirst(); return found ? { id: found.id, reused: true } : { id: (await db.venueSettings.create({ data: { ...data, id: 1 } })).id, reused: false }; }
+    case 'VenueSettings': { const found = await db.venueSettings.findFirst(); return found ? { id: found.id, reused: true } : { id: (await db.venueSettings.create({ data: { logoIcon: DEFAULT_STORE_LOGO_ICON, logoColor: DEFAULT_STORE_LOGO_COLOR, ...data, id: 1 } })).id, reused: false }; }
     case 'Room': { const venue = await db.venue.findFirst(); need(venue, 'Venue first'); return byName('room', { name: data.name, venueId: venue.id }, { ...data, active: true, venueId: venue.id }); }
     case 'Section': { const room = await db.room.findFirst({ where: { name: data.room } }); need(room, 'Missing room'); return byName('section', { name: data.name, roomId: room.id }, { name: data.name, sort: data.sort || 0, roomId: room.id }); }
     case 'Table': { const room = await db.room.findFirst({ where: { name: data.room } }); const section = room && await db.section.findFirst({ where: { name: data.section, roomId: room.id } }); need(section, 'Missing section');
