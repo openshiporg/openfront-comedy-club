@@ -142,7 +142,8 @@ export async function cancelShow(_: any, a: any, c: any) {
 export async function cancelShowCore(c: any, a: { showId: string; reason: string; idempotencyKey: string }, actorId: string | null) {
   await command(c, 'cancelShow', a, async tx => {
     const show = await tx.show.findUnique({ where: { id: a.showId } });
-    if (!show || ['completed', 'settled', 'cancelled'].includes(show.status)) throw new Error('Show cannot be cancelled');
+    if (show?.status === 'cancelled') return { ok: true, resumed: true }; // a retry only finishes the refunds
+    if (!show || ['completed', 'settled'].includes(show.status)) throw new Error('Show cannot be cancelled');
     await tx.show.update({ where: { id: show.id }, data: { status: 'cancelled' } });
     await tx.priceTier.updateMany({ where: { showId: show.id }, data: { status: 'closed' } });
     await tx.lineupSlot.updateMany({ where: { showId: show.id, status: { notIn: ['performed'] } }, data: { status: 'cancelled' } });
@@ -161,7 +162,7 @@ export async function refundCancelledShow(c: any, showId: string, _reason: strin
   const orders = await c.prisma.ticketOrder.findMany({ where: { showId, status: { in: ['paid', 'partially_refunded'] } }, select: { id: true } });
   let refunded = 0, failed = 0;
   for (const o of orders) {
-    try { await refundOrderInternal(c, { orderId: o.id, reason: 'Show cancelled', idempotencyKey: `cancel:${showId}:${o.id}`, actorId, threshold: Number.MAX_SAFE_INTEGER }); refunded++; } catch { failed++; }
+    try { await refundOrderInternal(c, { orderId: o.id, reason: 'Show cancelled', idempotencyKey: `cancel:${showId}:${o.id}`, actorId, threshold: Number.MAX_SAFE_INTEGER, includeCheckedIn: true }); refunded++; } catch { failed++; }
   }
   return { cancelled: true, refunded, failed };
 }

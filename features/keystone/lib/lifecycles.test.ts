@@ -15,3 +15,12 @@ test('shows only move forward through the night', () => {
   assert.equal((showTransitions as Record<string, string[]>).completed, undefined);
   assert.equal((showTransitions as Record<string, string[]>).cancelled, undefined);
 });
+
+import { refundOutcome } from '../utils/paymentState';
+test('a manual-tender refund ("refunded") settles like a Stripe one ("succeeded")', () => {
+  assert.equal(refundOutcome('succeeded'), 'succeeded');
+  assert.equal(refundOutcome('refunded'), 'succeeded');
+  assert.equal(refundOutcome('failed'), 'failed');
+  assert.equal(refundOutcome('pending'), 'unknown');
+  assert.equal(refundOutcome(undefined), 'unknown');
+});

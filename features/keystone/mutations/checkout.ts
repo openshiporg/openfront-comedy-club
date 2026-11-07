@@ -9,7 +9,7 @@ import { releaseHoldSeats } from '../lib/holds';
 import { consumeManagerApproval } from '../utils/managerApproval';
 import { createPayment, getPaymentStatus, refundPayment } from '../utils/paymentProviderAdapter';
 import { assertCheckoutProviderObservation } from '../utils/checkoutProviderObservation';
-import { nextPaymentStatus } from '../utils/paymentState';
+import { nextPaymentStatus, refundOutcome } from '../utils/paymentState';
 
 const PROVIDER_CODE = 'pp_stripe';
 export const ticketToken = (ticketCode: string) =>
@@ -112,7 +112,7 @@ export async function verifyAndFinalize(context: any, order: any) {
   // The card was charged after the show was cancelled: cancelShow already ran its refund pass, so refund this one now.
   const showNow = await context.prisma.show.findUnique({ where: { id: order.showId }, select: { status: true } });
   if (showNow?.status === 'cancelled') {
-    try { await refundOrderInternal(context, { orderId: order.id, reason: 'Show cancelled', idempotencyKey: `cancel:${order.showId}:${order.id}`, actorId: null, threshold: Number.MAX_SAFE_INTEGER }); } catch { /* stays paid on a cancelled show; the cancel retry refunds it */ }
+    try { await refundOrderInternal(context, { orderId: order.id, reason: 'Show cancelled', idempotencyKey: `cancel:${order.showId}:${order.id}`, actorId: null, threshold: Number.MAX_SAFE_INTEGER, includeCheckedIn: true }); } catch { /* stays paid on a cancelled show; the cancel retry refunds it */ }
   }
   return { status: 'paid' };
 }
@@ -178,7 +178,9 @@ export async function ticketOrderConfirmation(_: any, input: any, context: any) 
 }
 
 /** Local reservation first, provider refund outside the transaction, then finalization. */
-export async function refundOrderInternal(context: any, a: { orderId: string; amountCents?: number; ticketIds?: string[]; reason: string; idempotencyKey: string; approvalId?: string; actorId: string | null; threshold: number }) {
+export async function refundOrderInternal(context: any, a: { orderId: string; amountCents?: number; ticketIds?: string[]; reason: string; idempotencyKey: string; approvalId?: string; actorId: string | null; threshold: number; includeCheckedIn?: boolean }) {
+  // A cancelled show owes every ticket back, scanned or not; a normal refund only takes tickets that are still valid.
+  const live = a.includeCheckedIn ? ['valid', 'checked_in'] : ['valid'];
   const prisma = context.prisma;
   const reserved = await command(context, 'refundTicketOrder', { ...a }, async tx => {
     const order = await tx.ticketOrder.findUnique({ where: { id: a.orderId }, include: { payments: true, tickets: { include: { line: true } } } });
@@ -187,14 +189,14 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     if (await tx.refund.count({ where: { orderId: order.id, status: { in: ['processing', 'unknown'] } } })) throw new Error('A refund on this order is still being confirmed. Wait for it or retry that refund first');
     const payment = order.payments.find((p: any) => ['succeeded', 'partially_refunded'].includes(p.status));
     if (!payment) throw new Error('No captured payment');
-    const tickets = (a.ticketIds?.length ? order.tickets.filter((t: any) => a.ticketIds!.includes(t.id)) : order.tickets.filter((t: any) => t.status === 'valid'));
-    if (!tickets.length || tickets.some((t: any) => t.status !== 'valid')) throw new Error('Only valid tickets can be refunded');
+    const tickets = (a.ticketIds?.length ? order.tickets.filter((t: any) => a.ticketIds!.includes(t.id)) : order.tickets.filter((t: any) => live.includes(t.status)));
+    if (!tickets.length || tickets.some((t: any) => !live.includes(t.status))) throw new Error('Only valid tickets can be refunded');
     const remaining = payment.amount - payment.refundedAmount;
-    const full = tickets.length === order.tickets.filter((t: any) => t.status === 'valid').length;
+    const full = tickets.length === order.tickets.filter((t: any) => live.includes(t.status)).length;
     // tickets replaced by a transfer are not part of the party any more; each remaining ticket weighs its own line price
-    const live = order.tickets.filter((t: any) => !order.tickets.some((x: any) => x.transferredFromCode === t.ticketCode));
+    const kept = order.tickets.filter((t: any) => !order.tickets.some((x: any) => x.transferredFromCode === t.ticketCode));
     const price = (t: any) => ({ priceCents: ticketWeight(t.line) });
-    const amount = a.amountCents ?? (full ? remaining : refundShare(order.totalCents, tickets.map(price), live.map(price)));
+    const amount = a.amountCents ?? (full ? remaining : refundShare(order.totalCents, tickets.map(price), kept.map(price)));
     if (!Number.isSafeInteger(amount) || amount < 1 || amount > remaining) throw new Error('Invalid refund amount');
     if (a.actorId && amount > a.threshold) await consumeManagerApproval(tx, { approvalId: a.approvalId, actorId: a.actorId, actionType: 'refund_payment', targetId: order.id, reason: a.reason, amount, entityType: 'TicketOrder', entityId: order.id });
     const refund = await tx.refund.create({ data: { idempotencyKey: 'refund:' + a.idempotencyKey, amount, currencyCode: payment.currencyCode, status: 'processing', reason: a.reason, paymentId: payment.id, orderId: order.id, requestedById: a.actorId } });
@@ -204,16 +206,16 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
   let result: any; let finalStatus = 'unknown';
   try {
     result = await refundPayment({ provider, paymentId: reserved.providerPaymentId, amount: reserved.amount, currency: reserved.currencyCode, idempotencyKey: 'refund:' + a.idempotencyKey });
-    finalStatus = result.status === 'succeeded' ? 'succeeded' : ['failed', 'canceled'].includes(result.status) ? 'failed' : 'unknown';
+    finalStatus = refundOutcome(result.status);
   } catch { finalStatus = 'unknown'; }
   await prisma.$transaction(async (tx: any) => {
     await lockTransactionKey(tx, 'show:' + reserved.showId);
-    const moved = await tx.refund.updateMany({ where: { id: reserved.refundId, status: { in: ['processing', 'unknown'] } }, data: { status: finalStatus, providerRefundId: result?.refundId || null, processedAt: finalStatus === 'succeeded' ? new Date() : null } });
+    const moved = await tx.refund.updateMany({ where: { id: reserved.refundId, status: { in: ['processing', 'unknown'] } }, data: { status: finalStatus, providerRefundId: result?.refundId || result?.id || '', processedAt: finalStatus === 'succeeded' ? new Date() : null } });
     if (moved.count !== 1 || finalStatus !== 'succeeded') return;
     const payment = await tx.payment.update({ where: { id: reserved.paymentId }, data: { refundedAmount: { increment: reserved.amount } } });
     const fullyRefunded = payment.refundedAmount >= payment.amount;
     await tx.payment.update({ where: { id: payment.id }, data: { status: nextPaymentStatus('succeeded', fullyRefunded ? 'refunded' : 'partially_refunded') === 'succeeded' ? (fullyRefunded ? 'refunded' : 'partially_refunded') : 'refunded' } });
-    const voided = await tx.ticket.findMany({ where: { id: { in: reserved.ticketIds }, status: 'valid' }, include: { line: true } });
+    const voided = await tx.ticket.findMany({ where: { id: { in: reserved.ticketIds }, status: { in: live } }, include: { line: true } });
     await tx.ticket.updateMany({ where: { id: { in: voided.map((t: any) => t.id) } }, data: { status: 'refunded' } });
     const byTier = new Map<string, number>(); for (const t of voided) byTier.set(t.line.priceTierId, (byTier.get(t.line.priceTierId) || 0) + 1);
     for (const [tierId, n] of byTier) {

@@ -14,6 +14,12 @@ export function webhookPaymentStatus(type: string): string | null {
   if (["payment_intent.canceled", "CHECKOUT.ORDER.VOIDED"].includes(type)) return "cancelled";
   return null;
 }
+/** Adapters report a finished refund as 'succeeded' (Stripe) or 'refunded' (manual tender); both settle it. Anything unrecognised stays unknown for reconciliation. */
+export function refundOutcome(status: unknown): 'succeeded' | 'failed' | 'unknown' {
+  if (status === 'succeeded' || status === 'refunded') return 'succeeded';
+  if (status === 'failed' || status === 'canceled') return 'failed';
+  return 'unknown';
+}
 export function stripeRefundReference(id: string) {
   if (id.startsWith("pi_")) return { payment_intent: id };
   if (id.startsWith("ch_")) return { charge: id };
