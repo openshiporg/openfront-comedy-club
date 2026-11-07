@@ -2,6 +2,8 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fopenshiporg%2Fopenfront-comedy-club&env=DATABASE_URL%2CSESSION_SECRET)
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/openfront-comedy-club)
+
 Openfront Comedy Club is a self-hostable application for comedy clubs. It runs the show calendar, who is on the bill, ticket sales, table seating, the door, the food and drink check with its two-item minimum, comedian pay and the nightly close.
 
 **Documentation:** [docs.openship.org/docs/openfront/comedy-club](https://docs.openship.org/docs/openfront/comedy-club)
