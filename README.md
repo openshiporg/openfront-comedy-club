@@ -1,8 +1,23 @@
-# Openfront Comedy Club
+![openfront-comedy-club](.github/logo.svg)
 
-Run a comedy club on one system: the show calendar, who is on the bill, ticket sales, table seating, the door, the food and drink check with its two-item minimum, comedian pay and the nightly close.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fopenshiporg%2Fopenfront-comedy-club&env=DATABASE_URL%2CSESSION_SECRET)
 
-Built on Next.js and KeystoneJS 6 with PostgreSQL. Payments use Stripe in test mode out of the box.
+Openfront Comedy Club is a self-hostable application for comedy clubs. It runs the show calendar, who is on the bill, ticket sales, table seating, the door, the food and drink check with its two-item minimum, comedian pay and the nightly close.
+
+**Documentation:** [docs.openship.org/docs/openfront/comedy-club](https://docs.openship.org/docs/openfront/comedy-club)
+
+## Live
+
+The Laugh Track
+
+| | |
+|---|---|
+| **Storefront** | [comedy-club.openship.org](https://comedy-club.openship.org) |
+| **Dashboard** | [comedy-club.openship.org/dashboard](https://comedy-club.openship.org/dashboard) |
+
+[Learn more →](https://openship.org/products/openfront-comedy-club)
+
+[Documentation →](https://docs.openship.org/docs/openfront/comedy-club/)
 
 ## What is built
 
@@ -70,13 +85,12 @@ node --import tsx --test features/keystone/lib/money.test.ts features/keystone/l
 
 ## The Openfront Ecosystem
 
-Every Openfront is open source and self-hostable.
+Every Openfront is open source and self-hostable. Try any of them live.
 
-| Product | For | Repository | Demo | Docs |
+| Product | For | Repository | Live | Docs |
 |---|---|---|---|---|
 | Openfront E-commerce | Online store: catalog, checkout, orders, fulfillment | [openfront](https://github.com/openshiporg/openfront) | [e-commerce.openship.org](https://e-commerce.openship.org) | [Docs](https://docs.openship.org/docs/openfront/ecommerce) |
 | Openfront Restaurant | Online ordering, POS and kitchen display | [openfront-restaurant](https://github.com/openshiporg/openfront-restaurant) | [restaurant.openship.org](https://restaurant.openship.org) | [Docs](https://docs.openship.org/docs/openfront/restaurant) |
-| **Openfront Comedy Club** (this repository) | Shows, lineups, table seating, door check-in and nightly settlement | [openfront-comedy-club](https://github.com/openshiporg/openfront-comedy-club) | | |
 | Openfront Grocery | Grocery ordering, lots, expiry and pickup | [openfront-grocery](https://github.com/openshiporg/openfront-grocery) | [grocery.openship.org](https://grocery.openship.org) | [Docs](https://docs.openship.org/docs/openfront/grocery) |
 | Openfront Gym | Memberships, classes, check-in and billing | [openfront-gym](https://github.com/openshiporg/openfront-gym) | [gym.openship.org](https://gym.openship.org) | [Docs](https://docs.openship.org/docs/openfront/gym) |
 | Openfront Hotel | Reservations, front desk, housekeeping, folios | [openfront-hotel](https://github.com/openshiporg/openfront-hotel) | [hotel.openship.org](https://hotel.openship.org) | [Docs](https://docs.openship.org/docs/openfront/hotel) |
@@ -94,13 +108,10 @@ Every Openfront is open source and self-hostable.
 | Openfront Med Spa | Treatments, consents and memberships | [openfront-medspa](https://github.com/openshiporg/openfront-medspa) | [medspa.openship.org](https://medspa.openship.org) | [Docs](https://docs.openship.org/docs/openfront/medspa) |
 | Openfront Construction | Projects, bids, change orders and crews | [openfront-construction](https://github.com/openshiporg/openfront-construction) | [construction.openship.org](https://construction.openship.org) | [Docs](https://docs.openship.org/docs/openfront/construction) |
 | Openfront Law Firm | Matters, intake, time and billing | [openfront-law-firm](https://github.com/openshiporg/openfront-law-firm) | [law-firm.openship.org](https://law-firm.openship.org) | [Docs](https://docs.openship.org/docs/openfront/law-firm) |
-| Openfront Scheduling | Booking pages for appointment businesses | [openfront-scheduling](https://github.com/openshiporg/openfront-scheduling) | [scheduling.openship.org](https://scheduling.openship.org) | [Docs](https://docs.openship.org/docs/openfront/scheduling) |
-| Openfront Social | Creator community and posts | [openfront-social](https://github.com/openshiporg/openfront-social) | [social.openship.org](https://social.openship.org) | [Docs](https://docs.openship.org/docs/openfront/social) |
+| **Openfront Comedy Club** (this repository) | Shows, lineups, table seating, door check-in and nightly settlement | [openfront-comedy-club](https://github.com/openshiporg/openfront-comedy-club) | [comedy-club.openship.org](https://comedy-club.openship.org) | [Docs](https://docs.openship.org/docs/openfront/comedy-club) |
 | Openfront Rideshare | Rides, drivers and dispatch | [openfront-rideshare](https://github.com/openshiporg/openfront-rideshare) | [rideshare.openship.org](https://rideshare.openship.org) | [Docs](https://docs.openship.org/docs/openfront/rideshare) |
 | Openfront Airline | Flights, booking and passenger operations | [openfront-airline](https://github.com/openshiporg/openfront-airline) | [airline.openship.org](https://airline.openship.org) | [Docs](https://docs.openship.org/docs/openfront/airline) |
 | Openfront Hospital | Appointments, patients and care teams | [openfront-hospital](https://github.com/openshiporg/openfront-hospital) | [hospital.openship.org](https://hospital.openship.org) | [Docs](https://docs.openship.org/docs/openfront/hospital) |
 | Openfront Sportsbook | Markets, bets and results | [openfront-sportsbook](https://github.com/openshiporg/openfront-sportsbook) | [sportsbook.openship.org](https://sportsbook.openship.org) | [Docs](https://docs.openship.org/docs/openfront/sportsbook) |
-| Openfront Financial | Accounts, portfolios and advisory | [openfront-financial](https://github.com/openshiporg/openfront-financial) | [financial.openship.org](https://financial.openship.org) | [Docs](https://docs.openship.org/docs/openfront/financial) |
-| Openfront Analytics | Privacy-friendly website analytics | [analytics](https://github.com/openshiporg/analytics) | [analytics.openship.org](https://analytics.openship.org) | [Docs](https://docs.openship.org/docs/openfront/analytics) |
 | Openship | Order routing from sales channels to fulfillment | [openship](https://github.com/openshiporg/openship) | [os.openship.org](https://os.openship.org) | [Docs](https://docs.openship.org/docs/openship/ecommerce) |
 | Marketplace | Shop across Openfront stores | [marketplace](https://github.com/openshiporg/marketplace) | [marketplace.openship.org](https://marketplace.openship.org) | [Docs](https://docs.openship.org/docs/openfront/marketplace) |
