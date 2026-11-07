@@ -88,7 +88,7 @@ export async function finalizePaidOrder(tx: any, context: any, orderId: string, 
   await tx.payment.create({ data: { idempotencyKey: 'pay:' + order.id, amount: order.totalCents, currencyCode: order.currencyCode, status: 'succeeded', paymentMethod: 'credit_card', providerPaymentId, processedAt: new Date(), orderId: order.id, paymentProviderId: provider.id, paymentCollectionId: order.paymentCollection?.id || null } });
   await tx.ticketOrder.update({ where: { id: order.id }, data: { status: 'paid' } });
   const totals = await tx.priceTier.aggregate({ where: { showId: order.showId }, _sum: { sold: true, held: true } });
-  for (const tier of soldTiers) if (tier.sold >= tier.capacity) await tx.priceTier.update({ where: { id: tier.id }, data: { status: 'sold_out' } });
+  for (const tier of soldTiers) if (tier.sold >= tier.capacity) await tx.priceTier.updateMany({ where: { id: tier.id, status: 'on_sale' }, data: { status: 'sold_out' } });
   if (order.show.status === 'on_sale' && (totals._sum.sold || 0) + (totals._sum.held || 0) >= order.show.capacity) await tx.show.update({ where: { id: order.showId }, data: { status: 'sold_out' } });
   await audit(tx, context, 'paid', 'TicketOrder', order.id, { status: 'pending_payment' }, { status: 'paid' });
   return order;
@@ -109,6 +109,11 @@ export async function verifyAndFinalize(context: any, order: any) {
     await lockTransactionKey(tx, 'show:' + order.showId);
     await finalizePaidOrder(tx, context, order.id, provider, intent);
   }, { timeout: 20000 });
+  // The card was charged after the show was cancelled: cancelShow already ran its refund pass, so refund this one now.
+  const showNow = await context.prisma.show.findUnique({ where: { id: order.showId }, select: { status: true } });
+  if (showNow?.status === 'cancelled') {
+    try { await refundOrderInternal(context, { orderId: order.id, reason: 'Show cancelled', idempotencyKey: `cancel:${order.showId}:${order.id}`, actorId: null, threshold: Number.MAX_SAFE_INTEGER }); } catch { /* stays paid on a cancelled show; the cancel retry refunds it */ }
+  }
   return { status: 'paid' };
 }
 
@@ -178,6 +183,8 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
   const reserved = await command(context, 'refundTicketOrder', { ...a }, async tx => {
     const order = await tx.ticketOrder.findUnique({ where: { id: a.orderId }, include: { payments: true, tickets: { include: { line: true } } } });
     if (!order || !['paid', 'partially_refunded'].includes(order.status)) throw new Error('Order is not refundable');
+    // An earlier refund that is still processing or unknown has not moved money locally yet; a second one would count the same seats and dollars twice.
+    if (await tx.refund.count({ where: { orderId: order.id, status: { in: ['processing', 'unknown'] } } })) throw new Error('A refund on this order is still being confirmed. Wait for it or retry that refund first');
     const payment = order.payments.find((p: any) => ['succeeded', 'partially_refunded'].includes(p.status));
     if (!payment) throw new Error('No captured payment');
     const tickets = (a.ticketIds?.length ? order.tickets.filter((t: any) => a.ticketIds!.includes(t.id)) : order.tickets.filter((t: any) => t.status === 'valid'));
@@ -192,7 +199,7 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     if (a.actorId && amount > a.threshold) await consumeManagerApproval(tx, { approvalId: a.approvalId, actorId: a.actorId, actionType: 'refund_payment', targetId: order.id, reason: a.reason, amount, entityType: 'TicketOrder', entityId: order.id });
     const refund = await tx.refund.create({ data: { idempotencyKey: 'refund:' + a.idempotencyKey, amount, currencyCode: payment.currencyCode, status: 'processing', reason: a.reason, paymentId: payment.id, orderId: order.id, requestedById: a.actorId } });
     return { refundId: refund.id, paymentId: payment.id, providerPaymentId: payment.providerPaymentId, providerId: payment.paymentProviderId, amount, currencyCode: payment.currencyCode, ticketIds: tickets.map((t: any) => t.id), showId: order.showId };
-  }, undefined);
+  }, 'order:' + a.orderId);
   const provider = await prisma.paymentProvider.findUnique({ where: { id: reserved.providerId } });
   let result: any; let finalStatus = 'unknown';
   try {
@@ -209,7 +216,11 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     const voided = await tx.ticket.findMany({ where: { id: { in: reserved.ticketIds }, status: 'valid' }, include: { line: true } });
     await tx.ticket.updateMany({ where: { id: { in: voided.map((t: any) => t.id) } }, data: { status: 'refunded' } });
     const byTier = new Map<string, number>(); for (const t of voided) byTier.set(t.line.priceTierId, (byTier.get(t.line.priceTierId) || 0) + 1);
-    for (const [tierId, n] of byTier) await tx.priceTier.update({ where: { id: tierId }, data: { sold: { decrement: n }, status: 'on_sale' } });
+    for (const [tierId, n] of byTier) {
+      await tx.priceTier.update({ where: { id: tierId }, data: { sold: { decrement: n } } });
+      // Only a tier that sold out comes back; a paused or closed tier (or a cancelled show's) stays as the operator left it.
+      await tx.priceTier.updateMany({ where: { id: tierId, status: 'sold_out' }, data: { status: 'on_sale' } });
+    }
     const remainingValid = await tx.ticket.count({ where: { orderId: a.orderId, status: { in: ['valid', 'checked_in'] } } });
     await tx.ticketOrder.update({ where: { id: a.orderId }, data: { status: remainingValid ? 'partially_refunded' : 'refunded' } });
     if (!remainingValid) await cancelQueued(tx, { notificationKey: showReminderKey(a.orderId) });

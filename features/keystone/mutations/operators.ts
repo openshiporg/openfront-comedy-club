@@ -6,7 +6,8 @@ import { audit,code,command,hash,lockTransactionKey,requirePermission,transition
 import { minimum,payout,settlement } from '../lib/money';
 import { expireUnderLock } from './tickets';
 import { assertValidWindow } from '../lib/saleWindow';
-const showTransitions={draft:['on_sale','cancelled'],on_sale:['sold_out','doors_open','cancelled'],sold_out:['on_sale','doors_open','cancelled'],doors_open:['in_progress','cancelled'],in_progress:['completed','cancelled'],completed:['settled']};
+// Cancelling is not here on purpose: only cancelShow refunds paid orders, releases holds and closes tiers. 'settled' only comes from closeShow.
+export const showTransitions={draft:['on_sale'],on_sale:['doors_open'],sold_out:['doors_open'],doors_open:['in_progress'],in_progress:['completed']};
 export async function publishShow(_:any,a:any,c:any) {requirePermission(c,'canManageShows');return command(c,'publishShow',a,tx=>transition(tx,c,'show',a.showId,a.nextStatus||'on_sale',showTransitions),'show:'+a.showId);}
 export async function pauseSales(_:any,a:any,c:any) {requirePermission(c,'canManageShows');return command(c,'pauseSales',a,async tx=>{const show=await tx.show.findUnique({where:{id:a.showId}});if(!show||!['on_sale','sold_out'].includes(show.status)) throw new Error('Sales are not open');await tx.priceTier.updateMany({where:{showId:a.showId},data:{status:'paused'}});await audit(tx,c,'sales_paused','Show',a.showId,null,null);return {paused:true};},'show:'+a.showId);}
 export async function resumeSales(_:any,a:any,c:any) {
@@ -32,7 +33,8 @@ export async function confirmSlot(_:any,a:any,c:any) {requirePermission(c,'canMa
 export async function setLineup(_:any,a:any,c:any) {requirePermission(c,'canManageTalent');return command(c,'setLineup',a,async tx=>{const slots=await tx.lineupSlot.findMany({where:{showId:a.showId}});const ids=a.slots.map((s:any)=>s.id);if(ids.length!==new Set(ids).size||ids.some((id:string)=>!slots.some((s:any)=>s.id===id))) throw new Error('Invalid lineup');for(const s of a.slots) await tx.lineupSlot.update({where:{id:s.id},data:{position:s.position,setMinutes:s.setMinutes}});const show=await tx.show.findUnique({where:{id:a.showId}});const total=a.slots.reduce((n:number,s:any)=>n+s.setMinutes,0);await audit(tx,c,'reordered','Show',a.showId,null,a.slots);return {warning:total>(show.endsAt-show.startsAt)/60000?'Lineup exceeds show duration':null};},'show:'+a.showId);}
 export async function checkInTicket(_:any,a:any,c:any) {requirePermission(c,'canManageDoor');return command(c,'checkInTicket',a,async tx=>{
  const ticket=await tx.ticket.findFirst({where:{OR:[{ticketCode:a.tokenOrCode},{tokenHash:hash(a.tokenOrCode)}]}});if(!ticket) throw new Error('Ticket not found');
- const result=ticket.showId!==a.showId?'wrong_show':ticket.status==='checked_in'?'duplicate':ticket.status!=='valid'?'void':'admitted';
+ const scanShow=await tx.show.findUnique({where:{id:ticket.showId},select:{status:true}});
+ const result=ticket.showId!==a.showId?'wrong_show':ticket.status==='checked_in'?'duplicate':ticket.status!=='valid'||['cancelled','settled','draft'].includes(scanShow?.status)?'void':'admitted';
  let effective=result;if(result==='admitted'){const cas=await tx.ticket.updateMany({where:{id:ticket.id,status:'valid'},data:{status:'checked_in'}});if(cas.count!==1) effective='duplicate';}
  const scan=await tx.checkIn.create({data:{ticketId:ticket.id,showId:a.showId,scannedById:c.session.itemId,at:effectiveScanTime(a.scannedAt,new Date()),method:a.method||'manual',result:effective}});await audit(tx,c,effective,'Ticket',ticket.id,null,{status:effective});
  // a duplicate tells staff who admitted the ticket first and when, so a late replay is never a silent clear
