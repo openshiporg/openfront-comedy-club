@@ -7,6 +7,7 @@ import { statelessSessions } from "@keystone-6/core/session";
 import { extendGraphqlSchema } from "./mutations";
 import { sendPasswordResetEmail } from "./lib/mail";
 import { withMcpBearerSessions } from "./mcp-oauth/session";
+import { pooledDatabaseUrl } from './database-url';
 
 const databaseURL = process.env.DATABASE_URL || "file:./keystone.db";
 
@@ -60,7 +61,7 @@ export default withAuth(
   config({
     db: {
       provider: "postgresql",
-      url: databaseURL,
+      url: pooledDatabaseUrl(databaseURL),
     },
     lists: models,
     storage: {
