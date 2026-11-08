@@ -25,6 +25,11 @@ test('a unique violation is named by index or by its fields', () => {
   assert.equal(constraintRefusal(new Error('Key (venue, lower(name))=(v1, main room) already exists.'))?.code, 'COMEDY_DUPLICATE_NAME')
 })
 
+test('Prisma’s message for a case-insensitive unique index is understood', () => {
+  const live = new GraphQLError('Prisma error: Unique constraint failed on the fields: (`venue`,`lower(name)`)', { extensions: { code: 'KS_PRISMA_ERROR' } })
+  assert.equal(constraintRefusal(live)?.code, 'COMEDY_DUPLICATE_NAME')
+})
+
 test('unknown errors are left alone and the refusal keeps the path', () => {
   assert.equal(constraintRefusal(new Error('connection reset')), null)
   const out = constraintGraphQLError(new GraphQLError('Prisma error', { path: ['updateShow'] }), { code: 'COMEDY_INVALID_TIME_RANGE', message: 'm' })

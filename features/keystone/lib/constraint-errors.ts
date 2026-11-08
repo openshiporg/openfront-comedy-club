@@ -77,10 +77,11 @@ export function constraintRefusal(error: unknown): { code: string; message: stri
     ].join(' ')
     for (const [name, rule] of Object.entries(CONSTRAINT_MESSAGES)) if (text.includes(name)) return rule
     // Prisma sometimes reports a unique violation by its fields instead of the index name.
-    const listed = /Unique constraint failed on the fields: \(([^)]*)\)/.exec(String(link?.message || ''))?.[1]?.match(/`([^`]+)`/g)?.map(field => field.slice(1, -1))
+    const listed = /Unique constraint failed on the fields: \((.*?)\)(?:\s|$)/.exec(String(link?.message || ''))?.[1]?.match(/`([^`]+)`/g)?.map(field => field.slice(1, -1))
     // Raw SQL writes surface Postgres's own detail instead: Key (show, email)=(…) already exists.
     const keyed = /Key \((.*?)\)=\(.*\) already exists/.exec(text)?.[1]?.split(',').map(field => field.trim().replace(/^"|"$/g, '').replace(/^lower\((.*)\)$/, '$1'))
-    const fields = link?.code === 'P2002' && Array.isArray(link?.meta?.target) ? link.meta.target : listed ?? keyed
+    const unwrap = (field: unknown) => String(field).replace(/^lower\((.*)\)$/, '$1')
+    const fields = (link?.code === 'P2002' && Array.isArray(link?.meta?.target) ? link.meta.target : listed ?? keyed)?.map(unwrap)
     if (fields?.length) {
       const target = [...fields].map(String).sort().join(',')
       const match = Object.values(CONSTRAINT_MESSAGES).find(rule => rule.fields && [...rule.fields].sort().join(',') === target)
