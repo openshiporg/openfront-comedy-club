@@ -22,6 +22,7 @@ import * as seed from "./seed";
 import * as seating from "./seating";
 import * as checkPay from "./checkPay";
 import { matchingManagerApproval } from '../utils/managerApproval';
+import { constraintRefusal, constraintGraphQLError } from '../lib/constraint-errors';
 
 const graphql = String.raw;
 
@@ -32,6 +33,9 @@ const UNSAFE = /prisma|invocation|\bat\s+\S+\s*\(|node_modules|postgres(ql)?:\/\
 const op = (fn: any) => async (root: any, args: any, context: any) => {
   try { return await fn(root, args, context); }
   catch (error: any) {
+    // A database rule refused the write: say which rule in words, with a stable code.
+    const refusal = constraintRefusal(error);
+    if (refusal) throw error instanceof GraphQLError ? constraintGraphQLError(error, refusal) : new GraphQLError(refusal.message, { extensions: { code: refusal.code } });
     if (error instanceof GraphQLError) throw error;
     const message = typeof error?.message === 'string' ? error.message : '';
     console.error('Operation failed:', message.slice(0, 300));

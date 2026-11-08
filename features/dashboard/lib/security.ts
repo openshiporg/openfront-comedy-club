@@ -52,7 +52,7 @@ export function publicGraphQLErrorMessage(error: unknown): string {
       if (names?.length) messages.push(`A record with this ${names.join(' and ')} already exists.`);
       continue;
     }
-    if (typeof code !== 'string' || !USER_FACING_CODES.has(code)) continue;
+    if (typeof code !== 'string' || !(USER_FACING_CODES.has(code) || code.startsWith('COMEDY_'))) continue;
     const cleaned = cleanMessage(message);
     if (cleaned) messages.push(cleaned);
   }
