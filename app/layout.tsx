@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next x Keystone Starter",
-  description: "Next, Keystone, and Tailwind Starter Template",
+  title: "Openfront Comedy Club",
+  description: "Shows, tickets and open mics at Openfront Comedy Club.",
 };
 
 export default function RootLayout({
