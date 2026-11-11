@@ -160,6 +160,9 @@ export async function getAuthenticatedUser() {
           role {
             canAccessDashboard
             canManageOnboarding
+            canManageOrders
+            canManageChecks
+            canIssueRefunds
           }
         }
       }

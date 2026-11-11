@@ -59,6 +59,9 @@ interface User {
   role?: {
     canAccessDashboard?: boolean;
     canManageOnboarding?: boolean;
+    canManageOrders?: boolean;
+    canManageChecks?: boolean;
+    canIssueRefunds?: boolean;
   };
 }
 

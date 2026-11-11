@@ -43,7 +43,7 @@ import { User } from './User';
 import { Venue } from './Venue';
 import { VenueSettings } from './VenueSettings';
 
-export const models = {
+const rawModels = {
   AuditEvent,
   Check,
   CheckIn,
@@ -89,4 +89,21 @@ export const models = {
   Venue,
   VenueSettings,
 };
+
+// Sidebar visibility follows the role: a list whose query access denies the session is hidden from navigation
+// (Keystone evaluates ui.isHidden per session in admin meta). Explicit isHidden settings are kept.
+type QueryAccess = (args: unknown) => unknown;
+type ListConfig = { access?: { operation?: { query?: unknown } }; ui?: { isHidden?: unknown } } & Record<string, unknown>;
+export const models = Object.fromEntries(Object.entries(rawModels).map(([key, entry]) => {
+  const config = entry as ListConfig;
+  const query: unknown = config?.access?.operation?.query;
+  if (typeof query !== 'function') return [key, config];
+  const existing = config?.ui?.isHidden;
+  const isHidden = (args: unknown) => {
+    if (existing === true) return true;
+    if (typeof existing === 'function' && (existing as QueryAccess)(args)) return true;
+    return !(query as QueryAccess)(args);
+  };
+  return [key, { ...config, ui: { ...(config.ui ?? {}), isHidden } }];
+})) as typeof rawModels;
 export default models;
