@@ -34,8 +34,8 @@ export const PLATFORM_PAGE_LISTS: Record<string, string[]> = {
   reports: ['comedian-payouts'],
   'promo-codes': ['promo-codes'],
   'payment-providers': ['payment-providers'],
-  settings: ['venues', 'venue-settings-items'],
-  store: ['venue-settings-items'],
+  settings: ['venues', 'venue-settings'],
+  store: ['venue-settings'],
 }
 
 /** Pages backed by a list that is hidden from navigation by design, so they follow role permissions instead. */
