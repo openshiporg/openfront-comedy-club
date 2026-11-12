@@ -15,7 +15,7 @@ function Pick({ label, value, options, onChange }: { label: string; value: strin
   const [open, setOpen] = React.useState(false);
   const current = options.find((o) => o.id === value);
   const face = (
-    <button type="button" aria-label={label} className="inline-flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
+    <button type="button" aria-label={label} className="inline-flex h-11 w-full items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
       <span className="min-w-0 truncate">{current?.name || label}</span><ChevronsUpDown className="size-4 shrink-0 opacity-60" />
     </button>
   );
@@ -23,7 +23,7 @@ function Pick({ label, value, options, onChange }: { label: string; value: strin
     <ClientOnly placeholder={face}>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" aria-label={label} className="inline-flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
+        <button type="button" aria-label={label} className="inline-flex h-11 w-full items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
           <span className="min-w-0 truncate">{current?.name || label}</span><ChevronsUpDown className="size-4 shrink-0 opacity-60" />
         </button>
       </PopoverTrigger>

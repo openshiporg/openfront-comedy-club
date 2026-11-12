@@ -111,10 +111,10 @@ function PartyPicker({ orders, orderId, onPick }: { orders: O[]; orderId: string
   );
   return (
     <div className="space-y-2">
-      <input aria-label="Find waiting party" placeholder={`Find one of ${orders.length} waiting parties by name or order code`} value={term} onChange={(e) => setTerm(e.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm" autoComplete="off" />
+      <input aria-label="Find waiting party" placeholder={`Find one of ${orders.length} waiting parties by name or order code`} value={term} onChange={(e) => setTerm(e.target.value)} className="h-11 w-full rounded-md border bg-background px-3 text-sm" autoComplete="off" />
       <div role="listbox" aria-label="Waiting parties" className="divide-y rounded-md border">
         {shown.length ? shown.map((o) => (
-          <button key={o.id} type="button" role="option" aria-selected={o.id === orderId} onClick={() => { onPick(o.id); setTerm(''); }} className="flex w-full min-w-0 flex-wrap items-baseline justify-between gap-x-3 px-3 py-2 text-left text-sm">
+          <button key={o.id} type="button" role="option" aria-selected={o.id === orderId} onClick={() => { onPick(o.id); setTerm(''); }} className="flex min-h-11 w-full min-w-0 flex-wrap items-center justify-between gap-x-3 px-3 py-2 text-left text-sm">
             <span className="min-w-0 break-words font-medium">{o.name}</span>
             <span className="text-xs text-muted-foreground">party of {o.partySize} · <span className="font-mono">#{shortCode(o.orderNumber)}</span></span>
           </button>

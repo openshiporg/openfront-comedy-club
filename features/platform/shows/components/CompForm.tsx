@@ -15,7 +15,7 @@ export function CompForm({ showId, tiers, threshold }: { showId: string; tiers: 
   const [quantity, setQuantity] = React.useState(1); const [reason, setReason] = React.useState('comic_guest');
   const [approvalId, setApproval] = React.useState(''); const [message, setMessage] = React.useState('');
   const [pending, start] = React.useTransition();
-  const cls = 'h-10 w-full rounded-md border bg-background px-3 text-sm';
+  const cls = 'h-11 w-full rounded-md border bg-background px-3 text-sm';
   return <div className="space-y-3">
     <ClientOnly placeholder={<button className={pillClass}>Choose tier</button>}><Popover><PopoverTrigger asChild><button className={pillClass}>{tiers.find(t => t.id === tier)?.name || 'Choose tier'}</button></PopoverTrigger><PopoverContent><Command><CommandList>{tiers.map(t => <CommandItem key={t.id} onSelect={() => setTier(t.id)}>{t.name}</CommandItem>)}</CommandList></Command></PopoverContent></Popover></ClientOnly>
     <label className="block text-sm">Recipient<input aria-label="Comp recipient" className={cls} value={name} onChange={e => setName(e.target.value)} /></label>

@@ -6,7 +6,7 @@ import { label } from '../lib/format';
 const DOT: Record<string, string> = {
   on_sale: 'bg-emerald-500', paid: 'bg-emerald-500', valid: 'bg-emerald-500', confirmed: 'bg-emerald-500', performed: 'bg-emerald-500', succeeded: 'bg-emerald-500', active: 'bg-emerald-500', seated: 'bg-emerald-500', admitted: 'bg-emerald-500', settled: 'bg-emerald-500', closed: 'bg-emerald-500',
   doors_open: 'bg-amber-500', in_progress: 'bg-amber-500', open: 'bg-amber-500', presented: 'bg-amber-500', offered: 'bg-amber-500', pending_payment: 'bg-amber-500', draft: 'bg-amber-500', approved: 'bg-amber-500', waiting: 'bg-amber-500', processing: 'bg-amber-500', paused: 'bg-amber-500',
-  sold_out: 'bg-blue-500', checked_in: 'bg-blue-500', completed: 'bg-blue-500', called: 'bg-blue-500', comp: 'bg-blue-500',
+  sold_out: 'bg-cyan-500', checked_in: 'bg-cyan-500', completed: 'bg-cyan-500', called: 'bg-cyan-500', comp: 'bg-cyan-500',
   cancelled: 'bg-red-500', refunded: 'bg-red-500', declined: 'bg-red-500', no_show: 'bg-red-500', void: 'bg-red-500', voided: 'bg-red-500', failed: 'bg-red-500', duplicate: 'bg-red-500',
 };
 
@@ -37,7 +37,7 @@ export function Tabs({ items, active }: { items: { key: string; label: string; h
     <div className="max-w-full overflow-x-auto">
       <div className="inline-flex gap-1 rounded-lg bg-muted p-1">
         {items.map((i) => (
-          <Link key={i.key} href={i.href} className={cn('whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium', i.key === active ? 'bg-background shadow-sm' : 'text-muted-foreground')}>
+          <Link key={i.key} href={i.href} className={cn('inline-flex min-h-11 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium', i.key === active ? 'bg-background shadow-sm' : 'text-muted-foreground')}>
             {i.label}{i.count !== undefined ? <span className="ml-1.5 font-mono text-xs text-muted-foreground">{i.count}</span> : null}
           </Link>
         ))}

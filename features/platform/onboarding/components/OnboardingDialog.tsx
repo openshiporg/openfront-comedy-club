@@ -52,7 +52,7 @@ const OnboardingDialog: React.FC<OnboardingDialogProps> = ({ isOpen, onClose }) 
           <SectionRenderer sections={SECTION_DEFINITIONS} isLoading={s.isLoading} loadingItems={s.loadingItems} completedItems={s.completedItems} itemErrors={s.itemErrors} step={s.step} currentJsonData={s.currentJsonData} />
           {s.step === 'done' ? (
             <div className="flex flex-wrap gap-4 text-sm">
-              {NEXT.map((n) => <Link key={n.href} href={n.href} className="font-medium underline underline-offset-4" onClick={onClose}>{n.label}</Link>)}
+              {NEXT.map((n) => <Link key={n.href} href={n.href} className="font-medium inline-flex min-h-11 items-center underline underline-offset-4" onClick={onClose}>{n.label}</Link>)}
             </div>
           ) : null}
         </div>

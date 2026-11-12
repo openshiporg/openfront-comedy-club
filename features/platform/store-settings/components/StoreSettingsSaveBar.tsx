@@ -22,7 +22,7 @@ export function StoreSettingsSaveBar({
   className?: string
 }) {
   const button = (
-    <Button onClick={onSave} disabled={isSaving} className="h-10 rounded-full px-5 text-sm" type="button">
+    <Button onClick={onSave} disabled={isSaving} className="h-11 rounded-md px-5 text-sm" type="button">
       {isSaving ? 'Saving...' : label}
     </Button>
   )

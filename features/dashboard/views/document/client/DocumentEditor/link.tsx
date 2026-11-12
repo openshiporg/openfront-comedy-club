@@ -66,7 +66,7 @@ export const LinkElement = ({
             className={
               showInvalidState
                 ? "text-red-500"
-                : "text-blue-500 hover:text-blue-600"
+                : "text-cyan-500 hover:text-cyan-600"
             }
           >
             {children}

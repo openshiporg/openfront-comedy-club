@@ -8,8 +8,8 @@ import { Status } from '../../components/ui';
 export function GuestSearch({ showId, q }: { showId: string; q: string }) {
   return <form method="get" className="flex gap-2">
     <input type="hidden" name="show" value={showId} />
-    <input name="q" defaultValue={q} aria-label="Find guest" placeholder="Name, email or order number" className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm" autoComplete="off" />
-    <button type="submit" className={pillClass + ' h-10 border'}>Find</button>
+    <input name="q" defaultValue={q} aria-label="Find guest" placeholder="Name, email or order number" className="h-11 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm" autoComplete="off" />
+    <button type="submit" className={pillClass + ' border'}>Find</button>
   </form>;
 }
 

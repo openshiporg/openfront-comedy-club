@@ -17,7 +17,7 @@ export function SalesWindowForm({ tierId, tz, start, end }: { tierId: string; tz
   const router = useRouter(); const [open, setOpen] = React.useState(false);
   const [from, setFrom] = React.useState(toLocal(start, tz)); const [to, setTo] = React.useState(toLocal(end, tz));
   const [message, setMessage] = React.useState(''); const [pending, start_] = React.useTransition();
-  const cls = 'h-10 w-full rounded-md border bg-background px-3 text-sm';
+  const cls = 'h-11 w-full rounded-md border bg-background px-3 text-sm';
   if (!open) return <button type="button" className={pillClass} onClick={() => setOpen(true)}>Schedule sales</button>;
   return <div className="w-full space-y-2 py-2">
     <label className="block text-sm">On sale at<input type="datetime-local" className={cls} value={from} onChange={(e) => setFrom(e.target.value)} /></label>

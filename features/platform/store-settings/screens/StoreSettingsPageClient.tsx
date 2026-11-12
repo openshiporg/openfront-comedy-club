@@ -103,7 +103,7 @@ export function StoreSettingsPageClient({
                   className="[&>svg]:w-6 [&>svg]:h-6"
                 />
               </SelectPrimitive.Trigger>
-              <SelectContent className="border-border dark:border-blue-700">
+              <SelectContent className="border-border dark:border-cyan-700">
                 {LOGO_ICONS.map((icon) => (
                   <SelectItem key={icon.id} value={icon.id}>
                     <span className="flex items-center gap-3">
@@ -185,7 +185,7 @@ export function StoreSettingsPageClient({
                   />
                 </SelectValue>
               </SelectPrimitive.Trigger>
-              <SelectContent className="border-border dark:border-blue-700">
+              <SelectContent className="border-border dark:border-cyan-700">
                 <div className="grid grid-cols-4 gap-2 p-2">
                   {HUE_PRESETS.map((preset) => (
                     <SelectItem

@@ -66,7 +66,7 @@ function ThemeSwitcher({
             data-umami-event={`Switch Theme to ${type}`}
           >
             {isActive && (
-              <div className="-z-1 absolute inset-0 rounded-full bg-blue-100 dark:bg-blue-500" />
+              <div className="-z-1 absolute inset-0 rounded-full bg-cyan-100 dark:bg-cyan-500" />
             )}
             <Icon
               className={cn(

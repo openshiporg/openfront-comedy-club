@@ -62,8 +62,8 @@ export function SetupReadinessChecklist({ settingsReview }: { settingsReview: On
             <p className="mt-1 text-sm text-muted-foreground">{check.detail}</p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-3">
-            <Link className="text-sm font-medium underline underline-offset-4" href={check.href}>{check.link}</Link>
-            {check.secondaryHref && check.secondaryLink ? <Link className="text-sm font-medium underline underline-offset-4" href={check.secondaryHref}>{check.secondaryLink}</Link> : null}
+            <Link className="text-sm font-medium inline-flex min-h-11 items-center underline underline-offset-4" href={check.href}>{check.link}</Link>
+            {check.secondaryHref && check.secondaryLink ? <Link className="text-sm font-medium inline-flex min-h-11 items-center underline underline-offset-4" href={check.secondaryHref}>{check.secondaryLink}</Link> : null}
           </div>
         </div>
       </li>)}

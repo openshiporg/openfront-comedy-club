@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 const badgeVariants = cva(
-  "leading-tight px-2 py-1 group relative inline-flex rounded-md focus:outline-none data-[focus]:outline data-[focus]:outline-2 data-[focus]:outline-offset-2 data-[focus]:outline-blue-500",
+  "leading-tight px-2 py-1 group relative inline-flex rounded-md focus:outline-none data-[focus]:outline data-[focus]:outline-2 data-[focus]:outline-offset-2 data-[focus]:outline-cyan-500",
   {
     variants: {
       color: {
@@ -26,15 +26,15 @@ const badgeVariants = cva(
         teal: "bg-teal-500/15 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300 border-teal-200 dark:border-teal-900/50",
         cyan: "bg-cyan-400/20 text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300 border-cyan-200 dark:border-cyan-900/50",
         sky: "bg-sky-500/15 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300 border-sky-200 dark:border-sky-900/50",
-        blue: "bg-blue-500/15 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-800/50",
+        blue: "bg-cyan-500/15 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800/50",
         indigo:
-          "bg-indigo-500/15 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/50",
+          "g-teal-500/15 text-teal-700 dark:g-teal-500/10 dark:text-teal-400 order-teal-200 dark:order-teal-900/50",
         violet:
-          "bg-violet-500/15 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400 border-violet-200 dark:border-violet-900/50",
+          "g-teal-500/15 text-teal-700 dark:g-teal-500/10 dark:text-teal-400 order-teal-200 dark:order-teal-900/50",
         purple:
-          "bg-purple-500/15 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border-purple-200 dark:border-purple-900/50",
+          "g-teal-500/15 text-teal-700 dark:g-teal-500/10 dark:text-teal-400 order-teal-200 dark:order-teal-900/50",
         fuchsia:
-          "bg-fuchsia-400/15 text-fuchsia-700 dark:bg-fuchsia-400/10 dark:text-fuchsia-400 border-fuchsia-200 dark:border-fuchsia-900/50",
+          "g-teal-400/15 text-teal-700 dark:g-teal-400/10 dark:text-teal-400 order-teal-200 dark:order-teal-900/50",
         pink: "bg-pink-400/15 text-pink-700 dark:bg-pink-400/10 dark:text-pink-400 border-pink-200 dark:border-pink-900/50",
         rose: "bg-rose-400/15 text-rose-700 dark:bg-rose-400/10 dark:text-rose-400 border-rose-200 dark:border-rose-900/50",
         zinc: "bg-zinc-500/10 text-zinc-500/90 dark:bg-white/5 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700/50",
@@ -78,7 +78,7 @@ const BadgeButton = React.forwardRef<HTMLButtonElement, BadgeButtonProps>(functi
   return href ? (
     <Link
       href={href}
-      className={`group relative inline-flex rounded-md focus:outline-none data-[focus]:outline data-[focus]:outline-2 data-[focus]:outline-offset-2 data-[focus]:outline-blue-500 ${disabledClass}`}
+      className={`group relative inline-flex rounded-md focus:outline-none data-[focus]:outline data-[focus]:outline-2 data-[focus]:outline-offset-2 data-[focus]:outline-cyan-500 ${disabledClass}`}
     >
       <TouchTarget>
         <Badge color={color}>{children}</Badge>
@@ -87,7 +87,7 @@ const BadgeButton = React.forwardRef<HTMLButtonElement, BadgeButtonProps>(functi
   ) : (
     <button
       {...props}
-      className={`group relative inline-flex rounded-md focus:outline-none data-[focus]:outline data-[focus]:outline-2 data-[focus]:outline-offset-2 data-[focus]:outline-blue-500 ${disabledClass}`}
+      className={`group relative inline-flex rounded-md focus:outline-none data-[focus]:outline data-[focus]:outline-2 data-[focus]:outline-offset-2 data-[focus]:outline-cyan-500 ${disabledClass}`}
       ref={ref}
       disabled={isDisabled}
     >

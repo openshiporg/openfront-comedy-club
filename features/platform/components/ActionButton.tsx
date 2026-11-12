@@ -9,12 +9,12 @@ export function PillTrack({ children, className }: { children: React.ReactNode; 
   return <div className={cn('inline-flex max-w-full flex-wrap gap-1 rounded-lg bg-muted p-1', className)}>{children}</div>;
 }
 
-export const pillClass = 'inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md bg-background px-3 text-sm font-medium shadow-sm transition disabled:opacity-50';
+export const pillClass = 'inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-md bg-background px-3 text-sm font-medium shadow-sm transition disabled:opacity-50';
 
 /** Runs one named custom operation. The server action supplies the idempotency key. */
 export function ActionButton({ op, vars, children, paths, confirm, onDone, className }: {
   op: string; vars: Record<string, unknown>; children: React.ReactNode; paths?: string[]; confirm?: string;
-  onDone?: (data: any) => void; className?: string;
+  onDone?: (data: unknown) => void; className?: string;
 }) {
   const router = useRouter();
   const [pending, start] = React.useTransition();

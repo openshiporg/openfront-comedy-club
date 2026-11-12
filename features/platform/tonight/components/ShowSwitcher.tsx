@@ -12,7 +12,7 @@ export function ShowSwitcher({ shows, currentId }: { shows: { id: string; title:
   const [open, setOpen] = React.useState(false);
   const current = shows.find((s) => s.id === currentId);
   const face = (
-    <button type="button" className="inline-flex h-10 w-full max-w-md items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
+    <button type="button" className="inline-flex h-11 w-full max-w-md items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
       <span className="min-w-0 truncate">{current ? `${current.title} · ${current.when}` : 'Choose a show'}</span>
       <ChevronsUpDown className="size-4 shrink-0 opacity-60" />
     </button>
@@ -21,7 +21,7 @@ export function ShowSwitcher({ shows, currentId }: { shows: { id: string; title:
     <ClientOnly placeholder={face}>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" className="inline-flex h-10 w-full max-w-md items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
+        <button type="button" className="inline-flex h-11 w-full max-w-md items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-sm">
           <span className="min-w-0 truncate">{current ? `${current.title} · ${current.when}` : 'Choose a show'}</span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-60" />
         </button>

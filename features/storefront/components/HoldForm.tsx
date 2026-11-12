@@ -11,7 +11,7 @@ import { MAX_GROUP_HOLD } from '../../keystone/lib/groupHold';
 type Tier = { id: string; name: string; priceCents: number; feeCents: number; capacity: number; sold: number; held: number; status: string; isTableTier: boolean; salesStartAt?: string | null; salesEndAt?: string | null };
 type Section = { name: string; tables: { id: string; label: string; seats: number; taken: boolean }[] };
 
-const btn = 'inline-flex h-10 items-center justify-center rounded-md border bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50';
+const btn = 'inline-flex h-11 items-center justify-center rounded-md border bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50';
 const chip = (on: boolean, off?: boolean) => `min-w-12 rounded-md border px-2 py-2 text-sm ${on ? 'border-foreground bg-foreground text-background' : ''} ${off ? 'opacity-40' : ''}`;
 
 export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { showId: string; title: string; ageRestriction: string; tiers: Tier[]; sections: Section[] }) {

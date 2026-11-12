@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { joinWaitlist } from '../lib/actions';
 
-const field = 'h-10 w-full rounded-md border bg-background px-3 text-sm';
-const btn = 'inline-flex h-10 items-center justify-center rounded-md border bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50';
+const field = 'h-11 w-full rounded-md border bg-background px-3 text-sm';
+const btn = 'inline-flex h-11 items-center justify-center rounded-md border bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50';
 
 export function WaitlistForm({ showId, title }: { showId: string; title: string }) {
   const [form, setForm] = React.useState({ name: '', email: '', size: 2 });

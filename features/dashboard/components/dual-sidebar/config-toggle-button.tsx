@@ -36,7 +36,7 @@ export function ConfigToggleButton({
             onClick={handleToggle}
             disabled={disabled}
             className={`border inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] shadow-xs gap-1.5 px-3 has-[>svg]:px-2.5 size-8 rounded-full
-              ${isGlobal ? "bg-blue-500/15 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-800/50" : "bg-emerald-400/15 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50"}`
+              ${isGlobal ? "bg-cyan-500/15 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800/50" : "bg-emerald-400/15 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50"}`
             }
           >
             <Globe
