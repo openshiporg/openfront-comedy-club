@@ -2,12 +2,13 @@ import { handleWebhookFunction } from '../../integrations/payment/stripe';
 import { verifyAndFinalize } from './checkout';
 import { settleCheckCard } from './checkPay';
 
-/** Signed (raw-byte) Stripe TEST webhook with a durable, deduplicated inbox. Settlement re-reads the provider, never trusts the payload. */
+/** Signed (raw-byte) Stripe webhook with a durable, deduplicated inbox. Settlement re-reads the provider, never trusts the payload. */
 export async function handlePaymentWebhook(context: any, rawBody: string, headers: Record<string, string>) {
-  if (!process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) throw new Error('Stripe TEST configuration required');
+  if (!process.env.STRIPE_SECRET_KEY) throw new Error('Stripe is not configured');
   const verified = await handleWebhookFunction({ event: null, headers, rawBody });
   const event = verified.event as any;
-  if (event.livemode) throw new Error('Live payments are not enabled');
+  // the event mode must match the key mode (test events never settle on a live key and the reverse)
+  if (Boolean(event.livemode) !== process.env.STRIPE_SECRET_KEY.startsWith('sk_live_')) throw new Error('Stripe event mode does not match the configured key');
   const db = context.prisma;
   const eventKey = `pp_stripe:${event.id}`;
   const inbox = await db.paymentWebhookEvent.upsert({ where: { eventKey }, update: {}, create: { eventKey, providerCode: 'pp_stripe', providerEventId: event.id, eventType: event.type, status: 'received', payload: { id: event.id, type: event.type, resourceId: (verified.resource as any)?.id }, attempts: 0 } });

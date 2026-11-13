@@ -4,7 +4,7 @@ import { cancelPayment, createPayment, getPaymentStatus } from '../utils/payment
 import { assertCheckoutProviderObservation } from '../utils/checkoutProviderObservation';
 
 /**
- * Card tender on a bar/food check (keyed card, like a Toast virtual terminal). Stripe TEST only.
+ * Card tender on a bar/food check (keyed card, like a Toast virtual terminal). The Stripe mode follows the configured key.
  * 1. startCheckCardPayment freezes the bill (check -> presented, no more items), records one pending Payment and creates the
  *    PaymentIntent outside the transaction, keyed by that payment.
  * 2. The operator enters the card in the Stripe Payment Element; completeCheckCardPayment re-reads Stripe and only then marks the
@@ -15,7 +15,7 @@ const PROVIDER = 'pp_stripe';
 const LIVE_PAY = ['pending', 'processing', 'authorized', 'unknown'];
 
 async function stripeProvider(context: any) {
-  if (!process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) throw new Error('Card payments need Stripe TEST keys');
+  if (!process.env.STRIPE_SECRET_KEY) throw new Error('Card payments are not set up');
   const provider = await context.prisma.paymentProvider.findUnique({ where: { code: PROVIDER } });
   if (!provider?.isInstalled) throw new Error('Card payments are not set up');
   return provider;

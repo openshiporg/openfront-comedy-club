@@ -11,7 +11,7 @@ test('bad or tampered signatures are refused before the database', async () => {
   await assert.rejects(() => handlePaymentWebhook({ prisma: {} }, payload(), { 'stripe-signature': 'invalid' }), /signature/);
   const raw = payload(); await assert.rejects(() => handlePaymentWebhook({ prisma: {} }, raw + ' ', headers(raw)), /signature/);
 });
-test('live events fail closed', async () => { const raw = payload({ livemode: true }); await assert.rejects(() => handlePaymentWebhook({ prisma: {} }, raw, headers(raw)), /Live/); });
+test('an event whose mode does not match the key mode is refused', async () => { const raw = payload({ livemode: true }); await assert.rejects(() => handlePaymentWebhook({ prisma: {} }, raw, headers(raw)), /does not match/); });
 test('duplicates are acknowledged without reprocessing; unsupported ignored; refunds stay failed', async () => {
   const dup = { prisma: { paymentWebhookEvent: { upsert: async () => ({ id: 'i', status: 'processed' }) } } };
   const raw = payload(); assert.deepEqual(await handlePaymentWebhook(dup, raw, headers(raw)), { success: true, status: 'processed', duplicate: true });

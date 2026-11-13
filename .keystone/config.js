@@ -6015,10 +6015,11 @@ init_access();
 var LIVE = ["on_sale", "sold_out", "doors_open", "in_progress", "completed"];
 async function doorBoard(_, a, c) {
   const can = { door: permissions.canManageDoor(c), checks: permissions.canManageChecks(c), shows: permissions.canManageShows(c) };
-  if (!c.session?.itemId || !(can.door || can.checks)) throw new Error("Not authorized");
+  if (!c.session?.itemId || !(can.door || can.checks || can.shows)) throw new Error("Not authorized");
   const db = c.prisma;
+  const num = (v) => Number(v);
   const since = new Date(Date.now() - 6 * 36e5);
-  const shows = await db.show.findMany({ where: { startsAt: { gte: since }, status: { in: LIVE } }, orderBy: { startsAt: "asc" }, take: 20, select: { id: true, title: true, startsAt: true, status: true } });
+  const shows = await db.show.findMany({ where: { startsAt: { gte: since }, status: { in: [...LIVE] } }, orderBy: { startsAt: "asc" }, take: 20, select: { id: true, title: true, startsAt: true, status: true } });
   const current = shows.find((s2) => s2.id === a.showId) || shows[0];
   if (!current) return { shows, show: null, found: [], can };
   const live = { in: ["valid", "checked_in"] };
@@ -6048,14 +6049,14 @@ async function doorBoard(_, a, c) {
     db.priceTier.findMany({ where: { showId: current.id }, select: { sold: true, held: true } })
   ]);
   const heldCount = heldAgg._sum.quantity || 0;
-  const remaining = Math.max(0, Number(s.capacity) - tiers.reduce((n, t) => n + t.sold + t.held, 0));
+  const remaining = Math.max(0, num(s?.capacity) - tiers.reduce((n, t) => n + (t.sold ?? 0) + (t.held ?? 0), 0));
   const show = {
     ...s,
     soldCount,
     heldCount,
     checkedInCount,
     remaining,
-    checks: s.checks.map((k) => ({ id: k.id, status: k.status, guestCount: k.guestCount, seatingAssignment: k.seatingAssignment, minimumItemsMet: k.items.reduce((n, i) => n + i.qty, 0) >= Number(k.minimumItemsRequired) }))
+    checks: (s?.checks ?? []).map((k) => ({ id: k.id, status: k.status, guestCount: k.guestCount, seatingAssignment: k.seatingAssignment, minimumItemsMet: k.items.reduce((n, i) => n + (i.qty ?? 0), 0) >= num(k.minimumItemsRequired) }))
   };
   const term = String(a.term || "").trim().slice(0, 80);
   const found = term ? await db.ticket.findMany({
@@ -6075,7 +6076,7 @@ init_checkoutProviderObservation();
 var PROVIDER = "pp_stripe";
 var LIVE_PAY = ["pending", "processing", "authorized", "unknown"];
 async function stripeProvider(context) {
-  if (!process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")) throw new Error("Card payments need Stripe TEST keys");
+  if (!process.env.STRIPE_SECRET_KEY) throw new Error("Card payments are not set up");
   const provider = await context.prisma.paymentProvider.findUnique({ where: { code: PROVIDER } });
   if (!provider?.isInstalled) throw new Error("Card payments are not set up");
   return provider;

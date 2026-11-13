@@ -20,7 +20,7 @@ const CHECKS: ReadinessCheck[] = [
   },
   {
     title: "Payment and refund flow",
-    detail: "Configure credentials and complete provider sandbox payment, refund, and webhook checks. Do not use live keys for setup tests.",
+    detail: "Configure the Stripe keys and complete a real card payment, a refund and a webhook check before opening ticket sales.",
     href: "/dashboard/platform/payment-providers",
     link: "Review providers",
     secondaryHref: "/dashboard/platform/reconciliation",
