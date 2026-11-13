@@ -18,7 +18,7 @@ export default async function ShowPage({ params }: { params: Promise<{ id: strin
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">{show.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{showTime(show.startsAt)} · {show.room?.name} · {ageLabel(show.ageRestriction)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{[showTime(show.startsAt), show.room?.name, ageLabel(show.ageRestriction)].filter(Boolean).join(' · ')}</p>
         {show.publicNote ? <p className="mt-2 text-sm">{show.publicNote}</p> : null}
       </div>
       {show.lineup?.length ? (
@@ -27,13 +27,13 @@ export default async function ShowPage({ params }: { params: Promise<{ id: strin
           <ul>{show.lineup.map((l: any, i: number) => <li key={i} className="py-1 text-sm"><span className="font-medium">{l.comedian.stageName}</span> <span className="text-muted-foreground">{l.role.replace('_', ' ')}</span></li>)}</ul>
         </section>
       ) : null}
-      <HoldForm
+      {new Date(show.startsAt) <= new Date() ? <p className="text-sm text-muted-foreground">Ticket sales have ended for this show.</p> : <HoldForm
         showId={show.id}
         title={show.title}
         ageRestriction={show.ageRestriction}
         tiers={show.tiers}
         sections={show.room.seatingMode === 'tables' ? show.room.sections.map((s: any) => ({ name: s.name, tables: s.tables.map((t: any) => ({ ...t, taken: taken.has(t.id) })) })) : []}
-      />
+      />}
     </div>
   );
 }

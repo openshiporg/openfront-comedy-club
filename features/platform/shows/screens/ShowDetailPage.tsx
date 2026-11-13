@@ -31,11 +31,13 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
   const { menuItems } = await q<any>(`{ menuItems(where: { active: { equals: true } }, orderBy: { name: asc }, take: 100) { id name priceCents } }`);
   const { venueSettingsItems } = await q<any>(`{ venueSettingsItems(take: 1) { compApprovalQuantity } }`);
   const open = ['draft', 'on_sale', 'sold_out'].includes(show.status);
+  // Once a show has started or left sale, its tiers are no longer on sale whatever their stored status.
+  const salesOver = show.status !== 'draft' && (!['on_sale', 'sold_out'].includes(show.status) || new Date(show.startsAt) <= new Date());
   return (
     <Page title={show.title} crumbs={[{ label: 'Shows', href: '/dashboard/platform/shows' }]}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <Status value={show.status} />
-        <Meta>{when(show.startsAt, tz)} · {show.room?.name} · {show.ageRestriction === 'all' ? 'All ages' : `${show.ageRestriction}+`}{show.template ? ` · ${show.template.title}` : ''}</Meta>
+        <Meta>{[when(show.startsAt, tz), show.room?.name, show.ageRestriction === 'all' ? 'All ages' : `${show.ageRestriction}+`, show.template?.title].filter(Boolean).join(' · ')}</Meta>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat name="Sold" value={show.soldCount} /><Stat name="Held" value={show.heldCount} /><Stat name="Remaining" value={show.remaining} /><Stat name="Checked in" value={show.checkedInCount} />
@@ -75,7 +77,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         {show.tiers.length ? show.tiers.map((t: any) => (
           <Row key={t.id}>
             <span className="min-w-0"><span className="font-medium">{t.name}</span> <Meta>{money(t.priceCents)} + {money(t.feeCents)} fee</Meta></span>
-            <span className="inline-flex items-center gap-3"><Meta>{t.sold} sold · {t.held} held · {t.capacity} total</Meta><Status value={saleState(t) === 'scheduled' || saleState(t) === 'ended' ? saleState(t) : t.status} /></span>
+            <span className="inline-flex items-center gap-3"><Meta>{t.sold} sold · {t.held} held · {t.capacity} total</Meta><Status value={salesOver ? 'ended' : saleState(t) === 'scheduled' || saleState(t) === 'ended' ? saleState(t) : t.status} /></span>
             {t.salesStartAt || t.salesEndAt ? <span className="w-full text-xs text-muted-foreground">{t.salesStartAt ? `On sale ${when(t.salesStartAt, tz)}` : 'On sale now'}{t.salesEndAt ? ` · off sale ${when(t.salesEndAt, tz)}` : ''}</span> : null}
             {open ? <SalesWindowForm tierId={t.id} tz={tz} start={t.salesStartAt} end={t.salesEndAt} /> : null}
           </Row>

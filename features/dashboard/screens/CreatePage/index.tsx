@@ -20,7 +20,8 @@ export async function CreatePage({ params }: CreatePageParams) {
   const list = await getListByPath(listKey)
 
   // A list hidden from this role (its query access is denied) does not exist for them.
-  if (!list || list.isHidden) {
+  // Lists this role cannot create in (hideCreate) have no create page either.
+  if (!list || list.isHidden || list.hideCreate) {
     notFound()
   }
 
