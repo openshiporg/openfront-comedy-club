@@ -19,7 +19,6 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
       room { name } template { title } group { id name cancelRequestedAt cancelCompletedAt cancelReason shows { id startsAt status } }
       tiers(orderBy: { priceCents: desc }) { id name priceCents feeCents capacity sold held status salesStartAt salesEndAt }
       lineup(orderBy: { position: asc }) { id role position setMinutes feeCents status comedian { stageName email } }
-      notifications(where: { kind: { in: [show_reminder, lineup_confirmation] } }, orderBy: { createdAt: desc }, take: 30) { id kind status toEmail sendAfter sentAt }
       waitlist(where: { status: { in: [waiting, offered] } }, orderBy: { createdAt: asc }) { id name email partySize status offerExpiresAt }
       holds(where: { status: { equals: active } }) { id holdKey quantity expiresAt lines { quantity priceTier { name } } }
       orders(orderBy: { createdAt: desc }, take: 50) { id orderNumber name status totalCents partySize }
@@ -50,20 +49,6 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         {show.isOpenMic ? <Link className="self-center text-sm underline underline-offset-4" href="/dashboard/platform/open-mic">Open mic list</Link> : null}
       </div>
 
-      {['on_sale', 'sold_out', 'doors_open'].includes(show.status) || show.notifications.length ? (
-        <Section title="Reminders">
-          <div className="flex flex-wrap items-center gap-2 pb-2">
-            {['on_sale', 'sold_out', 'doors_open'].includes(show.status) ? <ActionButton op="scheduleShowReminders" vars={{ showId: show.id }}>Queue show-day reminders</ActionButton> : null}
-            <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Queued only: nothing is sent until delivery is connected</span>
-          </div>
-          {show.notifications.length ? show.notifications.map((n: any) => (
-            <Row key={n.id} className="flex-nowrap items-start gap-x-3">
-              <span className="min-w-0 flex-1"><span className="block break-words font-medium">{n.kind === 'show_reminder' ? 'Show-day reminder' : 'Lineup confirmation'}</span><Meta>{n.toEmail}{n.sendAfter ? ` · send after ${when(n.sendAfter, tz, 'time')}` : ''}</Meta></span>
-              <Status value={n.status} />
-            </Row>
-          )) : <Empty>No reminders queued.</Empty>}
-        </Section>
-      ) : null}
       {show.waitlist.length || show.status === 'sold_out' ? (
         <Section title="Waitlist">
           {show.waitlist.length ? <div className="flex flex-wrap gap-2 pb-2"><ActionButton op="offerWaitlist" vars={{ showId: show.id }}>Offer open seats</ActionButton></div> : null}
