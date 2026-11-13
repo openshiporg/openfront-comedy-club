@@ -1,4 +1,4 @@
-// Opt-in end-to-end check: scratch DB + Stripe TEST. An interrupted series cancellation is recorded, then finished by the sweep
+// Opt-in end-to-end check: scratch DB + Stripe TEST. An interrupted series cancellation is recorded, then finished by the operator's Continue
 // (racing the operator's own loop) with exactly one real Stripe refund per order.
 // Run: node --import tsx scripts/verify/series-cancel-e2e.ts
 import { PrismaClient } from '@prisma/client';
@@ -6,11 +6,10 @@ import Stripe from 'stripe';
 import { randomUUID } from 'node:crypto'; import assert from 'node:assert/strict'; import fs from 'node:fs';
 for (const l of fs.readFileSync(new URL('../../.env', import.meta.url).pathname, 'utf8').split('\n')) { const m = l.match(/^(STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET)=(.*)$/); if (m) process.env[m[1]] = m[2].replace(/^["']|["']$/g, ''); }
 assert(process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_'), 'TEST key only'); assert(process.env.STRIPE_WEBHOOK_SECRET, 'webhook secret needed');
-process.env.CRON_SECRET = 'series-cancel-e2e-' + randomUUID();
 import { createTicketHold } from '../../features/keystone/mutations/tickets';
 import { startTicketCheckout } from '../../features/keystone/mutations/checkout';
 import { handlePaymentWebhook } from '../../features/keystone/mutations/paymentWebhook';
-import { createShowSeries, recordSeriesCancel, advanceSeriesCancel, sweepSeriesCancellations, seriesCancelProgress, cancelShowSeries, editShowSeries } from '../../features/keystone/mutations/series';
+import { createShowSeries, recordSeriesCancel, advanceSeriesCancel, seriesCancelProgress, cancelShowSeries, editShowSeries } from '../../features/keystone/mutations/series';
 const p = new PrismaClient(); const stripe = new (Stripe as any)(process.env.STRIPE_SECRET_KEY); const k = () => randomUUID();
 async function main() { const shows: string[] = []; try {
   const anon: any = { prisma: p, session: null };
@@ -64,12 +63,11 @@ async function main() { const shows: string[] = []; try {
     await p.show.update({ where: { id: ids[2] }, data: { status: 'completed' } });
   }
   const ranExpected = s3!.status !== 'cancelled' ? 1 : 0;
-  // the sweep refuses a wrong secret, then finishes the series while the operator's loop also runs
-  await assert.rejects(sweepSeriesCancellations(null, { secret: 'nope' }, anon), /Not authorized/);
-  const [s1, s2, ui] = await Promise.all([sweepSeriesCancellations(null, { secret: process.env.CRON_SECRET! }, anon), sweepSeriesCancellations(null, { secret: process.env.CRON_SECRET! }, anon), advanceSeriesCancel(staff, groupId, owner.id, 20000)]);
+  // two operator loops race each other
+  const [s1, s2, ui] = await Promise.all([advanceSeriesCancel(staff, groupId, owner.id, 20000), advanceSeriesCancel(staff, groupId, owner.id, 20000), advanceSeriesCancel(staff, groupId, owner.id, 20000)]);
   console.log('sweeps', JSON.stringify(s1), JSON.stringify(s2), 'ui', ui.done, '/', ui.total);
   const after: any = await seriesCancelProgress(null, { groupId }, staff);
-  if (!after.completed) await sweepSeriesCancellations(null, { secret: process.env.CRON_SECRET! }, anon);
+  if (!after.completed) await advanceSeriesCancel(staff, groupId, owner.id, 20000);
   const fin: any = await seriesCancelProgress(null, { groupId }, staff); assert.equal(fin.completed, true); assert.equal(fin.done, 3); assert.equal(fin.ran, ranExpected); assert.equal(fin.refundsWaiting, 0);
   for (const id of ids.slice(0, 3 - ranExpected)) assert.equal((await p.show.findUnique({ where: { id } }))!.status, 'cancelled');
   // exactly one real refund per order, at Stripe and in the DB, for the full amount
@@ -79,10 +77,10 @@ async function main() { const shows: string[] = []; try {
   }
   assert.equal(await p.auditEvent.count({ where: { action: 'series_cancelled', targetId: groupId } }), 1, 'completion audited once');
   // everything is idempotent afterwards
-  const again: any = await sweepSeriesCancellations(null, { secret: process.env.CRON_SECRET! }, anon); assert.equal(again.groups, 0);
+  const again: any = await advanceSeriesCancel(staff, groupId, owner.id, 20000); assert.equal(again.completed, true);
   await assert.rejects(cancelShowSeries(null, { groupId, reason: 'Venue closed', idempotencyKey: k() }, staff), /No future shows|Series/).catch(() => {});
   for (const o of orders) assert.equal((await stripe.refunds.list({ payment_intent: o.intentId })).data.length, 1);
-  console.log('PASS series cancel e2e: intent recorded once, interrupted at', first.done, 'of 3, finished by the sweep racing the UI loop, one Stripe refund per order x', orders.length, '; shows that ran:', ranExpected);
+  console.log('PASS series cancel e2e: intent recorded once, interrupted at', first.done, 'of 3, finished by racing operator loops, one Stripe refund per order x', orders.length, '; shows that ran:', ranExpected);
 } finally {
   if (shows.length) await p.show.updateMany({ where: { id: { in: shows } }, data: { status: 'cancelled' } });
   await p.$disconnect();

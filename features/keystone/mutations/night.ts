@@ -1,6 +1,5 @@
 import { releaseHoldSeats } from '../lib/holds';
 import { showCapacity } from '../lib/capacity';
-import { cancelQueued } from './reminders';
 import { audit, code, command, hash, lockTransactionKey, requirePermission } from '../lib/commands';
 import { minimum, payout, settlement, runClosePlan } from '../lib/money';
 import { consumeManagerApproval, requestManagerApproval, approveManagerApproval } from '../utils/managerApproval';
@@ -148,7 +147,6 @@ export async function cancelShowCore(c: any, a: { showId: string; reason: string
     await tx.priceTier.updateMany({ where: { showId: show.id }, data: { status: 'closed' } });
     await tx.lineupSlot.updateMany({ where: { showId: show.id, status: { notIn: ['performed'] } }, data: { status: 'cancelled' } });
     await tx.waitlistEntry.updateMany({ where: { showId: show.id, status: { in: ['waiting', 'offered'] } }, data: { status: 'cancelled' } });
-    await cancelQueued(tx, { showId: show.id, kind: { in: ['show_reminder', 'lineup_confirmation'] } });
     const holds = await tx.inventoryHold.findMany({ where: { showId: show.id, status: 'active', order: null } });
     for (const h of holds) { await tx.inventoryHold.update({ where: { id: h.id }, data: { status: 'released' } }); await releaseHoldSeats(tx, h); await tx.tableOccupancy.updateMany({ where: { holdId: h.id }, data: { occupancyKey: null } }); }
     await audit(tx, c, 'cancelled', 'Show', show.id, show, { status: 'cancelled' }, a.reason);

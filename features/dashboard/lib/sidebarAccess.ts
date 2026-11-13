@@ -23,7 +23,7 @@ export function visibleSidebarLists<T extends SidebarList>(lists: T[], user: Sid
  * (features/keystone/models/index.ts), so the page is usable only when none of them is hidden.
  */
 export const PLATFORM_PAGE_LISTS: Record<string, string[]> = {
-  tonight: ['shows'],
+  tonight: [],
   shows: ['shows', 'show-templates'],
   orders: ['ticket-orders'],
   customers: ['ticket-orders'],
@@ -41,6 +41,8 @@ export const PLATFORM_PAGE_LISTS: Record<string, string[]> = {
 /** Pages backed by a list that is hidden from navigation by design, so they follow role permissions instead. */
 export const PLATFORM_PAGE_PERMISSIONS: Record<string, string[]> = {
   approvals: ['canManageOrders', 'canManageChecks', 'canIssueRefunds'],
+  // Door and floor staff use Tonight through the doorBoard read, which exposes only what the door needs.
+  tonight: ['canManageDoor', 'canManageChecks', 'canManageShows'],
 }
 
 export function canUsePlatformPage(slug: string, lists: SidebarList[], user: SidebarUser) {

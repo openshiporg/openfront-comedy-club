@@ -13,7 +13,6 @@ import { ManagerApproval } from './ManagerApproval';
 import { MenuItem } from './MenuItem';
 import { OAuthApp } from './OAuthApp';
 import { OAuthToken } from './OAuthToken';
-import { NotificationRecord } from './NotificationRecord';
 import { OpenMicSignup } from './OpenMicSignup';
 import { Payment } from './Payment';
 import { PaymentCollection } from './PaymentCollection';
@@ -59,7 +58,6 @@ const rawModels = {
   MenuItem,
   OAuthApp,
   OAuthToken,
-  NotificationRecord,
   OpenMicSignup,
   Payment,
   PaymentCollection,

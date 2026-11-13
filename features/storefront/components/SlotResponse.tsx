@@ -4,7 +4,7 @@ import * as React from 'react';
 import { answerSlot, loadSlotInvite } from '../lib/actions';
 import { price, showTime } from '../lib/format';
 
-const btn = 'inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium disabled:opacity-50';
+const btn = 'inline-flex h-11 items-center justify-center rounded-md border px-4 text-sm font-medium disabled:opacity-50';
 
 /** The emailed link carries the token in the fragment, so it never reaches a server log. */
 export function SlotResponse({ slotId }: { slotId: string }) {

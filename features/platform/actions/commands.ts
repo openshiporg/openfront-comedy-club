@@ -15,7 +15,6 @@ const OPS: Record<string, Record<string, string>> = {
   confirmSlot: { slotId: 'ID!' },
   setComedianStatus: { comedianId: 'ID!', status: 'String!' },
   updateSlotStatus: { slotId: 'ID!', status: 'String!' },
-  scheduleShowReminders: { showId: 'ID!' },
   issueSlotLink: { slotId: 'ID!' },
   issueComp: { showId: 'ID!', tierId: 'ID!', quantity: 'Int!', recipientName: 'String!', recipientEmail: 'String', reason: 'String!', approvalId: 'ID' },
   checkInTicket: { tokenOrCode: 'String!', showId: 'ID!', method: 'String', scannedAt: 'String' },

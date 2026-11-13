@@ -162,6 +162,8 @@ export async function getAuthenticatedUser() {
             canManageOnboarding
             canManageOrders
             canManageChecks
+            canManageDoor
+            canManageShows
             canIssueRefunds
           }
         }

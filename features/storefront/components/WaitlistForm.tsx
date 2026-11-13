@@ -20,9 +20,9 @@ export function WaitlistForm({ showId, title }: { showId: string; title: string 
       <label className="block text-sm">Email<input className={field} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" /></label>
       <div className="flex items-center gap-3">
         <span className="text-sm">Party of</span>
-        <button type="button" aria-label="Fewer" className="min-w-12 rounded-md border px-2 py-2 text-sm" onClick={() => setForm({ ...form, size: Math.max(1, form.size - 1) })}>−</button>
+        <button type="button" aria-label="Fewer" className="min-h-11 min-w-12 rounded-md border px-2 py-2 text-sm" onClick={() => setForm({ ...form, size: Math.max(1, form.size - 1) })}>−</button>
         <span className="w-6 text-center font-mono">{form.size}</span>
-        <button type="button" aria-label="More" className="min-w-12 rounded-md border px-2 py-2 text-sm" onClick={() => setForm({ ...form, size: Math.min(20, form.size + 1) })}>+</button>
+        <button type="button" aria-label="More" className="min-h-11 min-w-12 rounded-md border px-2 py-2 text-sm" onClick={() => setForm({ ...form, size: Math.min(20, form.size + 1) })}>+</button>
       </div>
       <button type="button" className={btn} disabled={pending || !form.name.trim() || !form.email.trim()} onClick={() => start(async () => {
         setError(''); const r = await joinWaitlist({ showId, name: form.name, email: form.email, partySize: form.size });

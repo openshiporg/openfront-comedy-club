@@ -1,5 +1,3 @@
-import { cancelQueued } from './reminders';
-import { showReminderKey } from '../lib/reminders';
 import { offerFreedSeats } from './waitlistCore';
 import crypto from 'node:crypto';
 import { audit, code, command, hash, lockTransactionKey, prove, requirePermission } from '../lib/commands';
@@ -66,7 +64,7 @@ export async function startTicketCheckout(_: any, input: any, context: any) {
 }
 
 /** Converts the hold into paid tickets. Caller holds the show lock inside a transaction. */
-export async function finalizePaidOrder(tx: any, context: any, orderId: string, provider: any, providerPaymentId: string) {
+export async function finalizePaidOrder(tx: any, context: any, orderId: string, provider: any, providerPaymentId: string, card: CardParts = {}) {
   const order = await tx.ticketOrder.findUnique({ where: { id: orderId }, include: { hold: { include: { redemption: true } }, lines: true, paymentCollection: true, show: true } });
   if (!order) throw new Error('Order not found');
   if (order.status === 'paid') return order;
@@ -85,13 +83,32 @@ export async function finalizePaidOrder(tx: any, context: any, orderId: string, 
     await tx.promoRedemption.update({ where: { id: order.hold.redemption.id }, data: { status: 'committed' } });
     await tx.promoCode.update({ where: { id: order.hold.redemption.promoCodeId }, data: { usedCount: { increment: 1 } } });
   }
-  await tx.payment.create({ data: { idempotencyKey: 'pay:' + order.id, amount: order.totalCents, currencyCode: order.currencyCode, status: 'succeeded', paymentMethod: 'credit_card', providerPaymentId, processedAt: new Date(), orderId: order.id, paymentProviderId: provider.id, paymentCollectionId: order.paymentCollection?.id || null } });
+  await tx.payment.create({ data: { idempotencyKey: 'pay:' + order.id, amount: order.totalCents, currencyCode: order.currencyCode, status: 'succeeded', paymentMethod: 'credit_card', cardBrand: card.brand || '', cardLast4: card.last4 || '', providerPaymentId, processedAt: new Date(), orderId: order.id, paymentProviderId: provider.id, paymentCollectionId: order.paymentCollection?.id || null } });
   await tx.ticketOrder.update({ where: { id: order.id }, data: { status: 'paid' } });
   const totals = await tx.priceTier.aggregate({ where: { showId: order.showId }, _sum: { sold: true, held: true } });
   for (const tier of soldTiers) if (tier.sold >= tier.capacity) await tx.priceTier.updateMany({ where: { id: tier.id, status: 'on_sale' }, data: { status: 'sold_out' } });
   if (order.show.status === 'on_sale' && (totals._sum.sold || 0) + (totals._sum.held || 0) >= order.show.capacity) await tx.show.update({ where: { id: order.showId }, data: { status: 'sold_out' } });
   await audit(tx, context, 'paid', 'TicketOrder', order.id, { status: 'pending_payment' }, { status: 'paid' });
   return order;
+}
+
+/** Card brand and last four from the observed payment; empty when the provider does not say. */
+type CardParts = { brand?: string; last4?: string };
+type Observed = { data?: { latest_charge?: string | { payment_method_details?: { card?: { brand?: string; last4?: string } } } | null } };
+async function cardOf(provider: { code?: string } | null, observed: Observed): Promise<CardParts> {
+  try {
+    const intent = observed?.data;
+    const ch = intent?.latest_charge;
+    const details = (typeof ch === 'object' ? ch?.payment_method_details?.card : null) || null;
+    if (details) return { brand: details.brand, last4: details.last4 };
+    if (typeof ch === 'string' && provider?.code === 'pp_stripe') {
+      const { default: Stripe } = await import('stripe');
+      const charge = await new Stripe(String(process.env.STRIPE_SECRET_KEY)).charges.retrieve(ch);
+      const d = charge.payment_method_details?.card;
+      return { brand: d?.brand || undefined, last4: d?.last4 || undefined };
+    }
+  } catch { /* the payment is still recorded without card details */ }
+  return {};
 }
 
 export async function verifyAndFinalize(context: any, order: any) {
@@ -105,9 +122,10 @@ export async function verifyAndFinalize(context: any, order: any) {
   if (['canceled', 'requires_payment_method'].includes(observed.status)) return { status: 'failed' };
   if (observed.status !== 'succeeded') return { status: 'pending' };
   assertCheckoutProviderObservation(observed, order.totalCents, order.currencyCode);
+  const card = await cardOf(provider, observed);
   await context.prisma.$transaction(async (tx: any) => {
     await lockTransactionKey(tx, 'show:' + order.showId);
-    await finalizePaidOrder(tx, context, order.id, provider, intent);
+    await finalizePaidOrder(tx, context, order.id, provider, intent, card);
   }, { timeout: 20000 });
   // The card was charged after the show was cancelled: cancelShow already ran its refund pass, so refund this one now.
   const showNow = await context.prisma.show.findUnique({ where: { id: order.showId }, select: { status: true } });
@@ -161,14 +179,11 @@ export async function abandonTicketCheckout(_: any, input: any, context: any) {
   return { status: await abandonPending(context, order) };
 }
 
-/** Cron entry point: settles pending orders whose hold window has passed. Never trusts a timeout as failure. */
-export async function sweepPendingCheckouts(_: any, { secret }: { secret: string }, context: any) {
-  const expected = process.env.CRON_SECRET;
-  if (!expected || secret !== expected) throw new Error('Not authorized');
-  const orders = await context.prisma.ticketOrder.findMany({ where: { status: 'pending_payment', hold: { expiresAt: { lt: new Date(Date.now() - 5 * 60000) } } }, include: { paymentCollection: { include: { paymentSessions: true } } }, take: 50 });
-  const out: Record<string, number> = {};
-  for (const order of orders) { try { const r = await abandonPending(context, order); out[r] = (out[r] || 0) + 1; } catch { out.error = (out.error || 0) + 1; } }
-  return out;
+/** Request-driven, idempotent: settles pending orders whose hold window passed 5+ minutes ago. Never trusts a timeout as failure; the provider decides. Called from the hold-expiry read path. */
+export async function settleStalePendingCheckouts(context: any, showId?: string) {
+  const orders = await context.prisma.ticketOrder.findMany({ where: { status: 'pending_payment', ...(showId ? { showId } : {}), hold: { expiresAt: { lt: new Date(Date.now() - 5 * 60000) } } }, include: { paymentCollection: { include: { paymentSessions: true } } }, take: 5 });
+  for (const order of orders) { try { await abandonPending(context, order); } catch { /* the next read retries */ } }
+  return orders.length;
 }
 
 export async function ticketOrderConfirmation(_: any, input: any, context: any) {
@@ -225,7 +240,6 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     }
     const remainingValid = await tx.ticket.count({ where: { orderId: a.orderId, status: { in: ['valid', 'checked_in'] } } });
     await tx.ticketOrder.update({ where: { id: a.orderId }, data: { status: remainingValid ? 'partially_refunded' : 'refunded' } });
-    if (!remainingValid) await cancelQueued(tx, { notificationKey: showReminderKey(a.orderId) });
     await tx.show.updateMany({ where: { id: reserved.showId, status: 'sold_out' }, data: { status: 'on_sale' } });
     await audit(tx, { session: { itemId: a.actorId } }, 'refunded', 'TicketOrder', a.orderId, null, { amount: reserved.amount, tickets: voided.length }, a.reason);
     await offerFreedSeats(tx, { session: { itemId: a.actorId } }, reserved.showId);

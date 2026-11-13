@@ -14,12 +14,12 @@ import * as reports from "./reports";
 import * as payStatements from "./payStatements";
 import * as series from "./series";
 import * as layout from "./layout";
-import * as reminders from "./reminders";
 import * as slotLink from "./slotLink";
 import * as transfer from "./transfer";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
 import * as seating from "./seating";
+import * as door from "./door";
 import * as checkPay from "./checkPay";
 import { matchingManagerApproval } from '../utils/managerApproval';
 import { constraintRefusal, constraintGraphQLError } from '../lib/constraint-errors';
@@ -52,6 +52,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
       type Query {
         redirectToInit: Boolean
         showsOnSale: JSON
+        doorBoard(showId: ID, term: String): JSON
         showAvailability(showId: ID!): JSON
         waitlistOffer(holdKey: String!, cartToken: String!): JSON
         slotInvite(slotId: ID!, token: String!): JSON
@@ -129,10 +130,6 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
         requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
         approveRequest(approvalId: ID!): JSON
-        sweepPendingCheckouts(secret: String!): JSON
-        sweepShowReminders(secret: String!): JSON
-        sweepSeriesCancellations(secret: String!): JSON
-        scheduleShowReminders(showId: ID!, idempotencyKey: String!): JSON
         updateActiveUser(data: UserUpdateProfileInput!): User
         ensureClubOnboardingRecord(entity: String!, data: JSON!): JSON
         seedClubOperations(template: String!): JSON
@@ -143,6 +140,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         storeLogo,
         redirectToInit,
         showsOnSale: op(tickets.showsOnSale),
+        doorBoard: op(door.doorBoard),
         showAvailability: op(tickets.showAvailability),
         waitlistOffer: op(waitlist.waitlistOffer),
         slotInvite: op(slotLink.slotInvite),
@@ -215,10 +213,6 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         refundTicketOrder: op(checkout.refundTicketOrder),
         requestApproval: op(night.requestApproval),
         approveRequest: op(night.approveRequest),
-        sweepPendingCheckouts: op(checkout.sweepPendingCheckouts),
-        sweepShowReminders: op(reminders.sweepShowReminders),
-        sweepSeriesCancellations: op(series.sweepSeriesCancellations),
-        scheduleShowReminders: op(reminders.scheduleShowReminders),
         updateActiveUser,
         ensureClubOnboardingRecord: op(seed.ensureClubOnboardingRecord),
         seedClubOperations: op(seed.seedClubOperations),

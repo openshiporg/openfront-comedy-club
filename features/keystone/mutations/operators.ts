@@ -1,6 +1,4 @@
 import { effectiveScanTime } from '../lib/doorQueue';
-import { queueLineupConfirmation, cancelQueued } from './reminders';
-import { lineupConfirmationKey } from '../lib/reminders';
 import crypto from 'node:crypto';
 import { audit,code,command,hash,lockTransactionKey,requirePermission,transition } from '../lib/commands';
 import { minimum,payout,settlement } from '../lib/money';
@@ -29,7 +27,7 @@ export async function offerSlot(_:any,a:any,c:any) {requirePermission(c,'canMana
   if(['headliner','host'].includes(a.role)&&await tx.lineupSlot.count({where:{showId:a.showId,role:a.role,status:{notIn:['cancelled','declined']}}})) throw new Error('Only one host and headliner allowed');
   const slot=await tx.lineupSlot.create({data:{showId:a.showId,comedianId:a.comedianId,role:a.role,position:a.position||0,setMinutes:a.setMinutes||10,feeCents:a.feeCents??comedian.defaultFeeCents,bonusCents:0,status:'offered'}});await audit(tx,c,'offered','LineupSlot',slot.id,null,slot);return slot;
 },'show:'+a.showId);}
-export async function confirmSlot(_:any,a:any,c:any) {requirePermission(c,'canManageTalent');return command(c,'confirmSlot',a,async tx=>{const slot=await tx.lineupSlot.findUnique({where:{id:a.slotId}});if(!slot) throw new Error('Slot not found');await lockTransactionKey(tx,'show:'+slot.showId);const updated=await transition(tx,c,'lineupSlot',slot.id,'confirmed',{offered:['confirmed']});await tx.lineupSlot.update({where:{id:slot.id},data:{confirmedAt:new Date()}});await queueLineupConfirmation(tx,slot.id);return updated;});}
+export async function confirmSlot(_:any,a:any,c:any) {requirePermission(c,'canManageTalent');return command(c,'confirmSlot',a,async tx=>{const slot=await tx.lineupSlot.findUnique({where:{id:a.slotId}});if(!slot) throw new Error('Slot not found');await lockTransactionKey(tx,'show:'+slot.showId);const updated=await transition(tx,c,'lineupSlot',slot.id,'confirmed',{offered:['confirmed']});await tx.lineupSlot.update({where:{id:slot.id},data:{confirmedAt:new Date()}});return updated;});}
 export async function setLineup(_:any,a:any,c:any) {requirePermission(c,'canManageTalent');return command(c,'setLineup',a,async tx=>{const slots=await tx.lineupSlot.findMany({where:{showId:a.showId}});const ids=a.slots.map((s:any)=>s.id);if(ids.length!==new Set(ids).size||ids.some((id:string)=>!slots.some((s:any)=>s.id===id))) throw new Error('Invalid lineup');for(const s of a.slots) await tx.lineupSlot.update({where:{id:s.id},data:{position:s.position,setMinutes:s.setMinutes}});const show=await tx.show.findUnique({where:{id:a.showId}});const total=a.slots.reduce((n:number,s:any)=>n+s.setMinutes,0);await audit(tx,c,'reordered','Show',a.showId,null,a.slots);return {warning:total>(show.endsAt-show.startsAt)/60000?'Lineup exceeds show duration':null};},'show:'+a.showId);}
 export async function checkInTicket(_:any,a:any,c:any) {requirePermission(c,'canManageDoor');return command(c,'checkInTicket',a,async tx=>{
  const ticket=await tx.ticket.findFirst({where:{OR:[{ticketCode:a.tokenOrCode},{tokenHash:hash(a.tokenOrCode)}]}});if(!ticket) throw new Error('Ticket not found');
@@ -98,7 +96,6 @@ export async function updateSlotStatus(_:any,a:any,c:any){
   if(!show||['settled','cancelled'].includes(show.status)) throw new Error('Show is closed to lineup changes');
   if(a.status==='no_show'&&!['doors_open','in_progress','completed'].includes(show.status)) throw new Error('No-show can only be recorded once doors are open');
   const moved=await transition(tx,c,'lineupSlot',slot.id,a.status,SLOT_FLOW);
-  if(['declined','cancelled'].includes(a.status)) await cancelQueued(tx,{notificationKey:lineupConfirmationKey(slot.id)});
   return moved;
  });
 }

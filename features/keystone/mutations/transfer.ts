@@ -1,5 +1,5 @@
 import { audit, code, command, hash, lockTransactionKey, prove } from '../lib/commands';
-import { MAX_TRANSFERS_PER_ORDER, buildHistory, holderAccess, normalizeHolder, transferDecision, transferMessage } from '../lib/transfer';
+import { MAX_TRANSFERS_PER_ORDER, buildHistory, holderAccess, normalizeHolder, transferDecision } from '../lib/transfer';
 import { ticketToken } from './checkout';
 
 /**
@@ -26,9 +26,6 @@ export async function transferTicket(_: any, a: any, c: any) {
     if (moved.count !== 1) throw new Error('This ticket has already been scanned in and cannot be transferred');
     const ticketCode = code('T');
     const fresh = await tx.ticket.create({ data: { orderId: order.id, showId: order.showId, lineId: old.lineId, ticketCode, tokenHash: hash(ticketToken(ticketCode)), holderName: next.name, holderEmail: next.email, transferredFromCode: old.ticketCode, status: 'valid' } });
-    const link = `${process.env.STOREFRONT_URL || ''}/tickets/${ticketCode}#${ticketToken(ticketCode)}`;
-    const msg = transferMessage(next, order.show, ticketCode, link, old.holderName || order.name, order.show.startsAt.toISOString());
-    await tx.notificationRecord.create({ data: { notificationKey: 'ticket_transfer:' + fresh.id, kind: 'ticket_transfer', channel: 'email', status: 'queued', toEmail: next.email, showId: order.showId, sendAfter: new Date(), subject: msg.subject, body: msg.body, payload: { orderId: order.id, ticketId: fresh.id } } });
     await audit(tx, c, 'transferred', 'Ticket', old.id, { status: 'valid', holderName: old.holderName, holderEmail: old.holderEmail, ticketCode: old.ticketCode }, { status: 'void', newTicketId: fresh.id, newTicketCode: ticketCode, holderName: next.name, holderEmail: next.email }, 'Ticket transferred by buyer');
     return { ticketCode, token: ticketToken(ticketCode), holderName: next.name, replacedCode: old.ticketCode, remainingTransfers: MAX_TRANSFERS_PER_ORDER - order.tickets.filter((t: any) => t.transferredFromCode).length - 1 };
   });

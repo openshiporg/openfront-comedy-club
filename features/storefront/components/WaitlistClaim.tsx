@@ -25,7 +25,7 @@ export function WaitlistClaim({ holdKey }: { holdKey: string }) {
   return (
     <div className="space-y-3">
       <p className="text-sm">{o.quantity} seat{o.quantity === 1 ? '' : 's'} held for <span className="font-medium">{o.title}</span>. Complete checkout by {showTime(o.expiresAt)}.</p>
-      <button type="button" className="inline-flex h-10 items-center justify-center rounded-md border bg-foreground px-4 text-sm font-medium text-background" onClick={() => router.push(`/checkout?hold=${encodeURIComponent(holdKey)}`)}>Continue to checkout</button>
+      <button type="button" className="inline-flex h-11 items-center justify-center rounded-md border bg-foreground px-4 text-sm font-medium text-background" onClick={() => router.push(`/checkout?hold=${encodeURIComponent(holdKey)}`)}>Continue to checkout</button>
     </div>
   );
 }

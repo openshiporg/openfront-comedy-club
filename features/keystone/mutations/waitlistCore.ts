@@ -5,8 +5,7 @@ import { offerExpiry, planOffers } from '../lib/waitlist';
 
 /**
  * Runs inside a transaction that already holds the show lock. Settles finished offers, then turns
- * freed capacity into new offers in join order. Each offer is a real InventoryHold plus a queued
- * notification; nothing is emailed from here.
+ * freed capacity into new offers in join order. Each offer is a real InventoryHold; nothing is emailed from here.
  */
 export async function offerFreedSeats(tx: any, context: any, showId: string) {
   const now = new Date();
@@ -37,14 +36,6 @@ export async function offerFreedSeats(tx: any, context: any, showId: string) {
     const token = crypto.randomBytes(32).toString('hex');
     const hold = await tx.inventoryHold.create({ data: { holdKey: code('H'), showId, priceTierId: o.tierId, quantity: o.quantity, cartToken: hash(token), status: 'active', expiresAt, waitlistEntryId: entry.id } });
     await tx.priceTier.update({ where: { id: o.tierId }, data: { held: { increment: o.quantity } } });
-    const base = process.env.STOREFRONT_URL || '';
-    const link = `${base}/waitlist/claim?hold=${hold.holdKey}#${token}`;
-    await tx.notificationRecord.create({ data: {
-      notificationKey: 'waitlist_offer:' + entry.id + ':' + hold.id, kind: 'waitlist_offer', channel: 'email', toEmail: entry.email, status: 'queued', waitlistEntryId: entry.id,
-      subject: `Seats opened up for ${show.title}`,
-      body: `Hi ${entry.name}, ${o.quantity} seat${o.quantity === 1 ? ' is' : 's are'} held for you at ${show.title}. Complete checkout before ${expiresAt.toISOString()} or the seats go to the next party.\n${link}`,
-      payload: { holdKey: hold.holdKey, expiresAt: expiresAt.toISOString(), quantity: o.quantity },
-    } });
     await audit(tx, context, 'offered', 'WaitlistEntry', entry.id, { status: 'waiting' }, { status: 'offered', holdKey: hold.holdKey, quantity: o.quantity, expiresAt });
     made.push(entry.id);
   }

@@ -7,7 +7,7 @@ export const ShowGroup = domainList({
   groupKey: unique(),
   sourceShow: relationship({ ref: 'Show.groupSources' }),
   shows: relationship({ ref: 'Show.group', many: true }),
-  // Cancel intent: recorded once, then every show in cancelShowIds is finished by the UI loop or the sweep.
+  // Cancel intent: recorded once, then every show in cancelShowIds is finished by the UI loop or the Continue button.
   cancelRequestedAt: timestamp(),
   cancelRequestedBy: relationship({ ref: 'User' }),
   cancelReason: text(),

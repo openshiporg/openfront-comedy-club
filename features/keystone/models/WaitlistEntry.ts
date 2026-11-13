@@ -13,5 +13,4 @@ export const WaitlistEntry = domainList({
   hold: relationship({ ref: 'InventoryHold.waitlistEntry' }),
   offeredAt: timestamp(),
   offerExpiresAt: timestamp(),
-  notifications: relationship({ ref: 'NotificationRecord.waitlistEntry', many: true }),
 }, 'canManageOrders', true);

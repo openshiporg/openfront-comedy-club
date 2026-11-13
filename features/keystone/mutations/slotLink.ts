@@ -1,8 +1,6 @@
 import crypto from 'node:crypto';
 import { audit, command, hash, lockTransactionKey, requirePermission, transition } from '../lib/commands';
-import { checkSlotLink, inviteMessage, RESPONSES, slotLinkExpiry, slotTerms } from '../lib/slotLink';
-import { cancelQueued, queueLineupConfirmation } from './reminders';
-import { lineupConfirmationKey } from '../lib/reminders';
+import { checkSlotLink, RESPONSES, slotLinkExpiry, slotTerms } from '../lib/slotLink';
 
 const FLOW: Record<string, string[]> = { offered: ['confirmed', 'declined'] };
 const GONE = ['settled', 'cancelled'];
@@ -20,11 +18,8 @@ export async function issueSlotLink(_: any, a: any, c: any) {
     const token = crypto.randomBytes(32).toString('hex'), now = new Date(), expires = slotLinkExpiry(now, slot.show.startsAt);
     await tx.lineupSlot.update({ where: { id: slot.id }, data: { responseTokenHash: hash(token), responseTokenExpiresAt: expires } });
     const link = `${process.env.STOREFRONT_URL || ''}/lineup/respond?slot=${slot.id}#${token}`;
-    const msg = inviteMessage({ name: slot.comedian.stageName }, slot.show, link, expires);
-    await tx.notificationRecord.updateMany({ where: { kind: 'lineup_invite', status: 'queued', payload: { path: ['slotId'], equals: slot.id } }, data: { status: 'cancelled' } });
-    await tx.notificationRecord.create({ data: { notificationKey: `lineup_invite:${slot.id}:${crypto.randomUUID()}`, kind: 'lineup_invite', channel: 'email', status: 'queued', toEmail: slot.comedian.email, showId: slot.showId, sendAfter: now, subject: msg.subject, body: msg.body, payload: { slotId: slot.id, expiresAt: expires.toISOString() } } });
     await audit(tx, c, 'response_link_issued', 'LineupSlot', slot.id, null, { expiresAt: expires });
-    return { slotId: slot.id, expiresAt: expires };
+    return { slotId: slot.id, expiresAt: expires, link };
   }, 'show-slot:' + a.slotId);
 }
 
@@ -54,8 +49,7 @@ export async function respondToSlot(_: any, a: any, c: any) {
     if (slot.status === next) return { status: slot.status, changed: false };
     if (slot.status !== 'offered') throw new Error('This slot has already been answered. Contact the venue to change it.');
     await transition(tx, anon, 'lineupSlot', slot.id, next, FLOW);
-    if (next === 'confirmed') { await tx.lineupSlot.update({ where: { id: slot.id }, data: { confirmedAt: new Date() } }); await queueLineupConfirmation(tx, slot.id); }
-    else await cancelQueued(tx, { notificationKey: lineupConfirmationKey(slot.id) });
+    if (next === 'confirmed') { await tx.lineupSlot.update({ where: { id: slot.id }, data: { confirmedAt: new Date() } }); }
     await audit(tx, anon, 'responded_via_link', 'LineupSlot', slot.id, { status: 'offered' }, { status: next }, 'Comedian response via link');
     return { status: next, changed: true };
   });

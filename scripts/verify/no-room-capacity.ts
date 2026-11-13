@@ -23,7 +23,7 @@ async function main() { let showId = '';
     await assert.rejects(() => createTicketHold(null, { showId, tierId: tier.id, quantity: 3, idempotencyKey: randomUUID() }, anon), /capacity|available|enough/i);
     console.log('PASS no-room capacity: join, no-op offer, real offer, oversell refused');
   } finally {
-    if (showId) { await p.notificationRecord.deleteMany({ where: { showId } }); await p.inventoryHold.deleteMany({ where: { showId } }).catch(() => {}); await p.waitlistEntry.deleteMany({ where: { showId } }).catch(() => {}); await p.priceTier.deleteMany({ where: { showId } }).catch(() => {}); await p.show.delete({ where: { id: showId } }).catch((e: any) => console.log('show kept:', String(e.message).slice(0, 60))); }
+    if (showId) { await p.inventoryHold.deleteMany({ where: { showId } }).catch(() => {}); await p.waitlistEntry.deleteMany({ where: { showId } }).catch(() => {}); await p.priceTier.deleteMany({ where: { showId } }).catch(() => {}); await p.show.delete({ where: { id: showId } }).catch((e: any) => console.log('show kept:', String(e.message).slice(0, 60))); }
     await p.$disconnect();
   } }
 main();

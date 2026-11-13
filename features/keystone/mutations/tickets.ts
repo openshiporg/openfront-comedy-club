@@ -26,6 +26,8 @@ export async function expireHolds(_root:any,args:any,context:any) {
   const due=await context.prisma.inventoryHold.findMany({where:{status:'active',expiresAt:{lte:new Date()},...(args.showId?{showId:args.showId}:{})},select:{showId:true},distinct:['showId'],take:100});
   let expired=0;
   for(const {showId} of due) expired+=await context.prisma.$transaction(async(tx:any)=>{await lockTransactionKey(tx,'show:'+showId);return expireUnderLock(tx,showId,context);});
+  // pending payments whose window passed are settled with the provider on this same request
+  try { const { settleStalePendingCheckouts } = await import('./checkout'); await settleStalePendingCheckouts(context, args.showId); } catch { /* the next read retries */ }
   return {expired};
 }
 export async function showsOnSale(_root:any,_args:any,context:any) {

@@ -12,10 +12,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Openfront Comedy Club",
-  description: "Shows, tickets and open mics at Openfront Comedy Club.",
-};
+import { gqlCall } from "@/features/storefront/lib/data";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const r = await gqlCall<{ storeLogo: { name: string } }>("{ storeLogo { name } }");
+  const name = (r.ok && r.data.storeLogo?.name) || "Openfront Comedy Club";
+  return { title: name, description: `Shows, tickets and open mics at ${name}.` };
+}
 
 export default function RootLayout({
   children,

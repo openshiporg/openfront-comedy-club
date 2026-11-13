@@ -32,7 +32,8 @@ export async function ListPage({ params, searchParams }: PageProps) {
   // Get the list by path using our cached function
   const list = await getListByPath(listKeyParam);
 
-  if (!list) {
+  // A list hidden from this role (its query access is denied) does not exist for them.
+  if (!list || list.isHidden) {
     notFound()
   }
 

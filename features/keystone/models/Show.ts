@@ -4,7 +4,7 @@ import { domainList, money, currency, lifecycle, choice, unique, secret } from '
 
 export const Show = domainList({
   soldCount: virtual({field: graphql.field({type: graphql.Int, async resolve(item: any, _args: any, context: any) { return (context.prisma as any).ticket.count({where:{showId:item.id,status:{in:['valid','checked_in']}}}); }})}),
-  heldCount: virtual({field: graphql.field({type: graphql.Int, async resolve(item: any, _args: any, context: any) { const result = await (context.prisma as any).inventoryHold.aggregate({where:{showId:item.id,status:'active'},_sum:{quantity:true}}); return result._sum.quantity || 0; }})}),
+  heldCount: virtual({field: graphql.field({type: graphql.Int, async resolve(item: any, _args: any, context: any) { const result = await (context.prisma as any).inventoryHold.aggregate({where:{showId:item.id,status:'active',expiresAt:{gt:new Date()}},_sum:{quantity:true}}); return result._sum.quantity || 0; }})}),
   checkedInCount: virtual({field: graphql.field({type: graphql.Int, async resolve(item: any, _args: any, context: any) { return (context.prisma as any).ticket.count({where:{showId:item.id,status:'checked_in'}}); }})}),
   remaining: virtual({field: graphql.field({type: graphql.Int, async resolve(item: any, _args: any, context: any) { const tiers = await (context.prisma as any).priceTier.findMany({where:{showId:item.id},select:{sold:true,held:true}}); return Math.max(0, Number(item.capacity) - tiers.reduce((n:number,t:any)=>n+t.sold+t.held,0)); }})}),
   room: relationship({ref:'Room.shows'}),
@@ -26,7 +26,6 @@ export const Show = domainList({
   lineup: relationship({ref:'LineupSlot.show',many:true}),
   signups: relationship({ref:'OpenMicSignup.show',many:true}),
   waitlist: relationship({ref:'WaitlistEntry.show',many:true}),
-  notifications: relationship({ref:'NotificationRecord.show',many:true}),
   tiers: relationship({ref:'PriceTier.show',many:true}),
   holds: relationship({ref:'InventoryHold.show',many:true}),
   orders: relationship({ref:'TicketOrder.show',many:true}),

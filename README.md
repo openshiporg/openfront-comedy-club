@@ -59,7 +59,6 @@ PUBLIC_SIGNUPS_ALLOWED=false
 NEXT_PUBLIC_STRIPE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-CRON_SECRET=<random string, for the hold sweeper>
 ```
 
 ```bash
@@ -69,7 +68,7 @@ npm run dev      # builds the schema, applies migrations, starts Next
 
 Open `/dashboard/init` to create the first admin, then use the setup card in the sidebar. The complete template adds a venue with 32 tables, 12 comedians, a menu, show templates, a headliner run, three weeks of shows and recent history. The basic template adds one room, one template and two shows.
 
-Call `POST /api/cron/expire-holds` with `Authorization: Bearer $CRON_SECRET` every minute to release expired holds and settle unresolved pending payments.
+Expired holds are released on the next availability read, and stale pending payments are settled with the provider on that same read. There is no cron or scheduler.
 
 ## Data
 

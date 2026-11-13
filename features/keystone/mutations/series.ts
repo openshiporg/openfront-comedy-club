@@ -144,8 +144,8 @@ export async function seriesCancelStatus(db: any, group: { id: string; cancelReq
 }
 
 /**
- * Finishes a recorded series cancellation, working for at most `budgetMs` (at least one show). Called by the operator's screen and by the sweep:
- * both use the same per-show and per-order keys, so running them at once, or again after an interruption, never cancels or refunds twice.
+ * Finishes a recorded series cancellation, working for at most `budgetMs` (at least one show). Called by the operator's screen (the Continue button);
+ * every call uses the same per-show and per-order keys, so running them at once, or again after an interruption, never cancels or refunds twice.
  */
 export async function advanceSeriesCancel(c: any, groupId: string, actorId: string | null, budgetMs: number) {
   const started = Date.now();
@@ -186,7 +186,7 @@ export async function advanceSeriesCancel(c: any, groupId: string, actorId: stri
 
 /**
  * Records the intent to cancel every future show in the series (once, audited), then starts working through them. The work continues from
- * the operator's screen or, if they close the tab, from the sweep; the intent and the exact list of shows are stored on the series.
+ * the operator's screen or, if they close the tab, from the Continue button; the intent and the exact list of shows are stored on the series.
  */
 export async function recordSeriesCancel(c: any, a: any) {
   requirePermission(c, 'canManageShows'); requirePermission(c, 'canIssueRefunds');
@@ -217,17 +217,4 @@ export async function seriesCancelProgress(_: any, a: any, c: any) {
   if (!group) throw new Error('Series not found');
   const { pending, ...rest } = await seriesCancelStatus(c.prisma, group);
   return { ...rest, reason: group.cancelReason, requestedAt: group.cancelRequestedAt };
-}
-
-/** Cron: finish every series whose cancellation was requested but not completed (for example because the operator closed the tab). Same secret rule as the other sweeps. */
-export async function sweepSeriesCancellations(_: any, { secret }: { secret: string }, c: any) {
-  const expected = process.env.CRON_SECRET;
-  if (!expected || secret !== expected) throw new Error('Not authorized');
-  const groups = await c.prisma.showGroup.findMany({ where: { cancelRequestedAt: { not: null }, cancelCompletedAt: null }, select: { id: true, cancelRequestedById: true }, orderBy: { cancelRequestedAt: 'asc' }, take: 10 });
-  const started = Date.now(); let finished = 0, stillOpen = 0, refunded = 0, errors = 0;
-  for (const g of groups) {
-    if (Date.now() - started > 20000) { stillOpen++; continue; }
-    try { const r = await advanceSeriesCancel(c, g.id, g.cancelRequestedById || null, 15000); refunded += r.refunded; r.completed ? finished++ : stillOpen++; } catch { errors++; }
-  }
-  return { groups: groups.length, finished, stillOpen, refunded, errors };
 }

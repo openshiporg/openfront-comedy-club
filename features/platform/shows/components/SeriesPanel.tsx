@@ -20,7 +20,7 @@ export function SeriesPanel({ cancelling, cancelDone, canRepeat, showId, groupId
   const [reason, setReason] = React.useState('');
   const [message, setMessage] = React.useState(''); const [firstId, setFirstId] = React.useState(''); const [error, setError] = React.useState('');
   const pattern = () => ({ sourceShowId: showId, from, count: Number(count), everyDays: Number(every), startTime: time || undefined, copyLineup: lineup });
-  /** Starts (first=true) or resumes the recorded cancellation, one call at a time, until the server says every show is done. The intent is saved on the first call, so closing the tab does not lose it: the scheduled sweep finishes the rest. */
+  /** Starts (first=true) or resumes the recorded cancellation, one call at a time, until the server says every show is done. The intent is saved on the first call, so closing the tab does not lose it: press Continue to finish the rest. */
   const finishCancel = async (first: boolean) => {
     let refunded = 0, failed = 0, lastDone = -1; const problems: string[] = [];
     for (let i = 0; i < 60; i++) {
@@ -29,7 +29,7 @@ export function SeriesPanel({ cancelling, cancelDone, canRepeat, showId, groupId
       refunded += r.data.refunded; failed += r.data.failed; problems.push(...r.data.problems);
       setMessage(`Cancelling: ${r.data.done} of ${r.data.total} done`);
       if (r.data.completed || r.data.problems.length) break;
-      if (r.data.done === lastDone && r.data.failed) break; // a refund keeps failing: stop here, the sweep keeps retrying
+      if (r.data.done === lastDone && r.data.failed) break; // a refund keeps failing: stop here, press Continue to retry
       lastDone = r.data.done;
     }
     const p = await seriesProgress(groupId!);
