@@ -12,7 +12,7 @@ const LIVE = ['on_sale', 'sold_out', 'doors_open', 'in_progress', 'completed'] a
  */
 export async function doorBoard(_: unknown, a: { showId?: string; term?: string }, c: DoorContext) {
   const can = { door: permissions.canManageDoor(c), checks: permissions.canManageChecks(c), shows: permissions.canManageShows(c) };
-  if (!c.session?.itemId || !(can.door || can.checks)) throw new Error('Not authorized');
+  if (!c.session?.itemId || !(can.door || can.checks || can.shows)) throw new Error('Not authorized');
   const db = c.prisma;
   const num = (v: unknown) => Number(v);
   const since = new Date(Date.now() - 6 * 3600000);
