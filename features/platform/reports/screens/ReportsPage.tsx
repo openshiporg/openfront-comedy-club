@@ -14,6 +14,8 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   let report: any = null, error = '';
   try { report = (await q<any>(`query($from: String!, $to: String!) { showReport(from: $from, to: $to) }`, { from, to })).showReport; }
   catch (e: any) { error = /Dates|date|period|before|Invalid/.test(e.message) ? e.message : 'The report could not run. Check the dates.'; }
+  const { authenticatedItem: me } = await q<{ authenticatedItem?: { role?: { canManageShows?: boolean } } }>(`{ authenticatedItem { ... on User { role { canManageShows } } } }`);
+  const showLinks = !!me?.role?.canManageShows;
   const t = report?.totals;
   return (
     <Page title="Reports">
@@ -49,7 +51,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           ) : null}
           <Section title="Shows">
             {report.shows.length ? report.shows.map((s: any) => (
-              <Row key={s.id} href={`/dashboard/platform/shows/${s.id}`} className="flex-nowrap items-start gap-x-3">
+              <Row key={s.id} href={showLinks ? `/dashboard/platform/shows/${s.id}` : undefined} className="flex-nowrap items-start gap-x-3">
                 <span className="min-w-0 flex-1">
                   <span className="block font-medium">{s.title}</span>
                   <Meta>{when(s.startsAt, tz, 'day')} · {s.sold} sold{s.comp ? ` · ${s.comp} comp` : ''} · {s.checkedIn} in{s.noShow !== null ? ` · ${s.noShow} no-show` : ''}</Meta>
