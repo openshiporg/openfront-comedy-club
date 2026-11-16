@@ -11,8 +11,8 @@ import { MAX_GROUP_HOLD } from '../../keystone/lib/groupHold';
 type Tier = { id: string; name: string; priceCents: number; feeCents: number; capacity: number; sold: number; held: number; status: string; isTableTier: boolean; salesStartAt?: string | null; salesEndAt?: string | null };
 type Section = { name: string; tables: { id: string; label: string; seats: number; taken: boolean }[] };
 
-const btn = 'inline-flex h-11 items-center justify-center rounded-md border bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50';
-const chip = (on: boolean, off?: boolean) => `min-h-11 min-w-12 rounded-md border px-2 py-2 text-sm ${on ? 'border-foreground bg-foreground text-background' : ''} ${off ? 'opacity-40' : ''}`;
+const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[#e9f93d] px-5 text-sm font-semibold text-black hover:bg-[#dff022] disabled:opacity-50';
+const chip = (on: boolean, off?: boolean) => `min-h-11 min-w-12 rounded-full border px-2 py-2 text-sm ${on ? 'border-neutral-950 bg-[#e9f93d] text-black' : ''} ${off ? 'opacity-40' : ''}`;
 
 export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { showId: string; title: string; ageRestriction: string; tiers: Tier[]; sections: Section[] }) {
   const router = useRouter();
@@ -46,7 +46,7 @@ export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { s
         <div className="space-y-2" data-testid="mix-tiers">
           <p className="text-sm text-muted-foreground">Choose how many of each ticket type. They are held together and expire together.</p>
           {mixable.map((t) => (
-            <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3">
+            <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-3">
               <div><p className="font-medium">{t.name}</p><p className="text-sm">{price(t.priceCents)} <span className="text-muted-foreground">+ {price(t.feeCents)} fee</span></p></div>
               <div className="flex items-center gap-3">
                 <button type="button" aria-label={`Fewer ${t.name}`} className={chip(false)} onClick={() => setQ(t, -1)}>−</button>
@@ -61,7 +61,7 @@ export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { s
         <>
       <div className="space-y-2">
         {open.map((t) => (
-          <label key={t.id} className={`flex cursor-pointer flex-wrap items-center justify-between gap-2 rounded-md border p-3 ${t.id === tierId ? 'border-foreground' : ''}`}>
+          <label key={t.id} className={`flex cursor-pointer flex-wrap items-center justify-between gap-2 rounded-2xl border p-3 ${t.id === tierId ? "border-neutral-950 bg-[#f7fcc4]" : ""}`}>
             <span className="flex items-center gap-3">
               <input type="radio" name="tier" checked={t.id === tierId} onChange={() => { setTier(t.id); setTables([]); }} />
               <span className="font-medium">{t.name}</span>

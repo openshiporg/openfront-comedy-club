@@ -17,7 +17,7 @@ export default async function ShowPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">{show.title}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{show.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{[showTime(show.startsAt), show.room?.name, ageLabel(show.ageRestriction)].filter(Boolean).join(' · ')}</p>
         {show.publicNote ? <p className="mt-2 text-sm">{show.publicNote}</p> : null}
       </div>

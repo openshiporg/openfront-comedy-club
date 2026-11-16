@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { transferTicket } from '../lib/actions';
 
-const field = 'h-11 w-full rounded-md border bg-background px-3 text-sm';
-const btn = 'inline-flex h-11 items-center justify-center rounded-md border px-4 text-sm font-medium disabled:opacity-50';
+const field = 'h-11 w-full rounded-full border border-neutral-200 bg-background px-4 text-sm';
+const btn = 'inline-flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium disabled:opacity-50';
 
 /** Buyer-side transfer of one ticket. The server re-checks everything; this only gathers the new holder. */
 export function TransferTicket({ orderNumber, secret, ticketCode, onDone }: { orderNumber: string; secret: string; ticketCode: string; onDone: () => void }) {

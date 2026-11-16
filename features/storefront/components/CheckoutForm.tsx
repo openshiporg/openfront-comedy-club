@@ -7,8 +7,8 @@ import { applyPromo, startCheckout, completeCheckout, abandonCheckout } from '..
 import { price } from '../lib/format';
 
 declare global { interface Window { Stripe?: any } }
-const btn = 'inline-flex h-11 items-center justify-center rounded-md border bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50';
-const input = 'h-11 w-full rounded-md border bg-background px-3 text-sm';
+const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[#e9f93d] px-5 text-sm font-semibold text-black hover:bg-[#dff022] disabled:opacity-50';
+const input = 'h-11 w-full rounded-full border border-neutral-200 bg-background px-4 text-sm';
 
 export function CheckoutForm({ holdKey }: { holdKey: string }) {
   const router = useRouter();
@@ -86,7 +86,7 @@ export function CheckoutForm({ holdKey }: { holdKey: string }) {
           <label className="block text-sm">Occasion<input className={input} value={form.occasion} onChange={(e) => setForm({ ...form, occasion: e.target.value })} /></label>
           <div className="flex gap-2">
             <input className={input} placeholder="Promo code" value={promo} onChange={(e) => setPromo(e.target.value)} />
-            <button type="button" className="h-11 rounded-md border px-4 text-sm" disabled={pending || !promo.trim()} onClick={() => start(async () => { const r = await applyPromo({ holdKey, cartToken: hold.cartToken, code: promo }); setPromoMsg(r.ok ? 'Code applied' : r.error); })}>Apply</button>
+            <button type="button" className="h-11 rounded-full border px-4 text-sm" disabled={pending || !promo.trim()} onClick={() => start(async () => { const r = await applyPromo({ holdKey, cartToken: hold.cartToken, code: promo }); setPromoMsg(r.ok ? 'Code applied' : r.error); })}>Apply</button>
           </div>
           {promoMsg ? <p role="status" className="text-sm">{promoMsg}</p> : null}
           {needsAge ? <label className="flex min-h-11 cursor-pointer items-center gap-3 py-1 text-sm"><input type="checkbox" className="size-5 shrink-0" checked={age} onChange={(e) => setAge(e.target.checked)} />Everyone in my party is {hold.ageRestriction} or older and will show ID.</label> : null}
