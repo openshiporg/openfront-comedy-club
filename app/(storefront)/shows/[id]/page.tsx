@@ -27,7 +27,7 @@ export default async function ShowPage({ params }: { params: Promise<{ id: strin
           <ul>{show.lineup.map((l: any, i: number) => <li key={i} className="py-1 text-sm"><span className="font-medium">{l.comedian.stageName}</span> <span className="text-muted-foreground">{l.role.replace('_', ' ')}</span></li>)}</ul>
         </section>
       ) : null}
-      {new Date(show.startsAt) <= new Date() ? <p className="text-sm text-muted-foreground">Ticket sales have ended for this show.</p> : <HoldForm
+      {show.status !== 'on_sale' || new Date(show.startsAt) <= new Date() ? <p className="text-sm text-muted-foreground">{show.status === 'sold_out' ? 'This show is sold out.' : 'Ticket sales have ended for this show.'}</p> : <HoldForm
         showId={show.id}
         title={show.title}
         ageRestriction={show.ageRestriction}
