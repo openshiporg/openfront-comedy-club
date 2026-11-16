@@ -90,7 +90,7 @@ export default async function Home() {
         {feat ? <Link href={`/shows/${(tonight[0] || feat).id}`} className={`${btnSoft} w-full justify-between`}>Get tickets <span>→</span></Link> : null}
         <div className="border-t pt-4 text-sm">
           <p className="mb-2 font-semibold">This week</p>
-          <ul className="space-y-2">{shows.slice(0, 4).map((s) => <li key={s.id} className="flex gap-3"><span className="w-14 shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-center text-xs">{dayOf(s.startsAt).split(' ')[0]}</span><span className="min-w-0 truncate">{s.title}</span></li>)}</ul>
+          <ul className="space-y-2">{shows.slice(0, 4).map((s) => <li key={s.id} className="flex gap-3"><span className="w-14 shrink-0 whitespace-nowrap rounded-full bg-neutral-100 px-2 py-0.5 text-center text-xs">{dayOf(s.startsAt).split(' ')[0].replace(',', '')}</span><span className="min-w-0 truncate">{s.title}</span></li>)}</ul>
         </div>
       </aside>
     </div>

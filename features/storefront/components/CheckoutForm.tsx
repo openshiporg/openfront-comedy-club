@@ -7,7 +7,7 @@ import { applyPromo, startCheckout, completeCheckout, abandonCheckout } from '..
 import { price } from '../lib/format';
 
 declare global { interface Window { Stripe?: any } }
-const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[#e9f93d] px-5 text-sm font-semibold text-black hover:bg-[#dff022] disabled:opacity-50';
+const btn = 'inline-flex h-11 items-center justify-center rounded-full bg-[#e9f93d] px-5 text-sm font-semibold text-black hover:bg-[#dff022] disabled:opacity-50';
 const input = 'h-11 w-full rounded-full border border-neutral-200 bg-background px-4 text-sm';
 
 export function CheckoutForm({ holdKey }: { holdKey: string }) {
