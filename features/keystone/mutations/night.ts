@@ -175,7 +175,9 @@ export async function closeShow(_: any, a: any, c: any) {
     if (await tx.ticketOrder.count({ where: { showId: show.id, status: 'pending_payment' } }) || await tx.inventoryHold.count({ where: { showId: show.id, status: 'active' } })) throw new Error('Resolve pending payments and holds first');
     if (await tx.refund.count({ where: { order: { showId: show.id }, status: { in: ['processing', 'unknown'] } } })) throw new Error('Reconcile refunds first');
     const orders = await tx.ticketOrder.findMany({ where: { showId: show.id, status: { in: ['paid', 'partially_refunded', 'refunded'] } } });
-    const refunds = await tx.refund.aggregate({ where: { order: { showId: show.id }, status: 'succeeded' }, _sum: { amount: true } });
+    // refunds give back tax too, which the gross never counted: count each order's refunds without its tax share
+    const refundRows = await tx.refund.groupBy({ by: ['orderId'], where: { order: { showId: show.id }, status: 'succeeded' }, _sum: { amount: true } });
+    const refundedCents = refundRows.reduce((n: number, r: any) => { const o = orders.find((x: any) => x.id === r.orderId); const amt = r._sum.amount || 0; return n + (o && o.totalCents > 0 ? Math.round(amt * (o.totalCents - o.taxCents) / o.totalCents) : amt); }, 0);
     const checks = await tx.check.aggregate({ where: { showId: show.id, status: 'paid' }, _sum: { subtotalCents: true, minimumShortfallCents: true, tipCents: true } });
     const comps = await tx.comp.aggregate({ where: { showId: show.id }, _sum: { quantity: true } });
     const performing = show.lineup.filter((s: any) => ['confirmed', 'performed'].includes(s.status));
@@ -191,7 +193,7 @@ export async function closeShow(_: any, a: any, c: any) {
     const gross = orders.reduce((n: number, o: any) => n + o.subtotalCents, 0);
     const fees = orders.reduce((n: number, o: any) => n + o.feesCents, 0);
     const discounts = orders.reduce((n: number, o: any) => n + o.discountCents, 0);
-    const figures = { ticketGrossCents: gross, feesCents: fees, discountsCents: discounts, refundsCents: refunds._sum.amount || 0, compsCount: comps._sum.quantity || 0, foodBeverageGrossCents: (checks._sum.subtotalCents || 0) - (checks._sum.minimumShortfallCents || 0), minimumShortfallRevenueCents: checks._sum.minimumShortfallCents || 0, tipsCents: checks._sum.tipCents || 0, talentCostCents: talent };
+    const figures = { ticketGrossCents: gross, feesCents: fees, discountsCents: discounts, refundsCents: refundedCents, compsCount: comps._sum.quantity || 0, foodBeverageGrossCents: (checks._sum.subtotalCents || 0) - (checks._sum.minimumShortfallCents || 0), minimumShortfallRevenueCents: checks._sum.minimumShortfallCents || 0, tipsCents: checks._sum.tipCents || 0, talentCostCents: talent };
     const netCents = settlement(figures);
     const data = { ...figures, netCents, currencyCode: 'USD', status: 'closed', closedById: c.session.itemId };
     const row = show.settlement ? await tx.showSettlement.update({ where: { id: show.settlement.id }, data }) : await tx.showSettlement.create({ data: { ...data, show: { connect: { id: show.id } } } });
