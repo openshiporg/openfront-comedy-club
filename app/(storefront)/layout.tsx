@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { StoreLogoMark } from '@/features/storefront/components/StoreLogoMark';
 
-const side = [['/', 'Home'], ['/#shows', 'Shows'], ['/open-mic', 'Open mic'], ['/lookup', 'Find my order']] as const;
+const side = [['/', 'Home'], ['/#shows', 'Shows'], ['/comedians', 'Comedians'], ['/menu', 'Food & drinks'], ['/open-mic', 'Open mic'], ['/#visit', 'Plan your visit'], ['/lookup', 'Find my order']] as const;
 
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +11,8 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
         <nav className="flex w-full items-center gap-1 overflow-x-auto whitespace-nowrap rounded-full sm:w-auto bg-neutral-100 p-1 text-sm">
           <Link href="/" className="inline-flex min-h-11 items-center rounded-full bg-white px-4 font-medium shadow-sm">Home</Link>
           <Link href="/#shows" className="inline-flex min-h-11 items-center rounded-full px-3 text-neutral-600 sm:px-4">Shows</Link>
+          <Link href="/comedians" className="inline-flex min-h-11 items-center rounded-full px-3 text-neutral-600 sm:px-4">Comedians</Link>
+          <Link href="/menu" className="inline-flex min-h-11 items-center rounded-full px-3 text-neutral-600 sm:px-4">Menu</Link>
           <Link href="/open-mic" className="inline-flex min-h-11 items-center rounded-full px-3 text-neutral-600 sm:px-4">Open mic</Link>
           <Link href="/lookup" className="inline-flex min-h-11 items-center rounded-full px-3 text-neutral-600 sm:px-4">Find my order</Link>
         </nav>
