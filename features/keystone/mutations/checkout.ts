@@ -30,7 +30,13 @@ export async function startTicketCheckout(_: any, input: any, context: any) {
     const hold = await tx.inventoryHold.findUnique({ where: { id: lookup.id }, include: { show: { include: { room: { include: { venue: true } } } }, lines: { include: { priceTier: true } }, priceTier: true, tables: true, redemption: { include: { promoCode: true } } } });
     prove(hold, input.cartToken);
     if (hold.status !== 'active' || hold.expiresAt <= new Date() || hold.show.status !== 'on_sale') throw new Error('Hold expired');
-    if (await tx.ticketOrder.count({ where: { hold: { id: hold.id } } })) throw new Error('Checkout already started');
+    // Reload, back button or a failed payment step: the holder of this hold's cart token picks the same pending order back up.
+    const started = await tx.ticketOrder.findFirst({ where: { hold: { id: hold.id } } });
+    if (started) {
+      if (started.status !== 'pending_payment') throw new Error('Checkout already started');
+      await tx.ticketOrder.update({ where: { id: started.id }, data: { secretKey: hash(secret) } });
+      return { orderId: started.id, orderNumber: started.orderNumber, totalCents: started.totalCents, currencyCode: 'USD', expiresAt: hold.expiresAt };
+    }
     if (hold.show.ageRestriction !== 'all' && input.ageAttested !== true) throw new Error('Age confirmation required');
     const venue = hold.show.room.venue;
     const promo = hold.redemption?.status === 'reserved' ? hold.redemption.promoCode : null;
