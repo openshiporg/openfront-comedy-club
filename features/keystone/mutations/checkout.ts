@@ -252,6 +252,11 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
     }
     const remainingValid = await tx.ticket.count({ where: { orderId: a.orderId, status: { in: ['valid', 'checked_in'] } } });
     await tx.ticketOrder.update({ where: { id: a.orderId }, data: { status: remainingValid ? 'partially_refunded' : 'refunded' } });
+    // A fully refunded party gives its table back; a party already seated frees it when its check closes or it is unseated.
+    if (!remainingValid) {
+      const hold = await tx.inventoryHold.findFirst({ where: { order: { id: a.orderId } }, select: { id: true } });
+      if (hold) await tx.tableOccupancy.updateMany({ where: { holdId: hold.id, assignmentId: null }, data: { occupancyKey: null } });
+    }
     await tx.show.updateMany({ where: { id: reserved.showId, status: 'sold_out' }, data: { status: 'on_sale' } });
     await audit(tx, { session: { itemId: a.actorId } }, 'refunded', 'TicketOrder', a.orderId, null, { amount: reserved.amount, tickets: voided.length }, a.reason);
     await offerFreedSeats(tx, { session: { itemId: a.actorId } }, reserved.showId);
