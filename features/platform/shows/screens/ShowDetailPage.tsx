@@ -9,6 +9,8 @@ import { CompForm } from '../components/CompForm';
 import { SalesWindowForm } from '../components/SalesWindowForm';
 import { SeriesPanel } from '../components/SeriesPanel';
 import { saleState } from '../../../keystone/lib/saleWindow';
+import { offerToken } from '../../../keystone/lib/waitlist';
+import { CopyLink } from '../components/CopyLink';
 
 export default async function ShowDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,7 +21,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
       room { name } template { title } group { id name cancelRequestedAt cancelCompletedAt cancelReason shows { id startsAt status } }
       tiers(orderBy: { priceCents: desc }) { id name priceCents feeCents capacity sold held status salesStartAt salesEndAt }
       lineup(orderBy: { position: asc }) { id role position setMinutes feeCents status comedian { stageName email } }
-      waitlist(where: { status: { in: [waiting, offered] } }, orderBy: { createdAt: asc }) { id name email partySize status offerExpiresAt }
+      waitlist(where: { status: { in: [waiting, offered] } }, orderBy: { createdAt: asc }) { id name email partySize status offerExpiresAt hold { holdKey status } }
       holds(where: { status: { equals: active } }) { id holdKey quantity expiresAt lines { quantity priceTier { name } } }
       orders(orderBy: { createdAt: desc }, take: 50) { id orderNumber name status totalCents partySize }
       assignments { id status tables { label } }
@@ -60,6 +62,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
               <span className="inline-flex flex-wrap items-center gap-3">
                 <Status value={w.status} />
                 {w.status === 'offered' && w.offerExpiresAt ? <Meta>until {when(w.offerExpiresAt, tz, 'time')}</Meta> : null}
+                {w.status === 'offered' && w.hold?.status === 'active' ? <CopyLink href={`/waitlist/claim?hold=${w.hold.holdKey}#${offerToken(w.hold.holdKey)}`} /> : null}
                 <ActionButton op="removeWaitlistEntry" vars={{ entryId: w.id, reason: 'Removed by operator' }} confirm={`Remove ${w.name} from the waitlist?`}>Remove</ActionButton>
               </span>
             </Row>

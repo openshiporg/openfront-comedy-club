@@ -1,6 +1,9 @@
+import crypto from 'node:crypto';
 import { saleState } from './saleWindow';
 
 export const OFFER_MINUTES = 120;
+/** The offer link's token, derived from the hold key so staff can hand the party its link at any time. */
+export const offerToken = (holdKey: string) => crypto.createHmac('sha256', process.env.SESSION_SECRET || '').update('waitlist\0' + holdKey).digest('hex');
 type Tier = { id: string; priceCents: number; capacity: number; sold: number; held: number; status: string; isTableTier?: boolean; salesStartAt?: Date | null; salesEndAt?: Date | null };
 type Entry = { id: string; partySize: number; createdAt: Date };
 

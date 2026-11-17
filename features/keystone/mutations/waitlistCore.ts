@@ -1,11 +1,10 @@
 import { showCapacity } from '../lib/capacity';
-import crypto from 'node:crypto';
 import { audit, code, hash } from '../lib/commands';
-import { offerExpiry, planOffers } from '../lib/waitlist';
+import { offerExpiry, offerToken, planOffers } from '../lib/waitlist';
 
 /**
  * Runs inside a transaction that already holds the show lock. Settles finished offers, then turns
- * freed capacity into new offers in join order. Each offer is a real InventoryHold; nothing is emailed from here.
+ * freed capacity into new offers in join order. Each offer is a real InventoryHold; staff send its link from the show page.
  */
 export async function offerFreedSeats(tx: any, context: any, showId: string) {
   const now = new Date();
@@ -33,8 +32,8 @@ export async function offerFreedSeats(tx: any, context: any, showId: string) {
     const entry = waiting.find((w: any) => w.id === o.entryId);
     const claimed = await tx.waitlistEntry.updateMany({ where: { id: entry.id, status: 'waiting' }, data: { status: 'offered', offeredAt: now, offerExpiresAt: expiresAt } });
     if (claimed.count !== 1) continue;
-    const token = crypto.randomBytes(32).toString('hex');
-    const hold = await tx.inventoryHold.create({ data: { holdKey: code('H'), showId, priceTierId: o.tierId, quantity: o.quantity, cartToken: hash(token), status: 'active', expiresAt, waitlistEntryId: entry.id } });
+    const holdKey = code('H'); const token = offerToken(holdKey);
+    const hold = await tx.inventoryHold.create({ data: { holdKey, showId, priceTierId: o.tierId, quantity: o.quantity, cartToken: hash(token), status: 'active', expiresAt, waitlistEntryId: entry.id } });
     await tx.priceTier.update({ where: { id: o.tierId }, data: { held: { increment: o.quantity } } });
     await audit(tx, context, 'offered', 'WaitlistEntry', entry.id, { status: 'waiting' }, { status: 'offered', holdKey: hold.holdKey, quantity: o.quantity, expiresAt });
     made.push(entry.id);
