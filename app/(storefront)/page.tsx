@@ -26,7 +26,7 @@ function fromLabel(s: SaleShow) {
 export default async function Home() {
   const [r, content] = await Promise.all([gqlCall<{ showsOnSale: SaleShow[] }>(SHOWS_ON_SALE), venueContent()]);
   const { comedians, lineups, menu, venue } = content;
-  const thumb = (s: SaleShow, i: number) => (/open mic/i.test(s.title) ? '/storefront/mic.webp' : ['/storefront/tables.webp', '/storefront/curtain.webp', '/storefront/bar.webp'][i % 3]);
+  const thumb = (s: SaleShow, i: number) => (/open mic/i.test(s.title) ? '/storefront/mic.webp' : ['/storefront/tables.webp', '/storefront/curtain.webp'][i % 2]);
   const drinks = menu.filter((m) => m.category !== 'food');
   const food = menu.filter((m) => m.category === 'food');
   const shows = r.ok ? r.data.showsOnSale : [];

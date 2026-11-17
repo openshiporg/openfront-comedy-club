@@ -16,7 +16,7 @@ export default async function MenuPage() {
         <h1 className="text-3xl font-semibold tracking-tight">Food & drinks</h1>
         <p className="mt-1 text-sm text-neutral-500">Served at your table during the show{venue?.drinkMinimumItems ? `. ${venue.drinkMinimumItems}-item minimum per guest` : ''}.</p>
       </div>
-      <div className="relative h-44 overflow-hidden rounded-3xl bg-neutral-950 sm:h-64"><Image src="/storefront/bar.webp" alt="The bar, with the stage behind it" fill priority sizes="(min-width: 1024px) 800px, 100vw" className="object-cover" /></div>
+      <div className="relative h-44 overflow-hidden rounded-3xl bg-neutral-950 sm:h-64"><Image src="/storefront/bar.webp" alt="A bartender pouring a drink at the bar" fill priority sizes="(min-width: 1024px) 800px, 100vw" className="object-cover" /></div>
       {!menu.length ? <p className="text-sm text-neutral-500">The menu is not posted yet.</p> : null}
       {GROUPS.map(([key, label]) => {
         const items = menu.filter((m) => m.category === key);
