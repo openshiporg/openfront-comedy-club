@@ -47,6 +47,7 @@ const OPS: Record<string, Record<string, string>> = {
   approvePayout: { payoutId: 'ID!' },
   recordPayoutPaid: { payoutId: 'ID!', method: 'String!', reference: 'String!' },
   refundTicketOrder: { orderId: 'ID!', amountCents: 'Int', ticketIds: '[ID!]', reason: 'String!', approvalId: 'ID' },
+  retryTicketRefund: { refundId: 'ID!' },
   requestApproval: { actionType: 'String!', targetId: 'String!', reason: 'String!', amount: 'Int' },
   approveRequest: { approvalId: 'ID!' },
 };
@@ -55,7 +56,7 @@ export async function findApproval(input: { actionType: string; targetId: string
   if (!res.success) return { id: '', error: res.error || 'Approval lookup failed' };
   return { id: (res.data as any)?.matchingManagerApproval?.id || '', error: '' };
 }
-const NO_KEY = new Set(['requestApproval', 'approveRequest', 'completeCheckCardPayment']);
+const NO_KEY = new Set(['requestApproval', 'approveRequest', 'completeCheckCardPayment', 'retryTicketRefund']);
 
 export async function runCommand(op: string, variables: Record<string, unknown>, paths: string[] = []) {
   const spec = OPS[op];

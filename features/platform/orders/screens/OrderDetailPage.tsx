@@ -4,6 +4,7 @@ import { money, when } from '../../lib/format';
 import { Page, Section, Row, Stat, Status, Meta } from '../../components/ui';
 import { RefundPanel } from '../components/RefundPanel';
 import { ticketWeight } from '@/features/keystone/lib/groupHold';
+import { ActionButton } from '../../components/ActionButton';
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,7 +28,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-5"><Stat name="Subtotal" value={money(o.subtotalCents)} /><Stat name="Fees" value={money(o.feesCents)} /><Stat name="Discount" value={money(o.discountCents)} /><Stat name="Tax" value={money(o.taxCents)} /><Stat name="Total" value={money(o.totalCents)} /></div>
       <Section title="Lines">{o.lines.map((l: any) => <Row key={l.id}><span>{l.quantity} × {l.tierName}</span><span className="font-mono text-xs">{money(l.lineTotalCents)}</span></Row>)}</Section>
       <Section title="Tickets">{o.tickets.map((t: any) => <Row key={t.id}><span className="font-mono text-xs">{t.ticketCode}</span><Status value={t.status} /></Row>)}</Section>
-      {o.refunds.length ? <Section title="Refunds">{o.refunds.map((r: any) => <Row key={r.id}><span className="min-w-0 break-words">{r.reason}</span><span className="inline-flex gap-3"><Meta>{money(r.amount)}</Meta><Status value={r.status} /></span></Row>)}</Section> : null}
+      {o.refunds.length ? <Section title="Refunds">{o.refunds.map((r: any) => <Row key={r.id}><span className="min-w-0 break-words">{r.reason}</span><span className="inline-flex items-center gap-3"><Meta>{money(r.amount)}</Meta><Status value={r.status} />{['processing', 'unknown'].includes(r.status) ? <ActionButton op="retryTicketRefund" vars={{ refundId: r.id }}>Retry</ActionButton> : null}</span></Row>)}</Section> : null}
       {['paid', 'partially_refunded'].includes(o.status) ? <Section title="Refund"><RefundPanel orderId={o.id} totalCents={o.totalCents} keptWeights={kept} remainingCents={payment ? payment.amount - payment.refundedAmount : 0} threshold={venueSettingsItems[0]?.approvalThresholdCents ?? 10000} remainingTickets={o.tickets.filter((t: any) => t.status === 'valid').map((t: any) => ({ id: t.id, code: t.ticketCode, weight: ticketWeight(t.line) }))} /></Section> : null}
     </Page>
   );

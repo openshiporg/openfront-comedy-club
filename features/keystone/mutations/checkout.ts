@@ -205,11 +205,11 @@ export async function ticketOrderConfirmation(_: any, input: any, context: any) 
 }
 
 /** Local reservation first, provider refund outside the transaction, then finalization. */
-export async function refundOrderInternal(context: any, a: { orderId: string; amountCents?: number; ticketIds?: string[]; reason: string; idempotencyKey: string; approvalId?: string; actorId: string | null; threshold: number; includeCheckedIn?: boolean }) {
+export async function refundOrderInternal(context: any, a: { orderId: string; amountCents?: number; ticketIds?: string[]; reason: string; idempotencyKey: string; approvalId?: string; actorId: string | null; threshold: number; includeCheckedIn?: boolean; retry?: boolean; reserved?: any }) {
   // A cancelled show owes every ticket back, scanned or not; a normal refund only takes tickets that are still valid.
   const live = a.includeCheckedIn ? ['valid', 'checked_in'] : ['valid'];
   const prisma = context.prisma;
-  const reserved = await command(context, 'refundTicketOrder', { ...a }, async tx => {
+  const reserved = a.reserved ?? await command(context, 'refundTicketOrder', { ...a }, async tx => {
     const order = await tx.ticketOrder.findUnique({ where: { id: a.orderId }, include: { payments: true, tickets: { include: { line: true } } } });
     if (!order || !['paid', 'partially_refunded'].includes(order.status)) throw new Error('Order is not refundable');
     // An earlier refund that is still processing or unknown has not moved money locally yet; a second one would count the same seats and dollars twice.
@@ -232,7 +232,9 @@ export async function refundOrderInternal(context: any, a: { orderId: string; am
   const provider = await prisma.paymentProvider.findUnique({ where: { id: reserved.providerId } });
   let result: any; let finalStatus = 'unknown';
   try {
-    result = await refundPayment({ provider, paymentId: reserved.providerPaymentId, amount: reserved.amount, currency: reserved.currencyCode, idempotencyKey: 'refund:' + a.idempotencyKey });
+    // A retry looks for the refund at Stripe first, so a refund that already went out is never sent a second time.
+    const sent = a.retry ? ((await getPaymentStatus({ provider, paymentId: reserved.providerPaymentId })).refunds || []).find((r: any) => r.metadata?.restaurantRefundKey === 'refund:' + a.idempotencyKey) : null;
+    result = sent ? { refundId: sent.id, status: sent.status } : await refundPayment({ provider, paymentId: reserved.providerPaymentId, amount: reserved.amount, currency: reserved.currencyCode, idempotencyKey: 'refund:' + a.idempotencyKey });
     finalStatus = refundOutcome(result.status);
   } catch { finalStatus = 'unknown'; }
   await prisma.$transaction(async (tx: any) => {
@@ -268,6 +270,18 @@ export async function refundTicketOrder(_: any, a: any, context: any) {
   requirePermission(context, 'canIssueRefunds');
   const settings = await context.prisma.venueSettings.findFirst();
   return refundOrderInternal(context, { orderId: a.orderId, amountCents: a.amountCents, ticketIds: a.ticketIds, reason: String(a.reason || '').trim() || (() => { throw new Error('Reason required'); })(), idempotencyKey: a.idempotencyKey, approvalId: a.approvalId, actorId: context.session.itemId, threshold: settings?.approvalThresholdCents ?? 10000 });
+}
+
+/** Staff retry of a refund left processing or unknown: same idempotency key and inputs as the first try. */
+export async function retryTicketRefund(_: any, a: any, context: any) {
+  requirePermission(context, 'canIssueRefunds');
+  const refund = await context.prisma.refund.findUnique({ where: { id: String(a.refundId || '') } });
+  if (!refund || !['processing', 'unknown'].includes(refund.status)) throw new Error('Only a refund that is still being confirmed can be retried');
+  const key = refund.idempotencyKey.replace(/^refund:/, '');
+  const attempt = await context.prisma.idempotencyKey.findUnique({ where: { idempotencyKey: key } });
+  const p: any = attempt?.requestParams; const reserved: any = attempt?.responseBody;
+  if (!p || attempt.requestPath !== 'refundTicketOrder' || attempt.recoveryPoint !== 'completed' || reserved?.refundId !== refund.id) throw new Error('The original refund request was not found');
+  return refundOrderInternal(context, { orderId: refund.orderId, reason: refund.reason, idempotencyKey: key, actorId: p.actorId ?? null, threshold: 0, includeCheckedIn: p.includeCheckedIn === true, retry: true, reserved });
 }
 
 export async function cancelMyTicketOrder(_: any, a: any, context: any) {
