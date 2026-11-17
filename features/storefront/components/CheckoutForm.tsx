@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { applyPromo, startCheckout, completeCheckout, abandonCheckout } from '../lib/actions';
@@ -22,6 +23,7 @@ export function CheckoutForm({ holdKey }: { holdKey: string }) {
   const [stage, setStage] = React.useState<'details' | 'pay'>('details');
   const [order, setOrder] = React.useState<{ orderNumber: string; orderSecret: string; clientSecret: string; publishableKey: string; totalCents: number } | null>(null);
   const [stripeReady, setStripeReady] = React.useState(false);
+  const [released, setReleased] = React.useState(false);
   const [pending, start] = React.useTransition();
   const cardRef = React.useRef<HTMLDivElement>(null);
   const stripeRef = React.useRef<any>(null);
@@ -63,7 +65,8 @@ export function CheckoutForm({ holdKey }: { holdKey: string }) {
     if (stripeError && stripeError.type !== 'validation_error') {
       setError(stripeError.message || 'Payment failed');
       const a = await abandonCheckout(order!.orderNumber, order!.orderSecret);
-      if (a.ok && ['cancelled'].includes(a.data.status)) { setError((stripeError.message || 'Payment failed') + ' Your hold was released.'); }
+      if (a.ok && ['cancelled'].includes(a.data.status)) { setError((stripeError.message || 'Payment failed') + ' Your hold was released.'); setReleased(true); }
+      if (a.ok && a.data.status === 'paid') router.push(`/orders/${order!.orderNumber}#${order!.orderSecret}`);
       return;
     }
     if (stripeError) return;
@@ -96,7 +99,7 @@ export function CheckoutForm({ holdKey }: { holdKey: string }) {
       {stage === 'pay' ? (
         <div className="space-y-4">
           <div ref={cardRef} className="min-h-24" />
-          <button type="button" className={btn} disabled={pending || !stripeReady} onClick={pay}>{pending ? 'Paying' : `Pay ${price(order!.totalCents)}`}</button>
+          {released ? <Link className="text-sm underline" href="/">Choose tickets again</Link> : <button type="button" className={btn} disabled={pending || !stripeReady} onClick={pay}>{pending ? 'Paying' : `Pay ${price(order!.totalCents)}`}</button>}
         </div>
       ) : null}
       {error ? <p role="alert" className="break-words text-sm text-red-600">{error}</p> : null}

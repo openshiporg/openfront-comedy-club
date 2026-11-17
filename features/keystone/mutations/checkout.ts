@@ -5,7 +5,7 @@ import { selfRefundAllowed } from '../lib/money';
 import { quoteGroup, refundShare, ticketWeight } from '../lib/groupHold';
 import { releaseHoldSeats } from '../lib/holds';
 import { consumeManagerApproval } from '../utils/managerApproval';
-import { createPayment, getPaymentStatus, refundPayment } from '../utils/paymentProviderAdapter';
+import { cancelPayment, createPayment, getPaymentStatus, refundPayment } from '../utils/paymentProviderAdapter';
 import { assertCheckoutProviderObservation } from '../utils/checkoutProviderObservation';
 import { nextPaymentStatus, refundOutcome } from '../utils/paymentState';
 
@@ -156,6 +156,12 @@ async function abandonPending(context: any, order: any) {
   const observed = intent ? await getPaymentStatus({ provider, paymentId: intent }) : { status: 'canceled' };
   if (observed.status === 'succeeded') { await verifyAndFinalize(context, order); return 'paid'; }
   if (!['canceled', 'requires_payment_method'].includes(observed.status)) return 'pending';
+  // A declined payment can still be paid with another card; cancel it at Stripe first so no charge can land after the seats go.
+  if (intent && observed.status !== 'canceled') {
+    const r = await cancelPayment({ provider, paymentId: intent, idempotencyKey: hash('checkout-cancel:' + order.id) });
+    if (r.status === 'succeeded') { await verifyAndFinalize(context, order); return 'paid'; }
+    if (r.status !== 'cancelled') return 'pending';
+  }
   await context.prisma.$transaction(async (tx: any) => {
     await lockTransactionKey(tx, 'show:' + order.showId);
     const fresh = await tx.ticketOrder.updateMany({ where: { id: order.id, status: 'pending_payment' }, data: { status: 'cancelled' } });
