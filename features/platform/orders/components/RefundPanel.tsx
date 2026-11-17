@@ -4,16 +4,17 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { runCommand } from '../../actions/commands';
 import { pillClass } from '../../components/ActionButton';
+import { refundShare } from '@/features/keystone/lib/groupHold';
 import { ApprovalControl } from '../../approvals/components/ApprovalControl';
 
-export function RefundPanel({ orderId, remainingTickets, totalCents, ticketCount, remainingCents, threshold }: { orderId: string; remainingTickets: { id: string; code: string }[]; totalCents: number; ticketCount: number; remainingCents: number; threshold: number }) {
+export function RefundPanel({ orderId, remainingTickets, totalCents, keptWeights, remainingCents, threshold }: { orderId: string; remainingTickets: { id: string; code: string; weight: number }[]; totalCents: number; keptWeights: number[]; remainingCents: number; threshold: number }) {
   const router = useRouter();
   const [reason, setReason] = React.useState('');
   const [approval, setApproval] = React.useState('');
   const [picked, setPicked] = React.useState<string[]>([]);
   const [msg, setMsg] = React.useState('');
   const [pending, start] = React.useTransition();
-  const amount = !picked.length || picked.length === remainingTickets.length ? remainingCents : Math.floor(totalCents * picked.length / ticketCount);
+  const amount = !picked.length || picked.length === remainingTickets.length ? remainingCents : refundShare(totalCents, remainingTickets.filter((t) => picked.includes(t.id)).map((t) => ({ priceCents: t.weight })), keptWeights.map((w) => ({ priceCents: w })));
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-1.5">
