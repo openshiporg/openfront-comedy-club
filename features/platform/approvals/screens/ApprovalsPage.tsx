@@ -8,7 +8,7 @@ const ACTION: Record<string, string> = {
   refund_payment: 'Refund', comp_tickets: 'Comp tickets', void_check: 'Void check', void_item: 'Void item', waive_minimum: 'Waive drink minimum',
 };
 // what each status means to the manager reading the list
-const STATE: Record<string, string> = { pending: 'Waiting for a manager', approved: 'Not used yet', consumed: 'Approved and used' };
+const STATE: Record<string, string> = { pending: 'Waiting', approved: 'Approved, not used', rejected: 'Rejected', consumed: 'Approved and used', expired: 'Expired' };
 
 /** Comps count tickets; every other request is an amount of money in cents. */
 const amountText = (a: any) => a.amount === null ? null : a.actionType === 'comp_tickets' ? `${a.amount} ${a.amount === 1 ? 'ticket' : 'tickets'}` : money(a.amount);
@@ -24,9 +24,9 @@ export default async function ApprovalsPage() {
   ]);
   const about = (a: any) => {
     const o = orders.find((x: any) => x.id === a.targetId);
-    if (o) return <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/dashboard/platform/orders/${o.id}`}>Order <span className="font-mono">{o.orderNumber}</span> · {o.name}</Link>;
+    if (o) return <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/dashboard/platform/orders/${o.id}`}><span>Order <span className="font-mono">{o.orderNumber}</span> · {o.name}</span></Link>;
     const s = shows.find((x: any) => x.id === a.targetId);
-    if (s) return <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/dashboard/platform/shows/${s.id}`}>{s.title} · {when(s.startsAt, tz)}</Link>;
+    if (s) return <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/dashboard/platform/shows/${s.id}`}><span>{s.title} · {when(s.startsAt, tz)}</span></Link>;
     return a.actionType.includes('check') || a.actionType === 'void_item' || a.actionType === 'waive_minimum' ? 'A bar check' : null;
   };
   return <Page title="Approvals">{managerApprovals.length ? managerApprovals.map((a: any) => {
@@ -40,7 +40,7 @@ export default async function ApprovalsPage() {
         <p className="break-words text-sm text-muted-foreground">“{a.reason}”</p>
         <Meta>Asked by {a.requestedBy?.name || 'staff'} · {when(a.requestedAt, tz)}{a.approvedBy?.name ? ` · approved by ${a.approvedBy.name}` : ''}{state === 'pending' || state === 'approved' ? ` · good until ${when(a.expiresAt, tz, 'time')}` : ''}</Meta>
       </div>
-      <div className="flex flex-wrap items-center gap-2"><span className="inline-flex items-center gap-2"><Status value={state} /><span className="text-xs text-muted-foreground">{STATE[state] && STATE[state].toLowerCase() !== state ? STATE[state] : null}</span></span>{state === 'pending' ? <ActionButton op="approveRequest" vars={{ approvalId: a.id }}>Approve</ActionButton> : null}</div>
+      <div className="flex flex-wrap items-center gap-2"><Status value={state} text={STATE[state]} />{state === 'pending' ? <ActionButton op="approveRequest" vars={{ approvalId: a.id }}>Approve</ActionButton> : null}</div>
     </Row>;
   }) : <Empty>No approval requests.</Empty>}</Page>;
 }

@@ -10,12 +10,13 @@ const DOT: Record<string, string> = {
   cancelled: 'bg-red-500', refunded: 'bg-red-500', declined: 'bg-red-500', no_show: 'bg-red-500', void: 'bg-red-500', voided: 'bg-red-500', failed: 'bg-red-500', duplicate: 'bg-red-500',
 };
 
-export function Status({ value, className }: { value?: string | null; className?: string }) {
+/** `text` overrides the words shown; the dot colour still follows `value`. */
+export function Status({ value, text, className }: { value?: string | null; text?: string; className?: string }) {
   if (!value) return null;
   return (
     <span className={cn('inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wide', className)}>
       <span className={cn('size-2 shrink-0 rounded-full', DOT[value] || 'bg-muted-foreground/50')} />
-      {label(value)}
+      {text || label(value)}
     </span>
   );
 }
