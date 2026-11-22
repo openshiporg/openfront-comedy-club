@@ -10,11 +10,11 @@ import { btnPrimary, inputCls } from './ui';
 
 declare global { interface Window { Stripe?: any } }
 
-export function CheckoutForm({ holdKey }: { holdKey: string }) {
+export function CheckoutForm({ holdKey, buyer }: { holdKey: string; buyer?: { name: string; email: string } | null }) {
   const router = useRouter();
   const [hold, setHold] = React.useState<{ cartToken: string; expiresAt: string; ageRestriction: string; mixed?: boolean } | null>(null);
   const [left, setLeft] = React.useState(0);
-  const [form, setForm] = React.useState({ name: '', email: '', phone: '', seatingRequest: '', occasion: '' });
+  const [form, setForm] = React.useState({ name: buyer?.name || '', email: buyer?.email || '', phone: '', seatingRequest: '', occasion: '' });
   const [age, setAge] = React.useState(false);
   const [promo, setPromo] = React.useState('');
   const [promoMsg, setPromoMsg] = React.useState('');
@@ -82,6 +82,7 @@ export function CheckoutForm({ holdKey }: { holdKey: string }) {
       {expired ? <p role="alert" className="text-sm text-red-600">Your hold expired. <a className="underline" href="/">Choose tickets again</a>.</p> : null}
       {stage === 'details' && !expired ? (
         <div className="space-y-3">
+          {buyer ? <p className="text-sm text-neutral-600">These tickets will be saved under My tickets.</p> : <p className="text-sm text-neutral-600"><a className="underline underline-offset-4" href={`/account?next=${encodeURIComponent(`/checkout?hold=${holdKey}`)}`}>Sign in</a> to keep these tickets under My tickets, or continue as a guest.</p>}
           <label className="block text-sm">Name<input className={inputCls} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoComplete="name" /></label>
           <label className="block text-sm">Email<input className={inputCls} type="email" inputMode="email" autoCapitalize="none" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" /></label>
           <label className="block text-sm">Phone<input className={inputCls} type="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" /></label>

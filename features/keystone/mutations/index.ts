@@ -16,6 +16,7 @@ import * as series from "./series";
 import * as layout from "./layout";
 import * as slotLink from "./slotLink";
 import * as transfer from "./transfer";
+import * as account from "./account";
 import updateActiveUser from "./updateActiveUser";
 import * as seed from "./seed";
 import * as seating from "./seating";
@@ -58,6 +59,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         slotInvite(slotId: ID!, token: String!): JSON
         holderTicket(ticketCode: String!, token: String!): JSON
         lookupTicketOrder(email: String!, orderNumber: String!): JSON
+        myTicketOrders: JSON
         ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
         openMicShows: JSON
         showReport(from: String!, to: String!): JSON
@@ -130,6 +132,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
         retryTicketRefund(refundId: ID!): JSON
         emailTicketOrder(orderId: ID!, idempotencyKey: String!): JSON
+        registerTicketBuyer(name: String!, email: String!, password: String!): JSON
         requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
         approveRequest(approvalId: ID!): JSON
         updateActiveUser(data: UserUpdateProfileInput!): User
@@ -148,6 +151,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         slotInvite: op(slotLink.slotInvite),
         holderTicket: op(transfer.holderTicket),
         lookupTicketOrder: op(tickets.lookupTicketOrder),
+        myTicketOrders: op(account.myTicketOrders),
         ticketOrderConfirmation: op(checkout.ticketOrderConfirmation),
         openMicShows: op(tickets.openMicShows),
         matchingManagerApproval: op(matchingManagerApproval),
@@ -215,6 +219,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         refundTicketOrder: op(checkout.refundTicketOrder),
         retryTicketRefund: op(checkout.retryTicketRefund),
         emailTicketOrder: op(checkout.emailTicketOrder),
+        registerTicketBuyer: op(account.registerTicketBuyer),
         requestApproval: op(night.requestApproval),
         approveRequest: op(night.approveRequest),
         updateActiveUser,

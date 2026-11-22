@@ -70,7 +70,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         </Section>
       ) : null}
 
-      {show.room && (show.status !== 'cancelled' || show.group) ? (
+      {show.status !== 'cancelled' || show.group ? (
         <Section title="Repeat or series">
           <SeriesPanel cancelling={!!(show.group?.cancelRequestedAt && !show.group?.cancelCompletedAt)} cancelDone={!!show.group?.cancelCompletedAt} canRepeat={show.status !== 'cancelled'} showId={show.id} groupId={show.group?.id || null} groupName={show.group?.name || null} startTime={new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(show.startsAt))}
             futureCount={show.group ? show.group.shows.filter((x: any) => x.startsAt && new Date(x.startsAt) > new Date() && !['cancelled', 'completed', 'settled', 'in_progress', 'doors_open'].includes(x.status)).length : 0} />

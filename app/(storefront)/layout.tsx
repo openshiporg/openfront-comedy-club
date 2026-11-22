@@ -4,8 +4,8 @@ import { TopNav, SideNav } from '@/features/storefront/components/NavLinks';
 import { VenueTimeProvider } from '@/features/storefront/components/VenueTime';
 import { venueTimeZone } from '@/features/storefront/lib/venue';
 
-const top = [['/', 'Home'], ['/#shows', 'Shows'], ['/comedians', 'Comedians'], ['/menu', 'Menu'], ['/open-mic', 'Open mic'], ['/lookup', 'Find my order']] as const;
-const side = [['/', 'Home'], ['/#shows', 'Shows'], ['/comedians', 'Comedians'], ['/menu', 'Food & drinks'], ['/open-mic', 'Open mic'], ['/#visit', 'Plan your visit'], ['/lookup', 'Find my order']] as const;
+const top = [['/', 'Home'], ['/#shows', 'Shows'], ['/comedians', 'Comedians'], ['/menu', 'Menu'], ['/open-mic', 'Open mic'], ['/account', 'My tickets']] as const;
+const side = [['/', 'Home'], ['/#shows', 'Shows'], ['/comedians', 'Comedians'], ['/menu', 'Food & drinks'], ['/open-mic', 'Open mic'], ['/#visit', 'Plan your visit'], ['/lookup', 'Find my order'], ['/account', 'My tickets']] as const;
 
 // The storefront's one accent: the red of the club's neon sign. White text on it is 4.74:1, on the hover shade 5.89:1.
 const brand = { '--brand-accent': '#dc2c27', '--brand-accent-hover': '#c2241f', '--brand-accent-soft': '#fdeceb' } as React.CSSProperties;

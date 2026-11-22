@@ -5874,6 +5874,7 @@ type Mutation {
   refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
   retryTicketRefund(refundId: ID!): JSON
   emailTicketOrder(orderId: ID!, idempotencyKey: String!): JSON
+  registerTicketBuyer(name: String!, email: String!, password: String!): JSON
   requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
   approveRequest(approvalId: ID!): JSON
   updateActiveUser(data: UserUpdateProfileInput!): User
@@ -6050,6 +6051,7 @@ type Query {
   slotInvite(slotId: ID!, token: String!): JSON
   holderTicket(ticketCode: String!, token: String!): JSON
   lookupTicketOrder(email: String!, orderNumber: String!): JSON
+  myTicketOrders: JSON
   ticketOrderConfirmation(orderNumber: String!, orderSecret: String!): JSON
   openMicShows: JSON
   showReport(from: String!, to: String!): JSON

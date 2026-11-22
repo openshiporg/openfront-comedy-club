@@ -25,7 +25,7 @@ async function unwrap(p: ReturnType<typeof gqlCall>, key: string) { const r = aw
 
 export async function createHold(v: { showId: string; tierId?: string; quantity?: number; tableIds?: string[]; lines?: { tierId: string; quantity: number; tableIds?: string[] }[] }) { return unwrap(gqlCall(HOLD, { ...v, k: randomUUID() }), 'createTicketHold'); }
 export async function applyPromo(v: { holdKey: string; cartToken: string; code: string }) { return unwrap(gqlCall(PROMO, { ...v, k: randomUUID() }), 'applyPromoToHold'); }
-export async function startCheckout(v: { holdKey: string; cartToken: string; customer: { name: string; email: string; phone?: string }; ageAttested: boolean; seatingRequest?: string; occasion?: string }) { return unwrap(gqlCall(START, { ...v, k: randomUUID() }), 'startTicketCheckout'); }
+export async function startCheckout(v: { holdKey: string; cartToken: string; customer: { name: string; email: string; phone?: string }; ageAttested: boolean; seatingRequest?: string; occasion?: string }) { return unwrap(gqlCall(START, { ...v, k: randomUUID() }, true), 'startTicketCheckout'); }
 export async function completeCheckout(n: string, s: string) { return unwrap(gqlCall(COMPLETE, { n, s }), 'completeTicketCheckout'); }
 export async function abandonCheckout(n: string, s: string) { return unwrap(gqlCall(ABANDON, { n, s }), 'abandonTicketCheckout'); }
 export async function cancelOrder(n: string, e: string) { return unwrap(gqlCall(CANCEL, { n, e, k: randomUUID() }), 'cancelMyTicketOrder'); }
