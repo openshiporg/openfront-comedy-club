@@ -85,7 +85,8 @@ export function DoorScanner({ showId, startsAt, endsAt }: { showId: string; star
       <div className="flex gap-2">
         <input
           autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder="Ticket code or scan QR"
-          className="h-10 min-w-0 flex-1 rounded-md border bg-background px-3 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Ticket code"
+          className="h-11 min-w-0 flex-1 rounded-md border bg-background px-3 font-mono text-base sm:text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           autoCapitalize="characters" autoComplete="off" spellCheck={false}
         />
         <Button type="submit" variant="outline" disabled={pending} className="h-10">Check in</Button>

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { q, venueTimezone, canRead } from '../../lib/server';
-import { money, when } from '../../lib/format';
+import { label, money, when } from '../../lib/format';
 import { Page, Tabs, Section, Row, Empty, Stat, Status, Meta } from '../../components/ui';
 import { CloseRun } from '../components/CloseRun';
 import { PayoutActions } from '../components/PayoutActions';
@@ -17,7 +17,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams?: Pro
   return (
     <Page title="Payouts">
       <p className="text-sm"><Link href="/dashboard/platform/payouts/statements" className="underline">Pay statements by year</Link></p>
-      <Tabs active={tab} items={TABS.map((t) => ({ key: t, label: t, href: `/dashboard/platform/payouts?tab=${t}` }))} />
+      <Tabs active={tab} items={TABS.map((t) => ({ key: t, label: label(t), href: `/dashboard/platform/payouts?tab=${t}` }))} />
       <div>
         {comedianPayouts.length ? comedianPayouts.map((p: any) => (
           <Row key={p.id} className="flex-nowrap items-start gap-x-3">

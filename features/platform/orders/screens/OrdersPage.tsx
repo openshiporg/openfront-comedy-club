@@ -1,5 +1,5 @@
 import { q, venueTimezone } from '../../lib/server';
-import { money, when } from '../../lib/format';
+import { label, money, when } from '../../lib/format';
 import { Page, Tabs, Row, Empty, Status, Meta } from '../../components/ui';
 
 const TABS = ['paid', 'pending_payment', 'partially_refunded', 'refunded', 'cancelled', 'comp'];
@@ -10,7 +10,7 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Prom
   const { ticketOrders } = await q<any>(`query($s: TicketOrderStatusType!) { ticketOrders(where: { status: { equals: $s } }, orderBy: { createdAt: desc }, take: 60) { id orderNumber name email status totalCents partySize createdAt show { title startsAt } } }`, { s: tab });
   return (
     <Page title="Orders">
-      <Tabs active={tab} items={TABS.map((t) => ({ key: t, label: t.replaceAll('_', ' '), href: `/dashboard/platform/orders?tab=${t}`, count: counts[t] }))} />
+      <Tabs active={tab} items={TABS.map((t) => ({ key: t, label: label(t), href: `/dashboard/platform/orders?tab=${t}`, count: counts[t] }))} />
       <div>
         {ticketOrders.length ? ticketOrders.map((o: any) => (
           <Row key={o.id} href={`/dashboard/platform/orders/${o.id}`}>

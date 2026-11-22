@@ -23,7 +23,7 @@ export function RefundPanel({ orderId, remainingTickets, totalCents, keptWeights
         ))}
       </div>
       <p className="text-xs text-muted-foreground">{picked.length ? `${picked.length} tickets selected` : 'No tickets selected refunds every remaining ticket.'}</p>
-      <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason" className="h-11 w-full rounded-md border bg-background px-3 text-sm" />
+      <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason" className="h-11 w-full rounded-md border bg-background px-3 text-base sm:text-sm" />
       <p className="text-sm">Refund amount: ${(amount / 100).toFixed(2)}</p>
       {amount > threshold ? <ApprovalControl actionType="refund_payment" targetId={orderId} amount={amount} reason={reason} onApproval={setApproval} /> : null}
       <button type="button" disabled={pending || !reason.trim() || amount < 1 || (amount > threshold && !approval)} className={pillClass + ' border'} onClick={() => start(async () => {

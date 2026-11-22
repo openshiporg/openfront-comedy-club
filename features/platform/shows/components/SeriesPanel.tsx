@@ -7,7 +7,7 @@ import { previewSeries, seriesProgress } from '../../actions/reports';
 import { Button } from '@/components/ui/button';
 
 type Preview = { rows: { day: string; time: string; problem: string | null }[]; problems: number; tiers: number; lineupSlots: number };
-const input = 'mt-1 block h-10 w-full rounded-md border bg-background px-3 text-sm';
+const input = 'mt-1 block h-11 w-full rounded-md border bg-background px-3 text-base sm:text-sm';
 
 /** Repeat this show on later dates (preview first; all or nothing), and edit or cancel the future shows of its series together. */
 export function SeriesPanel({ cancelling, cancelDone, canRepeat, showId, groupId, groupName, futureCount, startTime }: { cancelling: boolean; cancelDone: boolean; canRepeat: boolean; showId: string; groupId: string | null; groupName: string | null; futureCount: number; startTime: string }) {

@@ -29,7 +29,7 @@ export default async function PayStatementsPage({ searchParams }: { searchParams
     <Page title="Pay statements" crumbs={[{ label: 'Payouts', href: back }]}>
       <form method="get" className="flex flex-wrap items-end gap-3">
         {sp.comedian ? <input type="hidden" name="comedian" value={sp.comedian} /> : null}
-        <label className="text-sm">Year<input type="number" name="year" min={2000} max={thisYear + 1} defaultValue={year} className="mt-1 block h-10 w-28 rounded-md border bg-background px-3 text-sm" /></label>
+        <label className="text-sm">Year<input type="number" name="year" min={2000} max={thisYear + 1} defaultValue={year} className="mt-1 block h-11 w-28 rounded-md border bg-background px-3 text-base sm:text-sm" /></label>
         <Button type="submit" variant="outline">Show year</Button>
       </form>
       {error ? <p role="alert" className="text-sm text-red-600">{error}</p> : null}

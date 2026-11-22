@@ -34,8 +34,9 @@ export function Page({ title, crumbs = [], children }: { title: string; crumbs?:
 
 export function Tabs({ items, active }: { items: { key: string; label: string; href: string; count?: number }[]; active: string }) {
   return (
-    <div className="max-w-full overflow-x-auto">
-      <div className="inline-flex gap-1 rounded-lg bg-muted p-1">
+    // on a phone the strip scrolls sideways; the right edge fades so the hidden tabs are announced
+    <div className="max-w-full overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] sm:[mask-image:none]">
+      <div className="inline-flex gap-1 rounded-lg bg-muted p-1 pr-8 sm:pr-1">
         {items.map((i) => (
           <Link key={i.key} href={i.href} className={cn('inline-flex min-h-11 items-center whitespace-nowrap rounded-md px-3 text-sm font-medium', i.key === active ? 'bg-background shadow-sm' : 'text-muted-foreground')}>
             {i.label}{i.count !== undefined ? <span className="ml-1.5 font-mono text-xs text-muted-foreground">{i.count}</span> : null}

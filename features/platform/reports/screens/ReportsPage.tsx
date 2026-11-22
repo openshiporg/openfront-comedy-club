@@ -20,8 +20,8 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   return (
     <Page title="Reports">
       <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="text-sm">From<input type="date" name="from" defaultValue={from} className="mt-1 block h-10 rounded-md border bg-background px-3 text-sm" /></label>
-        <label className="text-sm">To<input type="date" name="to" defaultValue={to} className="mt-1 block h-10 rounded-md border bg-background px-3 text-sm" /></label>
+        <label className="text-sm">From<input type="date" name="from" defaultValue={from} className="mt-1 block h-11 rounded-md border bg-background px-3 text-base sm:text-sm" /></label>
+        <label className="text-sm">To<input type="date" name="to" defaultValue={to} className="mt-1 block h-11 rounded-md border bg-background px-3 text-base sm:text-sm" /></label>
         <Button type="submit" variant="outline">Run report</Button>
       </form>
       {error ? <p role="alert" className="text-sm text-red-600">{error}</p> : null}

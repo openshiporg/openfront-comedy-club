@@ -11,4 +11,5 @@ export function when(iso: string | null | undefined, tz = 'America/Chicago', sty
   return new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts }).format(d);
 }
 
-export const label = (value: string | null | undefined) => (value || '').replaceAll('_', ' ');
+/** A stored value as words: 'partially_refunded' → 'Partially refunded'. */
+export const label = (value: string | null | undefined) => { const s = (value || '').replaceAll('_', ' '); return s.charAt(0).toUpperCase() + s.slice(1); };

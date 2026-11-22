@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 type Table = { id: string; label: string; seats: number; shape: string };
 type Sec = { id: string; name: string; tables: Table[] };
 type Change = Record<string, unknown> & { kind: string };
-const field = 'mt-1 block h-11 w-full rounded-md border bg-background px-3 text-sm';
+const field = 'mt-1 block h-11 w-full rounded-md border bg-background px-3 text-base sm:text-sm';
 
 const describe = (c: Change, secs: Sec[]) => {
   const t = secs.flatMap((s) => s.tables).find((x) => x.id === c.tableId);
