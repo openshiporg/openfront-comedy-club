@@ -57,7 +57,7 @@ export async function signOutBuyer() {
 
 export type MyTickets = {
   name: string; email: string;
-  orders: { orderNumber: string; status: string; totalCents: number; partySize: number; show: { id: string; title: string; startsAt: string; doorsAt: string | null; room: { name: string } | null }; tickets: { ticketCode: string; status: string; token: string | null }[] }[];
+  orders: { orderNumber: string; upcoming: boolean; status: string; totalCents: number; partySize: number; show: { id: string; title: string; startsAt: string; doorsAt: string | null; room: { name: string } | null }; tickets: { ticketCode: string; status: string; token: string | null }[] }[];
 };
 
 /** The signed-in buyer and their orders, or null when nobody is signed in. */

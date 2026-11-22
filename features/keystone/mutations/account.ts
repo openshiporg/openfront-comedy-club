@@ -31,6 +31,7 @@ export async function registerTicketBuyer(_: any, a: any, context: any) {
 export async function myTicketOrders(_: any, _a: any, context: any) {
   const id = signedIn(context);
   const user = await context.prisma.user.findUnique({ where: { id }, select: { name: true, email: true } });
+  const recent = Date.now() - 4 * 3600_000; // a show stays under Upcoming until it has ended
   const orders = await context.prisma.ticketOrder.findMany({
     where: { customerId: id, status: { in: OWN } },
     orderBy: { show: { startsAt: 'desc' } },
@@ -47,7 +48,7 @@ export async function myTicketOrders(_: any, _a: any, context: any) {
       const passedOn = new Set(o.tickets.filter((t: any) => t.transferredFromCode).map((t: any) => t.transferredFromCode));
       const mine = o.tickets.filter((t: any) => !t.transferredFromCode);
       return {
-        orderNumber: o.orderNumber, status: o.status, totalCents: o.totalCents, partySize: o.partySize, show: o.show,
+        orderNumber: o.orderNumber, upcoming: new Date(o.show.startsAt).getTime() > recent, status: o.status, totalCents: o.totalCents, partySize: o.partySize, show: o.show,
         tickets: mine.map((t: any) => {
           const live = ['valid', 'checked_in'].includes(t.status) && !passedOn.has(t.ticketCode);
           return { ticketCode: t.ticketCode, status: passedOn.has(t.ticketCode) ? 'transferred' : t.status, token: live ? ticketToken(t.ticketCode) : null };

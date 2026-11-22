@@ -25,9 +25,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     );
   }
   const tz = await venueTimeZone();
-  const now = Date.now();
-  const upcoming = me.orders.filter((o) => new Date(o.show.startsAt).getTime() > now - 4 * 3600_000);
-  const past = me.orders.filter((o) => !upcoming.includes(o)).slice(0, 20);
+  const upcoming = me.orders.filter((o) => o.upcoming).reverse(); // soonest first
+  const past = me.orders.filter((o) => !o.upcoming).slice(0, 20);
   const list = (orders: typeof me.orders) => orders.map((o) => (
     <li key={o.orderNumber} className={`${card} space-y-3 p-4`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
