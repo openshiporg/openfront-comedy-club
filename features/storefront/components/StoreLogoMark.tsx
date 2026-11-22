@@ -12,7 +12,7 @@ export async function StoreLogoMark() {
     <div
       dangerouslySetInnerHTML={{ __html: logoSvg }}
       style={{ filter: `hue-rotate(${logoColor}deg)` }}
-      className="size-4 sm:size-5 [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
+      className="size-6 shrink-0 [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
       data-testid="store-logo-mark"
     />
     <span className="min-w-0 truncate">{name}</span>

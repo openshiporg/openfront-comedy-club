@@ -2,12 +2,14 @@
 
 import * as React from 'react';
 import { answerSlot, loadSlotInvite } from '../lib/actions';
-import { price, showTime } from '../lib/format';
+import { price } from '../lib/format';
+import { useShowTime } from './VenueTime';
 
 const btn = 'inline-flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium disabled:opacity-50';
 
 /** The emailed link carries the token in the fragment, so it never reaches a server log. */
 export function SlotResponse({ slotId }: { slotId: string }) {
+  const showTime = useShowTime();
   const [token, setToken] = React.useState('');
   const [state, setState] = React.useState<{ kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ok'; o: any }>({ kind: 'loading' });
   const [pending, start] = React.useTransition();

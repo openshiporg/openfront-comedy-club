@@ -2,11 +2,13 @@
 
 import * as React from 'react';
 import { loadHolderTicket } from '../lib/actions';
-import { ageLabel, showTime } from '../lib/format';
+import { ageLabel } from '../lib/format';
+import { useShowTime } from './VenueTime';
 import { TicketQr } from './TicketQr';
 
 /** The scan token travels in the URL fragment, so it never reaches a server log. */
 export function HolderTicket({ ticketCode }: { ticketCode: string }) {
+  const showTime = useShowTime();
   const [state, setState] = React.useState<{ kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'ok'; t: any }>({ kind: 'loading' });
   const [token, setToken] = React.useState('');
   React.useEffect(() => {
@@ -26,8 +28,8 @@ export function HolderTicket({ ticketCode }: { ticketCode: string }) {
       <div>
         <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground" data-testid="ticket-status">{label[t.status] || t.status}</p>
         <p className="mt-1 break-all font-mono text-2xl font-semibold">{t.ticketCode}</p>
-        <p className="mt-2 text-sm">{t.show.title} · {showTime(t.show.startsAt)}</p>
-        <p className="text-sm text-muted-foreground">{t.show.room?.name} · doors {showTime(t.show.doorsAt || t.show.startsAt, 'time')} · {ageLabel(t.show.ageRestriction)}</p>
+        <p className="mt-2 text-sm">{t.show.title} · {showTime(t.show.startsAt, 'date')}</p>
+        <p className="text-sm text-muted-foreground">{[t.show.doorsAt ? `Doors ${showTime(t.show.doorsAt, 'time')}` : '', `Show ${showTime(t.show.startsAt, 'time')}`, t.show.room?.name, ageLabel(t.show.ageRestriction)].filter(Boolean).join(' · ')}</p>
       </div>
       <dl>
         {row('Holder', t.holderName)}

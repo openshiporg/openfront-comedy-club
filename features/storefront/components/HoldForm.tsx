@@ -3,7 +3,8 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { createHold } from '../lib/actions';
-import { price, showTime } from '../lib/format';
+import { price } from '../lib/format';
+import { useShowTime } from './VenueTime';
 import { WaitlistForm } from './WaitlistForm';
 import { saleState } from '../../keystone/lib/saleWindow';
 import { MAX_GROUP_HOLD } from '../../keystone/lib/groupHold';
@@ -15,6 +16,7 @@ const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[var(--b
 const chip = (on: boolean, off?: boolean) => `min-h-11 min-w-12 rounded-full border px-2 py-2 text-sm ${on ? 'border-[var(--brand-accent)] bg-[var(--brand-accent)] text-white' : ''} ${off ? 'opacity-40' : ''}`;
 
 export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { showId: string; title: string; ageRestriction: string; tiers: Tier[]; sections: Section[] }) {
+  const showTime = useShowTime();
   const router = useRouter();
   const open = tiers.filter((t) => saleState(t) === 'open' && t.sold + t.held < t.capacity);
   const upcoming = tiers.filter((t) => saleState(t) === 'scheduled');

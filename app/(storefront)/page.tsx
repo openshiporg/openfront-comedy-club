@@ -3,15 +3,13 @@ import Image from 'next/image';
 import { gqlCall, SHOWS_ON_SALE } from '@/features/storefront/lib/data';
 import { showTime, ageLabel, price } from '@/features/storefront/lib/format';
 import { saleState } from '@/features/keystone/lib/saleWindow';
-import { venueContent } from '@/features/storefront/lib/venue';
+import { venueContent, venueTimeZone } from '@/features/storefront/lib/venue';
 import { Initials } from '@/features/storefront/components/Initials';
 import { ShowFinder } from '@/features/storefront/components/ShowFinder';
 import { btnPrimary, btnSoft, card, sectionTitle } from '@/features/storefront/components/ui';
 
 export const dynamic = 'force-dynamic';
 
-const short = (iso: string) => new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
-const dayOf = (iso: string) => new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(iso));
 
 type Tier = { priceCents: number; capacity: number; sold: number; held: number; status?: string; salesStartAt?: string | null; salesEndAt?: string | null };
 type SaleShow = { id: string; title: string; startsAt: string; doorsAt: string | null; ageRestriction: string; room: { name: string } | null; tiers: Tier[] };
@@ -24,7 +22,12 @@ function fromLabel(s: SaleShow) {
 }
 
 export default async function Home() {
-  const [r, content] = await Promise.all([gqlCall<{ showsOnSale: SaleShow[] }>(SHOWS_ON_SALE), venueContent()]);
+  const [r, content, zone] = await Promise.all([gqlCall<{ showsOnSale: SaleShow[] }>(SHOWS_ON_SALE), venueContent(), venueTimeZone()]);
+  const short = (iso: string) => showTime(iso, 'short', zone);
+  const dayOf = (iso: string) => showTime(iso, 'day', zone);
+  const clock = (iso: string) => showTime(iso, 'time', zone);
+  // "Doors 7:00 PM · Show 8:00 PM": both times are always named, so neither can be read as the other.
+  const times = (s: SaleShow) => `${s.doorsAt ? `Doors ${clock(s.doorsAt)} · ` : ''}Show ${clock(s.startsAt)}`;
   const { comedians, lineups, menu, venue } = content;
   const thumb = (s: SaleShow, i: number) => (/open mic/i.test(s.title) ? '/storefront/mic.webp' : ['/storefront/tables.webp', '/storefront/curtain.webp'][i % 2]);
   const drinks = menu.filter((m) => m.category !== 'food');
@@ -32,6 +35,8 @@ export default async function Home() {
   const shows = r.ok ? r.data.showsOnSale : [];
   const feat = shows[0];
   const rest = shows.slice(1, 5);
+  // The same act often plays twice in one night; the featured card names the other showtimes instead of looking like one show with two times.
+  const alsoTonight = feat ? shows.filter((s) => s.id !== feat.id && s.title === feat.title && dayOf(s.startsAt) === dayOf(feat.startsAt)) : [];
   const days = Array.from(new Set(shows.map((s) => dayOf(s.startsAt))));
   const today = dayOf(new Date().toISOString());
   const tonight = shows.filter((s) => dayOf(s.startsAt) === today);
@@ -54,7 +59,9 @@ export default async function Home() {
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Featured show</p>
                 <h2 className="text-xl font-semibold tracking-tight">{feat.title}</h2>
-                <p className="text-sm text-neutral-500">{showTime(feat.startsAt)} · {feat.room?.name} · {ageLabel(feat.ageRestriction)}</p>
+                <p className="text-sm text-neutral-500">{showTime(feat.startsAt, 'date', zone)} · {times(feat)}</p>
+                <p className="text-sm text-neutral-500">{[feat.room?.name, ageLabel(feat.ageRestriction)].filter(Boolean).join(' · ')}</p>
+                {alsoTonight.length ? <p className="mt-1 text-sm text-neutral-700">Also at {alsoTonight.map((s, i) => <span key={s.id}>{i ? ', ' : ''}<Link href={`/shows/${s.id}`} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">{clock(s.startsAt)}</Link></span>)}</p> : null}
                 {lineups[feat.id]?.length ? <p className="mt-1 text-sm text-neutral-700">With {lineups[feat.id].join(', ')}</p> : null}
               </div>
               <div className="flex gap-2"><Link href={`/shows/${feat.id}`} className={btnPrimary}>Get tickets →</Link><Link href="/#shows" className={btnSoft}>All shows</Link></div>
@@ -71,7 +78,8 @@ export default async function Home() {
                   <div className="min-w-0 flex-1 basis-40">
                     <p className="font-semibold">{s.title}</p>
                     {lineups[s.id]?.length ? <p className="truncate text-sm text-neutral-600">With {lineups[s.id].join(', ')}</p> : null}
-                    <p className="text-sm text-neutral-500">{short(s.startsAt)} · {s.room?.name} · {ageLabel(s.ageRestriction)}</p>
+                    <p className="text-sm text-neutral-500">{dayOf(s.startsAt)} · {times(s)}</p>
+                    <p className="text-sm text-neutral-500">{[s.room?.name, ageLabel(s.ageRestriction)].filter(Boolean).join(' · ')}</p>
                   </div>
                   <Link href={`/shows/${s.id}`} className={btnSoft}>{fromLabel(s)} · Get tickets</Link>
                 </li>
@@ -153,7 +161,7 @@ export default async function Home() {
       <aside className="hidden space-y-4 xl:block">
         <div className="text-sm">
           <p className="mb-3 flex items-center gap-2 font-semibold">{tonight.length ? <>Open tonight <span aria-hidden className="size-2 rounded-full bg-green-500" /></> : 'Next show'}</p>
-          {(tonight[0] || feat) ? <p className="text-neutral-600">{(tonight[0] || feat).title}<br />{(tonight[0] || feat).doorsAt ? <>Doors {showTime((tonight[0] || feat).doorsAt || '', 'time')}<br /></> : null}Show {showTime((tonight[0] || feat).startsAt, 'time')} · {(tonight[0] || feat).room?.name}{venue?.address ? <><br />{venue.address}</> : null}</p> : null}
+          {(tonight[0] || feat) ? <p className="text-neutral-600">{(tonight[0] || feat).title}<br />{(tonight[0] || feat).doorsAt ? <>Doors {clock((tonight[0] || feat).doorsAt || '')}<br /></> : null}Show {clock((tonight[0] || feat).startsAt)} · {(tonight[0] || feat).room?.name}{venue?.address ? <><br />{venue.address}</> : null}</p> : null}
         </div>
         {feat ? <Link href={`/shows/${(tonight[0] || feat).id}`} className={`${btnSoft} w-full justify-between`}>Get tickets <span>→</span></Link> : null}
         <div className="border-t pt-4 text-sm">

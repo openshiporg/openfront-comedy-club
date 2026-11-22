@@ -41,7 +41,8 @@ export function CheckoutForm({ holdKey }: { holdKey: string }) {
   React.useEffect(() => {
     if (stage !== 'pay' || !order || !stripeReady || !cardRef.current || cardEl.current) return;
     stripeRef.current = window.Stripe(order.publishableKey);
-    const elements = stripeRef.current.elements({ clientSecret: order.clientSecret });
+    const accent = getComputedStyle(cardRef.current).getPropertyValue('--brand-accent').trim();
+    const elements = stripeRef.current.elements({ clientSecret: order.clientSecret, ...(accent ? { appearance: { variables: { colorPrimary: accent } } } : {}) });
     cardEl.current = elements.create('payment');
     cardEl.current.mount(cardRef.current);
     (stripeRef.current as any)._elements = elements;

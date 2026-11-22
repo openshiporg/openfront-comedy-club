@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { gqlCall, SHOW_AVAILABILITY } from '@/features/storefront/lib/data';
 import { showTime, ageLabel } from '@/features/storefront/lib/format';
+import { venueTimeZone } from '@/features/storefront/lib/venue';
 import { HoldForm } from '@/features/storefront/components/HoldForm';
 
 export const dynamic = 'force-dynamic';
@@ -13,12 +14,13 @@ export default async function ShowPage({ params }: { params: Promise<{ id: strin
     return <p role="alert" className="text-sm text-red-600">{r.error}</p>;
   }
   const show = r.data.showAvailability;
+  const zone = await venueTimeZone();
   const taken = new Set<string>((show.occupancies || []).map((o: any) => o.tableId));
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">{show.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{[showTime(show.startsAt), show.room?.name, ageLabel(show.ageRestriction)].filter(Boolean).join(' · ')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{[showTime(show.startsAt, 'date', zone), show.doorsAt ? `Doors ${showTime(show.doorsAt, 'time', zone)}` : '', `Show ${showTime(show.startsAt, 'time', zone)}`, show.room?.name, ageLabel(show.ageRestriction)].filter(Boolean).join(' · ')}</p>
         {show.publicNote ? <p className="mt-2 text-sm">{show.publicNote}</p> : null}
       </div>
       {show.lineup?.length ? (

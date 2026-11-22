@@ -3,12 +3,14 @@
 import * as React from 'react';
 import { lookupOrder } from '../lib/clientActions';
 import { cancelOrder } from '../lib/actions';
-import { price, showTime } from '../lib/format';
+import { price } from '../lib/format';
+import { useShowTime } from './VenueTime';
 
 const input = 'h-11 w-full rounded-full border border-neutral-200 bg-background px-4 text-sm';
 const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[var(--brand-accent)] px-5 text-sm font-semibold text-white hover:bg-[var(--brand-accent-hover)] disabled:opacity-50';
 
 export function LookupForm() {
+  const showTime = useShowTime();
   const [email, setEmail] = React.useState(''); const [number, setNumber] = React.useState('');
   const [order, setOrder] = React.useState<any>(null); const [msg, setMsg] = React.useState(''); const [pending, start] = React.useTransition();
   return (

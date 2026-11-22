@@ -3,10 +3,11 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { claimWaitlistOffer } from '../lib/actions';
-import { showTime } from '../lib/format';
+import { useShowTime } from './VenueTime';
 
 /** The emailed link carries the hold token in the fragment, so it never reaches a server log. */
 export function WaitlistClaim({ holdKey }: { holdKey: string }) {
+  const showTime = useShowTime();
   const router = useRouter();
   const [state, setState] = React.useState<{ kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'offer'; o: any }>({ kind: 'loading' });
   React.useEffect(() => {

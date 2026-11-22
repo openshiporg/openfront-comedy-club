@@ -3,12 +3,14 @@
 import * as React from 'react';
 import { loadConfirmation } from '../lib/clientActions';
 import { completeCheckout } from '../lib/actions';
-import { price, showTime, ageLabel } from '../lib/format';
+import { price, ageLabel } from '../lib/format';
+import { useShowTime } from './VenueTime';
 import { TransferTicket } from './TransferTicket';
 import { TicketQr } from './TicketQr';
 
 /** Each valid ticket shows a QR code of its opaque scan token; the ticket code is printed too, for typing at the door. */
 export function Confirmation({ orderNumber }: { orderNumber: string }) {
+  const showTime = useShowTime();
   const [order, setOrder] = React.useState<any>(null);
   const [error, setError] = React.useState('');
   const [secret, setSecret] = React.useState('');
@@ -31,8 +33,8 @@ export function Confirmation({ orderNumber }: { orderNumber: string }) {
       <div>
         <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">{paid ? 'Confirmed' : order.status.replace('_', ' ')}</p>
         <h1 className="mt-1 break-all font-mono text-2xl font-semibold sm:text-3xl" data-testid="order-number">{order.orderNumber}</h1>
-        <p className="mt-2 text-sm">{order.show.title} · {showTime(order.show.startsAt)}</p>
-        <p className="text-sm text-muted-foreground">{order.show.room?.name} · doors {showTime(order.show.doorsAt, 'time')} · {ageLabel(order.show.ageRestriction)}</p>
+        <p className="mt-2 text-sm">{order.show.title} · {showTime(order.show.startsAt, 'date')}</p>
+        <p className="text-sm text-muted-foreground">{[order.show.doorsAt ? `Doors ${showTime(order.show.doorsAt, 'time')}` : '', `Show ${showTime(order.show.startsAt, 'time')}`, order.show.room?.name, ageLabel(order.show.ageRestriction)].filter(Boolean).join(' · ')}</p>
       </div>
       <section>
         <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">Tickets</h2>

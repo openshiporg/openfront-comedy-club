@@ -1,4 +1,18 @@
+import { cache } from 'react';
 import { keystoneContext } from '@/features/keystone/context';
+import { DEFAULT_TIME_ZONE } from './format';
+
+/** The venue's time zone (Venue.timezone), read once per request. Server only. */
+export const venueTimeZone = cache(async (): Promise<string> => {
+  try {
+    const rows = (await keystoneContext.sudo().query.Venue.findMany({ take: 1, query: 'timezone' })) as readonly { timezone: string | null }[];
+    const zone = rows[0]?.timezone || DEFAULT_TIME_ZONE;
+    new Intl.DateTimeFormat('en-US', { timeZone: zone });
+    return zone;
+  } catch {
+    return DEFAULT_TIME_ZONE;
+  }
+});
 
 export type PublicComedian = { id: string; stageName: string; homeCity: string; headshot: string | null; nextShowId: string; headliner: boolean };
 export type PublicMenuItem = { id: string; name: string; category: string; priceCents: number; image: string | null };

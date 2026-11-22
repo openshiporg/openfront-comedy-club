@@ -2,13 +2,14 @@
 
 import * as React from 'react';
 import { micSignup } from '../lib/actions';
-import { showTime } from '../lib/format';
+import { useShowTime } from './VenueTime';
 
 const input = 'h-11 w-full rounded-full border border-neutral-200 bg-background px-4 text-sm';
 export function OpenMicForm({ shows }: { shows: { id: string; title: string; startsAt: string; signupOpensAt: string | null }[] }) {
   return <div className="space-y-8">{shows.map((s) => <One key={s.id} show={s} />)}</div>;
 }
 function One({ show }: { show: { id: string; title: string; startsAt: string; signupOpensAt: string | null } }) {
+  const showTime = useShowTime();
   const [name, setName] = React.useState(''); const [email, setEmail] = React.useState(''); const [msg, setMsg] = React.useState(''); const [pending, start] = React.useTransition();
   const opens = show.signupOpensAt ? new Date(show.signupOpensAt) : null;
   const closed = !opens || opens.getTime() > Date.now();
