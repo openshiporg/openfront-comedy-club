@@ -23,7 +23,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams?: Pro
           <Row key={p.id} className="flex-nowrap items-start gap-x-3">
             <div className="min-w-0 flex-1 space-y-2">
   <span className="block min-w-0"><span className="font-medium">{p.comedian?.stageName}</span> <Meta>{p.show ? `${p.show.title} · ${when(p.show.startsAt, tz, 'day')}` : p.run ? `Run fee · ${p.run.notes || ''} · ${when(p.run.startAt, tz, 'day')}` : 'Manual payout'} · {p.method}{p.reference ? ` ${p.reference}` : ''}</Meta></span>
-              <PayoutActions id={p.id} status={p.status} />
+              {p.status === "draft" && !p.amountCents ? <Meta>Nothing to pay: no fee or ticket share was earned.</Meta> : <PayoutActions id={p.id} status={p.status} />}
             </div>
             <span className="shrink-0 whitespace-nowrap text-right font-mono text-xs tabular-nums">{money(p.amountCents)}</span>
           </Row>

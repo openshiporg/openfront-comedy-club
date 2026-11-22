@@ -22,7 +22,3 @@ export const OPEN_MIC = gql`{ openMicShows }`;
 export const CONFIRMATION = gql`query($n: String!, $s: String!) { ticketOrderConfirmation(orderNumber: $n, orderSecret: $s) }`;
 export const LOOKUP = gql`query($e: String!, $n: String!) { lookupTicketOrder(email: $e, orderNumber: $n) }`;
 
-export async function venueInfo() {
-  const r = await gqlCall<{ showsOnSale: any[] }>(SHOWS_ON_SALE);
-  return r.ok ? r.data.showsOnSale : [];
-}
