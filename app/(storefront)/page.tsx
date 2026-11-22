@@ -152,7 +152,7 @@ export default async function Home() {
       </div>
       <aside className="hidden space-y-4 xl:block">
         <div className="text-sm">
-          <p className="mb-3 flex items-center gap-2 font-semibold">{tonight.length ? 'Open tonight' : 'Next show'} <span className="size-2 rounded-full bg-green-500" /></p>
+          <p className="mb-3 flex items-center gap-2 font-semibold">{tonight.length ? <>Open tonight <span aria-hidden className="size-2 rounded-full bg-green-500" /></> : 'Next show'}</p>
           {(tonight[0] || feat) ? <p className="text-neutral-600">{(tonight[0] || feat).title}<br />{(tonight[0] || feat).doorsAt ? <>Doors {showTime((tonight[0] || feat).doorsAt || '', 'time')}<br /></> : null}Show {showTime((tonight[0] || feat).startsAt, 'time')} · {(tonight[0] || feat).room?.name}{venue?.address ? <><br />{venue.address}</> : null}</p> : null}
         </div>
         {feat ? <Link href={`/shows/${(tonight[0] || feat).id}`} className={`${btnSoft} w-full justify-between`}>Get tickets <span>→</span></Link> : null}

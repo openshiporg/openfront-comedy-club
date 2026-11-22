@@ -6,7 +6,7 @@ import { cancelOrder } from '../lib/actions';
 import { price, showTime } from '../lib/format';
 
 const input = 'h-11 w-full rounded-full border border-neutral-200 bg-background px-4 text-sm';
-const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[#e9f93d] px-5 text-sm font-semibold text-black hover:bg-[#dff022] disabled:opacity-50';
+const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[var(--brand-accent)] px-5 text-sm font-semibold text-white hover:bg-[var(--brand-accent-hover)] disabled:opacity-50';
 
 export function LookupForm() {
   const [email, setEmail] = React.useState(''); const [number, setNumber] = React.useState('');

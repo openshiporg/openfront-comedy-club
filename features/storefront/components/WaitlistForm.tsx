@@ -4,7 +4,7 @@ import * as React from 'react';
 import { joinWaitlist } from '../lib/actions';
 
 const field = 'h-11 w-full rounded-full border border-neutral-200 bg-background px-4 text-sm';
-const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[#e9f93d] px-5 text-sm font-semibold text-black hover:bg-[#dff022] disabled:opacity-50';
+const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[var(--brand-accent)] px-5 text-sm font-semibold text-white hover:bg-[var(--brand-accent-hover)] disabled:opacity-50';
 
 export function WaitlistForm({ showId, title }: { showId: string; title: string }) {
   const [form, setForm] = React.useState({ name: '', email: '', size: 2 });

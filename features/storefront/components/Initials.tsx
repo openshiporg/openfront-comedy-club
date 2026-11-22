@@ -1,4 +1,4 @@
-const TONES = ['bg-[#e9f93d] text-black', 'bg-neutral-900 text-white', 'bg-rose-100 text-rose-900', 'bg-violet-100 text-violet-900', 'bg-amber-100 text-amber-900', 'bg-sky-100 text-sky-900'];
+const TONES = ['bg-[var(--brand-accent)] text-white', 'bg-neutral-900 text-white', 'bg-rose-100 text-rose-900', 'bg-violet-100 text-violet-900', 'bg-amber-100 text-amber-900', 'bg-sky-100 text-sky-900'];
 
 /** A performer's mark when the club has not uploaded a headshot: their initials. */
 export function Initials({ name, className = '' }: { name: string; className?: string }) {

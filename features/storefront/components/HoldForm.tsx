@@ -11,8 +11,8 @@ import { MAX_GROUP_HOLD } from '../../keystone/lib/groupHold';
 type Tier = { id: string; name: string; priceCents: number; feeCents: number; capacity: number; sold: number; held: number; status: string; isTableTier: boolean; salesStartAt?: string | null; salesEndAt?: string | null };
 type Section = { name: string; tables: { id: string; label: string; seats: number; taken: boolean }[] };
 
-const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[#e9f93d] px-5 text-sm font-semibold text-black hover:bg-[#dff022] disabled:opacity-50';
-const chip = (on: boolean, off?: boolean) => `min-h-11 min-w-12 rounded-full border px-2 py-2 text-sm ${on ? 'border-neutral-950 bg-[#e9f93d] text-black' : ''} ${off ? 'opacity-40' : ''}`;
+const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[var(--brand-accent)] px-5 text-sm font-semibold text-white hover:bg-[var(--brand-accent-hover)] disabled:opacity-50';
+const chip = (on: boolean, off?: boolean) => `min-h-11 min-w-12 rounded-full border px-2 py-2 text-sm ${on ? 'border-[var(--brand-accent)] bg-[var(--brand-accent)] text-white' : ''} ${off ? 'opacity-40' : ''}`;
 
 export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { showId: string; title: string; ageRestriction: string; tiers: Tier[]; sections: Section[] }) {
   const router = useRouter();
@@ -61,9 +61,9 @@ export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { s
         <>
       <div className="space-y-2">
         {open.map((t) => (
-          <label key={t.id} className={`flex cursor-pointer flex-wrap items-center justify-between gap-2 rounded-2xl border p-3 ${t.id === tierId ? "border-neutral-950 bg-[#f7fcc4]" : ""}`}>
+          <label key={t.id} className={`flex cursor-pointer flex-wrap items-center justify-between gap-2 rounded-2xl border p-3 ${t.id === tierId ? "border-[var(--brand-accent)] bg-[var(--brand-accent-soft)]" : ""}`}>
             <span className="flex items-center gap-3">
-              <input type="radio" name="tier" checked={t.id === tierId} onChange={() => { setTier(t.id); setTables([]); }} />
+              <input type="radio" name="tier" className="accent-[var(--brand-accent)]" checked={t.id === tierId} onChange={() => { setTier(t.id); setTables([]); }} />
               <span className="font-medium">{t.name}</span>
             </span>
             <span className="text-sm">{price(t.priceCents)} <span className="text-muted-foreground">+ {price(t.feeCents)} fee</span></span>

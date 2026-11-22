@@ -19,7 +19,7 @@ function One({ show }: { show: { id: string; title: string; startsAt: string; si
         <>
           <label className="block text-sm">Stage name<input className={input} value={name} onChange={(e) => setName(e.target.value)} /></label>
           <label className="block text-sm">Email<input className={input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-          <button type="button" className="inline-flex h-11 items-center rounded-md bg-[#e9f93d] px-5 text-sm font-semibold text-black hover:bg-[#dff022] disabled:opacity-50" disabled={pending || !name || !email} onClick={() => start(async () => { const r = await micSignup({ showId: show.id, name, email }); setMsg(r.ok ? 'You are on the list.' : r.error); })}>Sign up</button>
+          <button type="button" className="inline-flex h-11 items-center rounded-md bg-[var(--brand-accent)] px-5 text-sm font-semibold text-white hover:bg-[var(--brand-accent-hover)] disabled:opacity-50" disabled={pending || !name || !email} onClick={() => start(async () => { const r = await micSignup({ showId: show.id, name, email }); setMsg(r.ok ? 'You are on the list.' : r.error); })}>Sign up</button>
         </>
       )}
       {msg ? <p role="status" className="text-sm">{msg}</p> : null}
