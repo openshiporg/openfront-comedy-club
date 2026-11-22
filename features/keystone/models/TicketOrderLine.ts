@@ -13,4 +13,4 @@ export const TicketOrderLine = domainList({
   currencyCode: currency(),
   priceTierId: text(),
   tickets: relationship({ref:'Ticket.line',many:true}),
-}, 'canManageOrders', true);
+}, 'canManageOrders', true, false, undefined, ['canManageDoor', 'canIssueRefunds']);

@@ -29,4 +29,4 @@ export const TicketOrder = domainList({
   payments: relationship({ref:'Payment.order',many:true}),
   redemptions: relationship({ ref: 'PromoRedemption.order', many: true }),
   refunds: relationship({ref:'Refund.order',many:true}),
-}, 'canManageOrders', true);
+}, 'canManageOrders', true, false, undefined, ['canManageDoor', 'canIssueRefunds']);

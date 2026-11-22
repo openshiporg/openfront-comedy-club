@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { q, venueTimezone } from '../../lib/server';
+import { q, venueTimezone, canRead } from '../../lib/server';
 import { money, when } from '../../lib/format';
 import { Page, Section, Row, Stat, Status, Meta } from '../../components/ui';
 import { RefundPanel } from '../components/RefundPanel';
@@ -18,6 +18,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     payments { amount refundedAmount status }
   } }`, { id });
   if (!o) notFound();
+  const refunder = await canRead('refunds');
   const { venueSettingsItems } = await q<any>(`{ venueSettingsItems(take: 1) { approvalThresholdCents } }`);
   // the refund share the server will charge back: replaced tickets drop out, each ticket weighs its own line
   const kept = o.tickets.filter((t: any) => !o.tickets.some((x: any) => x.transferredFromCode === t.ticketCode)).map((t: any) => ticketWeight(t.line));
@@ -29,7 +30,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <Section title="Lines">{o.lines.map((l: any) => <Row key={l.id}><span>{l.quantity} × {l.tierName}</span><span className="font-mono text-xs">{money(l.lineTotalCents)}</span></Row>)}</Section>
       <Section title="Tickets" aside={['paid', 'partially_refunded', 'comp'].includes(o.status) ? <ActionButton op="emailTicketOrder" vars={{ orderId: o.id }} confirm={`Email the valid tickets to ${o.email}?`}>Email tickets</ActionButton> : null}>{o.tickets.map((t: any) => <Row key={t.id}><span className="font-mono text-xs">{t.ticketCode}</span><Status value={t.status} /></Row>)}</Section>
       {o.refunds.length ? <Section title="Refunds">{o.refunds.map((r: any) => <Row key={r.id}><span className="min-w-0 break-words">{r.reason}</span><span className="inline-flex items-center gap-3"><Meta>{money(r.amount)}</Meta><Status value={r.status} />{['processing', 'unknown'].includes(r.status) ? <ActionButton op="retryTicketRefund" vars={{ refundId: r.id }}>Retry</ActionButton> : null}</span></Row>)}</Section> : null}
-      {['paid', 'partially_refunded'].includes(o.status) ? <Section title="Refund"><RefundPanel orderId={o.id} totalCents={o.totalCents} keptWeights={kept} remainingCents={payment ? payment.amount - payment.refundedAmount : 0} threshold={venueSettingsItems[0]?.approvalThresholdCents ?? 10000} remainingTickets={o.tickets.filter((t: any) => t.status === 'valid').map((t: any) => ({ id: t.id, code: t.ticketCode, weight: ticketWeight(t.line) }))} /></Section> : null}
+      {refunder && ['paid', 'partially_refunded'].includes(o.status) ? <Section title="Refund"><RefundPanel orderId={o.id} totalCents={o.totalCents} keptWeights={kept} remainingCents={payment ? payment.amount - payment.refundedAmount : 0} threshold={venueSettingsItems[0]?.approvalThresholdCents ?? 10000} remainingTickets={o.tickets.filter((t: any) => t.status === 'valid').map((t: any) => ({ id: t.id, code: t.ticketCode, weight: ticketWeight(t.line) }))} /></Section> : null}
     </Page>
   );
 }

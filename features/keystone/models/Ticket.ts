@@ -12,4 +12,4 @@ export const Ticket = domainList({
   transferredFromCode: text(),
   status: lifecycle(['valid', 'checked_in', 'void', 'refunded']),
   checkIns: relationship({ref:'CheckIn.ticket',many:true}),
-}, 'canManageDoor', true);
+}, 'canManageDoor', true, false, undefined, ['canIssueRefunds']);

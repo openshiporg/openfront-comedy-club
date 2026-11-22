@@ -9,6 +9,7 @@ import { cancelPayment, createPayment, getPaymentStatus, refundPayment } from '.
 import { assertCheckoutProviderObservation } from '../utils/checkoutProviderObservation';
 import { nextPaymentStatus, refundOutcome } from '../utils/paymentState';
 import { sendTicketEmail } from '../lib/ticketEmail';
+import { permissions } from '../access';
 
 const PROVIDER_CODE = 'pp_stripe';
 export const ticketToken = (ticketCode: string) =>
@@ -134,7 +135,7 @@ export async function emailTickets(context: any, orderId: string) {
 
 /** Box office: send the tickets again, e.g. when the buyer says the first email did not arrive. */
 export async function emailTicketOrder(_: any, a: any, context: any) {
-  requirePermission(context, 'canManageOrders');
+  if (!['canManageOrders', 'canManageDoor'].some((p: any) => permissions[p as keyof typeof permissions]({ session: context.session }))) throw new Error('Not authorized');
   const order = await context.prisma.ticketOrder.findUnique({ where: { id: String(a.orderId || '') }, select: { id: true, status: true } });
   if (!order) throw new Error('Order not found');
   if (!['paid', 'partially_refunded', 'comp'].includes(order.status)) throw new Error('Only a paid order has tickets to send');

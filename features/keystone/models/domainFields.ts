@@ -9,6 +9,7 @@ export const lifecycle = (values: string[], initial = values[0]) => select({ typ
 export const choice = (values: string[], initial = values[0]) => select({ type: values.some(value => /^\d/.test(value)) ? 'string' : 'enum', options: values.map(value => ({ label: value.replaceAll('_', ' '), value })), defaultValue: initial });
 export const unique = () => text({ isIndexed: 'unique', validation: { isRequired: true } });
 export const secret = () => text({ access: { read: () => false, create: () => false, update: () => false } });
-export function domainList(fields: Record<string, any>, permission: Permission, commandOnly = false, singleton = false, hooks?: any) {
-  return list({ ...(hooks ? { hooks } : {}), ...(singleton ? {isSingleton: true, graphql: {plural: 'VenueSettingsItems'}} : {}), access: { operation: { query: permissions[permission], create: commandOnly ? () => false : permissions[permission], update: commandOnly ? () => false : permissions[permission], delete: () => false } }, fields: { ...fields, ...trackingFields } });
+// readers: other roles that may look records up (never write); e.g. the box office and refunders read orders.
+export function domainList(fields: Record<string, any>, permission: Permission, commandOnly = false, singleton = false, hooks?: any, readers: Permission[] = []) {
+  return list({ ...(hooks ? { hooks } : {}), ...(singleton ? {isSingleton: true, graphql: {plural: 'VenueSettingsItems'}} : {}), access: { operation: { query: readers.length ? (a: any) => [permission, ...readers].some((p) => permissions[p](a)) : permissions[permission], create: commandOnly ? () => false : permissions[permission], update: commandOnly ? () => false : permissions[permission], delete: () => false } }, fields: { ...fields, ...trackingFields } });
 }
