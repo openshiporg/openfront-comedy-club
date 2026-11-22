@@ -63,6 +63,7 @@ interface User {
     canManageOrders?: boolean;
     canManageChecks?: boolean;
     canIssueRefunds?: boolean;
+    canManageRoles?: boolean;
   };
 }
 
@@ -287,7 +288,8 @@ export function Sidebar({ adminMeta, user, onOpenDialog }: SidebarProps) {
           </SidebarMenu>
         </SidebarGroup>
 
-        {/* Models */}
+        {/* Models: the raw lists are for admins only; staff work from Platform */}
+        {user?.role?.canManageRoles ? (<>
         <SidebarGroup>
           <SidebarGroupLabel>Models</SidebarGroupLabel>
           <SidebarMenu className="group-has-[[data-collapsible=icon]]/sidebar-wrapper:hidden">
@@ -362,6 +364,7 @@ export function Sidebar({ adminMeta, user, onOpenDialog }: SidebarProps) {
             </DropdownMenu>
           </SidebarMenu>
         </SidebarGroup>
+        </>) : null}
       </SidebarContent>
       
       <SidebarFooter>

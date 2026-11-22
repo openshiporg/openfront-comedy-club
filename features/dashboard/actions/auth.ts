@@ -165,6 +165,7 @@ export async function getAuthenticatedUser() {
             canManageDoor
             canManageShows
             canIssueRefunds
+            canManageRoles
           }
         }
       }
