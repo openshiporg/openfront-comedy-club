@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AdminMeta } from '../hooks/useAdminMeta'
 import { Home, ChevronRight, Package } from 'lucide-react'
-import { Logo, LogoIcon } from '@/features/dashboard/components/Logo'
+import { Logo, LogoIcon, StoreMark } from '@/features/dashboard/components/Logo'
 import { UserProfileClient } from './UserProfileClient'
 import { useDashboard } from '../context/DashboardProvider'
 import { visiblePlatformItems, visibleSidebarLists } from '../lib/sidebarAccess'
@@ -56,6 +56,7 @@ interface User {
   onboardingStatus?: string;
   menuItemsCount?: number | null;
   brandName?: string | null;
+  brandMark?: { svg: string; hue: string } | null;
   role?: {
     canAccessDashboard?: boolean;
     canManageOnboarding?: boolean;
@@ -140,7 +141,7 @@ export function Sidebar({ adminMeta, user, onOpenDialog }: SidebarProps) {
     return (
       <SidebarComponent collapsible="icon">
         <SidebarHeader>
-           <div className="p-1.5 opacity-0"><Logo name={user?.brandName} /></div>
+           <div className="p-1.5 opacity-0"><Logo name={user?.brandName} mark={user?.brandMark} /></div>
         </SidebarHeader>
         <SidebarContent />
         <SidebarFooter />
@@ -153,12 +154,12 @@ export function Sidebar({ adminMeta, user, onOpenDialog }: SidebarProps) {
       <SidebarHeader>
         <SidebarMenuButton asChild>
           <div className="group-has-[[data-collapsible=icon]]/sidebar-wrapper:hidden p-1.5">
-            <Logo name={user?.brandName} />
+            <Logo name={user?.brandName} mark={user?.brandMark} />
           </div>
         </SidebarMenuButton>
         <SidebarMenuButton asChild>
           <div className="hidden group-has-[[data-collapsible=icon]]/sidebar-wrapper:block">
-            <LogoIcon />
+            {user?.brandMark ? <StoreMark mark={user.brandMark} className="size-6" /> : <LogoIcon />}
           </div>
         </SidebarMenuButton>
       </SidebarHeader>

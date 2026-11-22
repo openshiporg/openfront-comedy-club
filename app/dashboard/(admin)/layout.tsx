@@ -5,9 +5,10 @@ import { getAdminMetaAction, getAuthenticatedUser } from '@/features/dashboard/a
 import { gqlCall } from '@/features/storefront/lib/data';
 
 // One club name for every role: the venue name through the public storeLogo read.
+// The same mark the storefront header shows (Settings > Store), so the club has one logo.
 async function getAuthenticatedBrand() {
-  const r = await gqlCall<{ storeLogo: { name: string } }>('{ storeLogo { name } }');
-  return r.ok ? r.data.storeLogo?.name ?? null : null;
+  const r = await gqlCall<{ storeLogo: { name: string; logoIcon: string; logoColor: string } }>('{ storeLogo { name logoIcon logoColor } }');
+  return r.ok ? r.data.storeLogo ?? null : null;
 }
 
 export default async function ListLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +21,7 @@ export default async function ListLayout({ children }: { children: React.ReactNo
   
   const adminMeta = adminMetaResponse.success ? adminMetaResponse.data : null;
   const user = userResponse.success && userResponse.data?.authenticatedItem
-    ? { ...userResponse.data.authenticatedItem, menuItemsCount: userResponse.data.showsCount ?? null, brandName: logo ?? userResponse.data.venues?.[0]?.name ?? null }
+    ? { ...userResponse.data.authenticatedItem, menuItemsCount: userResponse.data.showsCount ?? null, brandName: logo?.name ?? userResponse.data.venues?.[0]?.name ?? null, brandMark: logo?.logoIcon ? { svg: logo.logoIcon, hue: logo.logoColor || '0' } : null }
     : null;
 
   return (

@@ -1,5 +1,5 @@
 // Server Component
-import { Logo } from "../../components/Logo";
+import { ClubLogo } from "../../components/ClubLogo";
 import { SignInForm } from "./SignInForm";
 import Link from "next/link";
 import { publicSignUpsAllowed } from "../../lib/authFlow";
@@ -19,7 +19,7 @@ export async function SignInPage({ searchParams }: SignInPageProps) {
     <main className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <div className="flex items-center space-x-1.5">
-          <Logo aria-hidden="true" />
+          <ClubLogo />
         </div>
         <h1 className="mt-6 text-lg font-semibold text-foreground dark:text-foreground">
           Sign in to your account

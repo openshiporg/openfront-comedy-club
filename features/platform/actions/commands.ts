@@ -38,6 +38,7 @@ const OPS: Record<string, Record<string, string>> = {
   editShowSeries: { groupId: 'ID!', edit: 'JSON!' },
   cancelShowSeries: { groupId: 'ID!', reason: 'String!' },
   undoCheckIn: { ticketId: 'ID!', showId: 'ID!', reason: 'String!' },
+  emailTicketOrder: { orderId: 'ID!' },
   updatePromoLimit: { promoId: 'ID!', perOrderLimit: 'Int!' },
   addBringerSignup: { showId: 'ID!', name: 'String!', email: 'String!', guestsRequired: 'Int!' },
   setSignupStatus: { signupId: 'ID!', status: 'String!' },

@@ -129,6 +129,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         recordPayoutPaid(payoutId: ID!, method: String!, reference: String!, idempotencyKey: String!): JSON
         refundTicketOrder(orderId: ID!, amountCents: Int, ticketIds: [ID!], reason: String!, approvalId: ID, idempotencyKey: String!): JSON
         retryTicketRefund(refundId: ID!): JSON
+        emailTicketOrder(orderId: ID!, idempotencyKey: String!): JSON
         requestApproval(actionType: String!, targetId: String!, reason: String!, amount: Int): JSON
         approveRequest(approvalId: ID!): JSON
         updateActiveUser(data: UserUpdateProfileInput!): User
@@ -213,6 +214,7 @@ export function extendGraphqlSchema(baseSchema: GraphQLSchema) {
         recordPayoutPaid: op(payouts.recordPayoutPaid),
         refundTicketOrder: op(checkout.refundTicketOrder),
         retryTicketRefund: op(checkout.retryTicketRefund),
+        emailTicketOrder: op(checkout.emailTicketOrder),
         requestApproval: op(night.requestApproval),
         approveRequest: op(night.approveRequest),
         updateActiveUser,

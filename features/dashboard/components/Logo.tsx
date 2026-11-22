@@ -55,18 +55,31 @@ export const LogoIcon = ({ className, suffix = "" }: LogoIconProps) => {
   );
 };
 
+type Mark = { svg: string; hue: string };
+
+/** The club's own mark from Settings > Store. The SVG is sanitized when it is saved (sanitizeStoreLogoSvg). */
+export const StoreMark = ({ mark, className }: { mark: Mark; className?: string }) => (
+  <span
+    aria-hidden="true"
+    className={cn("block shrink-0 [&>svg]:block [&>svg]:h-full [&>svg]:w-full", className)}
+    style={{ filter: `hue-rotate(${Number(mark.hue) || 0}deg)` }}
+    dangerouslySetInnerHTML={{ __html: mark.svg }}
+  />
+);
+
 interface LogoProps {
   className?: string;
   name?: string | null;
+  mark?: Mark | null;
 }
 
 export const BRAND_FALLBACK = "Openfront Comedy Club";
 
-export const Logo = ({ className, name }: LogoProps) => {
+export const Logo = ({ className, name, mark }: LogoProps) => {
   return (
     <div className={cn(spaceGrotesk.className, className)}>
       <div className="flex items-center gap-2 text-zinc-700 dark:text-white">
-        <LogoIcon className="size-5 mb-1" suffix="-full" />
+        {mark ? <StoreMark mark={mark} className="size-6 mb-1" /> : <LogoIcon className="size-5 mb-1" suffix="-full" />}
           <h1 className="mb-1 min-w-0 truncate font-bold tracking-tight text-xl">{name || BRAND_FALLBACK}</h1>
       </div>
     </div>

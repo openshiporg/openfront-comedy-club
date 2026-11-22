@@ -8,6 +8,7 @@ import { consumeManagerApproval } from '../utils/managerApproval';
 import { cancelPayment, createPayment, getPaymentStatus, refundPayment } from '../utils/paymentProviderAdapter';
 import { assertCheckoutProviderObservation } from '../utils/checkoutProviderObservation';
 import { nextPaymentStatus, refundOutcome } from '../utils/paymentState';
+import { sendTicketEmail } from '../lib/ticketEmail';
 
 const PROVIDER_CODE = 'pp_stripe';
 export const ticketToken = (ticketCode: string) =>
@@ -117,6 +118,31 @@ async function cardOf(provider: { code?: string } | null, observed: Observed): P
   return {};
 }
 
+/** Emails the buyer their tickets and records the outcome (message id or error) in the audit log. Never throws: the order is paid either way. */
+export async function emailTickets(context: any, orderId: string) {
+  try {
+    const o = await context.prisma.ticketOrder.findUnique({ where: { id: orderId }, select: { id: true, orderNumber: true, email: true, name: true, currencyCode: true, totalCents: true, feesCents: true, taxCents: true, discountCents: true, lines: { select: { tierName: true, quantity: true, lineTotalCents: true } }, tickets: { where: { status: 'valid' }, orderBy: { createdAt: 'asc' }, select: { ticketCode: true } }, show: { select: { title: true, startsAt: true, doorsAt: true, room: { select: { name: true, venue: { select: { name: true, address: true, timezone: true, drinkMinimumItems: true } } } } } } } });
+    if (!o?.tickets.length) return { sent: false, error: 'no_tickets' };
+    const result = await sendTicketEmail({ ...o, venue: o.show.room?.venue || { name: 'The club' } }, o.tickets.map((t: any) => ({ ticketCode: t.ticketCode, token: ticketToken(t.ticketCode) })));
+    await audit(context.prisma, context, result.sent ? 'tickets_emailed' : 'tickets_email_failed', 'TicketOrder', o.id, null, { to: o.email, tickets: o.tickets.length, ...result });
+    return result;
+  } catch (error) {
+    console.error('Ticket email step failed:', error instanceof Error ? error.message.slice(0, 200) : 'unknown');
+    return { sent: false, error: 'failed' };
+  }
+}
+
+/** Box office: send the tickets again, e.g. when the buyer says the first email did not arrive. */
+export async function emailTicketOrder(_: any, a: any, context: any) {
+  requirePermission(context, 'canManageOrders');
+  const order = await context.prisma.ticketOrder.findUnique({ where: { id: String(a.orderId || '') }, select: { id: true, status: true } });
+  if (!order) throw new Error('Order not found');
+  if (!['paid', 'partially_refunded', 'comp'].includes(order.status)) throw new Error('Only a paid order has tickets to send');
+  const r = await emailTickets(context, order.id);
+  if (!r.sent) throw new Error('The email could not be sent; try again');
+  return r;
+}
+
 export async function verifyAndFinalize(context: any, order: any) {
   const session = order.paymentCollection?.paymentSessions?.find((s: any) => s.isSelected);
   const intent = session?.data?.paymentIntentId;
@@ -129,10 +155,12 @@ export async function verifyAndFinalize(context: any, order: any) {
   if (observed.status !== 'succeeded') return { status: 'pending' };
   assertCheckoutProviderObservation(observed, order.totalCents, order.currencyCode);
   const card = await cardOf(provider, observed);
-  await context.prisma.$transaction(async (tx: any) => {
+  // Under the show lock only one caller (return page or webhook) sees the order still pending; that one sends the tickets.
+  const before = await context.prisma.$transaction(async (tx: any) => {
     await lockTransactionKey(tx, 'show:' + order.showId);
-    await finalizePaidOrder(tx, context, order.id, provider, intent, card);
+    return finalizePaidOrder(tx, context, order.id, provider, intent, card);
   }, { timeout: 20000 });
+  if (before?.status === 'pending_payment') await emailTickets(context, order.id);
   // The card was charged after the show was cancelled: cancelShow already ran its refund pass, so refund this one now.
   const showNow = await context.prisma.show.findUnique({ where: { id: order.showId }, select: { status: true } });
   if (showNow?.status === 'cancelled') {

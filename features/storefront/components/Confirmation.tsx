@@ -18,7 +18,7 @@ export function Confirmation({ orderNumber }: { orderNumber: string }) {
   React.useEffect(() => {
     const secret = window.location.hash.slice(1) || sessionStorage.getItem(`order:${orderNumber}`) || '';
     setSecret(secret);
-    if (!secret) { setError('This link is incomplete. Use Find my order with your email and order number.'); return; }
+    if (!secret) { setError('This link is incomplete. Open the tickets email, or use Find my order with your email and order number.'); return; }
     (async () => {
       let r = await loadConfirmation(orderNumber, secret);
       if (r.ok && r.order.status === 'pending_payment') { await completeCheckout(orderNumber, secret); r = await loadConfirmation(orderNumber, secret); }
@@ -57,7 +57,7 @@ export function Confirmation({ orderNumber }: { orderNumber: string }) {
         <div className="flex justify-between"><span>Tax</span><span>{price(order.taxCents)}</span></div>
         <div className="flex justify-between border-t pt-2 font-medium"><span>Total</span><span>{price(order.totalCents)}</span></div>
       </section>
-      <p className="text-sm text-muted-foreground">Show the QR code or your ticket code at the door. Two-item minimum per guest applies at your table.</p>
+      <p className="text-sm text-muted-foreground">{paid ? 'Your tickets are also on their way to your email. ' : ''}Show the QR code or your ticket code at the door. Two-item minimum per guest applies at your table.</p>
     </div>
   );
 }
