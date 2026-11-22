@@ -17,5 +17,5 @@ export function ApprovalControl({ actionType, targetId, amount, reason, onApprov
       const r = await findApproval({ actionType, targetId, amount: amount ?? null, reason });
       onApproval(r.id || ''); setMessage(r.id ? 'Approval ready' : r.error || 'No matching approval');
     })}>Check approval</button>
-  </div><a href="/dashboard/platform/approvals" className="text-sm underline">Approvals</a>{message ? <p role="status" className="text-xs break-words">{message}</p> : null}</div>;
+  </div><a href="/dashboard/platform/approvals" className="inline-flex min-h-11 items-center text-sm underline">Approvals</a>{message ? <p role="status" className="text-xs break-words">{message}</p> : null}</div>;
 }

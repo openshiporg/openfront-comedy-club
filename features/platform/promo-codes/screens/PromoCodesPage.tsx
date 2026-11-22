@@ -8,7 +8,7 @@ export default async function PromoCodesPage() {
   const off = (p: any) => p.discountType === 'percent_bps' ? `${p.value / 100}% off` : p.discountType === 'amount_cents' ? `${money(p.value)} off` : 'Comp';
   return (
     <Page title="Promo codes">
-      <div className="flex justify-end"><Link className="text-sm underline underline-offset-4" href="/dashboard/promo-codes/create">Add code</Link></div>
+      <div className="flex justify-end"><Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href="/dashboard/promo-codes/create">Add code</Link></div>
       {promoCodes.length ? promoCodes.map((p: any) => (
         <Row key={p.id} href={`/dashboard/platform/promo-codes/${p.id}`}>
           <span className="min-w-0"><span className="font-mono font-semibold">{p.code}</span> <Meta>{off(p)} · {p.perOrderLimit} per order · {p.usedCount}{p.maxUses ? ` of ${p.maxUses}` : ''} used</Meta></span>

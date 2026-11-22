@@ -43,8 +43,8 @@ export function LayoutEditor({ roomId, sections }: { roomId: string; sections: S
           <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-xs uppercase tracking-wide">{s.name}</span>
             <span className="flex gap-3 text-sm">
-              <button type="button" className="inline-flex min-h-11 items-center inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => { const n = window.prompt('Section name', s.name); if (n && n.trim() !== s.name) stage({ kind: 'renameSection', sectionId: s.id, name: n.trim() }); }}>Rename</button>
-              {!s.tables.length ? <button type="button" className="inline-flex min-h-11 items-center inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => stage({ kind: 'removeSection', sectionId: s.id })}>Remove</button> : null}
+              <button type="button" className="inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => { const n = window.prompt('Section name', s.name); if (n && n.trim() !== s.name) stage({ kind: 'renameSection', sectionId: s.id, name: n.trim() }); }}>Rename</button>
+              {!s.tables.length ? <button type="button" className="inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => stage({ kind: 'removeSection', sectionId: s.id })}>Remove</button> : null}
             </span>
           </div>
           {s.tables.map((t) => edit?.id === t.id ? (
@@ -61,8 +61,8 @@ export function LayoutEditor({ roomId, sections }: { roomId: string; sections: S
             <div key={t.id} className="flex items-center justify-between gap-2 text-sm">
               <span className="min-w-0 break-words"><span className="font-mono">{t.label}</span> · {t.seats} seats · {t.shape}</span>
               <span className="flex shrink-0 gap-3">
-                <button type="button" className="inline-flex min-h-11 items-center inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => setEdit({ id: t.id, label: t.label, seats: String(t.seats), shape: t.shape })}>Edit</button>
-                <button type="button" className="inline-flex min-h-11 items-center inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => stage({ kind: 'removeTable', tableId: t.id })}>Remove</button>
+                <button type="button" className="inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => setEdit({ id: t.id, label: t.label, seats: String(t.seats), shape: t.shape })}>Edit</button>
+                <button type="button" className="inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => stage({ kind: 'removeTable', tableId: t.id })}>Remove</button>
               </span>
             </div>
           ))}

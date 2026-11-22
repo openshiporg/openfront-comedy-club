@@ -50,7 +50,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         {['on_sale', 'sold_out'].includes(show.status) ? <ActionButton op="pauseSales" vars={{ showId: show.id }} confirm="Pause ticket sales for this show?">Pause sales</ActionButton> : null}
         {['doors_open', 'in_progress', 'completed'].includes(show.status) ? <ActionButton op="closeShow" vars={{ showId: show.id }} confirm="Close the night? This creates payouts and freezes the settlement.">Close night</ActionButton> : null}
         {!['cancelled', 'completed', 'settled'].includes(show.status) ? <ActionButton op="cancelShow" vars={{ showId: show.id, reason: 'Cancelled by venue' }} confirm="Cancel this show and refund every order?">Cancel show</ActionButton> : null}
-        {show.isOpenMic ? <Link className="self-center text-sm underline underline-offset-4" href="/dashboard/platform/open-mic">Open mic list</Link> : null}
+        {show.isOpenMic ? <Link className="inline-flex min-h-11 items-center self-center text-sm underline underline-offset-4" href="/dashboard/platform/open-mic">Open mic list</Link> : null}
       </div>
 
       {show.waitlist.length || show.status === 'sold_out' ? (

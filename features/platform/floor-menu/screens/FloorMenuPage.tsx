@@ -13,7 +13,7 @@ export default async function FloorMenuPage() {
   return (
     <Page title={seesRooms ? 'Floor & menu' : 'Menu'}>
       {rooms.map((r: any) => (
-        <Section key={r.id} title={`${r.name} · ${r.capacity} seats · ${r.seatingMode}`} aside={<Link className="text-sm underline underline-offset-4" href={`/dashboard/rooms/${r.id}`}>Edit</Link>}>
+        <Section key={r.id} title={`${r.name} · ${r.capacity} seats · ${r.seatingMode}`} aside={<Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href={`/dashboard/rooms/${r.id}`}>Edit</Link>}>
           {r.sections.map((s: any) => (
             <div key={s.id} className="mb-4">
               <div className="mb-2 font-mono text-xs uppercase tracking-wide">{s.name} <span className="text-muted-foreground">{s.tables.length} tables · {s.tables.reduce((n: number, t: any) => n + t.seats, 0)} seats</span></div>
@@ -31,7 +31,7 @@ export default async function FloorMenuPage() {
           {!r.sections.length && r.seatingMode !== 'tables' ? <Meta>General admission, no tables.</Meta> : null}
         </Section>
       ))}
-      <Section title="Menu" aside={<Link className="text-sm underline underline-offset-4" href="/dashboard/menu-items/create">Add item</Link>}>
+      <Section title="Menu" aside={<Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href="/dashboard/menu-items/create">Add item</Link>}>
         {menuItems.map((m: any) => (
           <Row key={m.id} href={`/dashboard/menu-items/${m.id}`}>
             <span className="min-w-0"><span className="font-medium">{m.name}</span> <Meta>{m.category}{m.countsTowardMinimum ? ' · counts toward minimum' : ''}</Meta></span>

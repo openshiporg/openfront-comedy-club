@@ -16,12 +16,12 @@ export default async function SettingsPage() {
   ];
   return (
     <Page title="Settings">
-      <Section title="Venue" aside={<Link className="text-sm underline underline-offset-4" href={`/dashboard/venues/${v.id}`}>Edit</Link>}>
+      <Section title="Venue" aside={<Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href={`/dashboard/venues/${v.id}`}>Edit</Link>}>
         {rows.map(([k, val]) => <Row key={k}><span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">{k}</span><span className="min-w-0 break-words">{val}</span></Row>)}
         <p className="break-words text-sm text-muted-foreground">{v.policies}</p>
       </Section>
       {s ? (
-        <Section title="Sales and approvals" aside={<Link className="text-sm underline underline-offset-4" href={`/dashboard/venue-settings-items/${s.id}`}>Edit</Link>}>
+        <Section title="Sales and approvals" aside={<Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href={`/dashboard/venue-settings-items/${s.id}`}>Edit</Link>}>
           <Row><span>Self-cancel window</span><span>{s.refundWindowHours} hours</span></Row>
           <Row><span>Hold time</span><span>{s.holdMinutes} minutes</span></Row>
           <Row><span>Refund approval above</span><span>{money(s.approvalThresholdCents)}</span></Row>

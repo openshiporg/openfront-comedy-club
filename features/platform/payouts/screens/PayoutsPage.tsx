@@ -16,7 +16,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams?: Pro
   ]);
   return (
     <Page title="Payouts">
-      <p className="text-sm"><Link href="/dashboard/platform/payouts/statements" className="underline">Pay statements by year</Link></p>
+      <p className="text-sm"><Link href="/dashboard/platform/payouts/statements" className="inline-flex min-h-11 items-center underline underline-offset-4">Pay statements by year</Link></p>
       <Tabs active={tab} items={TABS.map((t) => ({ key: t, label: label(t), href: `/dashboard/platform/payouts?tab=${t}` }))} />
       <div>
         {comedianPayouts.length ? comedianPayouts.map((p: any) => (

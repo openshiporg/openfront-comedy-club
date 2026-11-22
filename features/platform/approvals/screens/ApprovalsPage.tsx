@@ -24,9 +24,9 @@ export default async function ApprovalsPage() {
   ]);
   const about = (a: any) => {
     const o = orders.find((x: any) => x.id === a.targetId);
-    if (o) return <Link className="underline underline-offset-4" href={`/dashboard/platform/orders/${o.id}`}>Order <span className="font-mono">{o.orderNumber}</span> · {o.name}</Link>;
+    if (o) return <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/dashboard/platform/orders/${o.id}`}>Order <span className="font-mono">{o.orderNumber}</span> · {o.name}</Link>;
     const s = shows.find((x: any) => x.id === a.targetId);
-    if (s) return <Link className="underline underline-offset-4" href={`/dashboard/platform/shows/${s.id}`}>{s.title} · {when(s.startsAt, tz)}</Link>;
+    if (s) return <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={`/dashboard/platform/shows/${s.id}`}>{s.title} · {when(s.startsAt, tz)}</Link>;
     return a.actionType.includes('check') || a.actionType === 'void_item' || a.actionType === 'waive_minimum' ? 'A bar check' : null;
   };
   return <Page title="Approvals">{managerApprovals.length ? managerApprovals.map((a: any) => {

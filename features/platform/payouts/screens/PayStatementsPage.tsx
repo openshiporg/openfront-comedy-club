@@ -50,7 +50,7 @@ export default async function PayStatementsPage({ searchParams }: { searchParams
               </Row>
             )) : <Empty>Nothing paid in {statement.year}.</Empty>}
           </Section>
-          <Link href={`/dashboard/platform/payouts/statements?year=${statement.year}`} className="text-sm underline">All payees for {statement.year}</Link>
+          <Link href={`/dashboard/platform/payouts/statements?year=${statement.year}`} className="inline-flex min-h-11 items-center text-sm underline">All payees for {statement.year}</Link>
         </>
       ) : !sp.comedian ? (
         <Section title={`Paid in ${year}`}>

@@ -99,7 +99,7 @@ export function SeriesPanel({ cancelling, cancelDone, canRepeat, showId, groupId
         </div>
       ) : null}
       {message ? <p role="status" className="break-words text-sm">{message}</p> : null}
-      {firstId ? <Link href={`/dashboard/platform/shows/${firstId}`} className="text-sm underline underline-offset-4">Open the first new show to manage the series</Link> : null}
+      {firstId ? <Link href={`/dashboard/platform/shows/${firstId}`} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Open the first new show to manage the series</Link> : null}
       {error ? <p role="alert" className="break-words text-sm text-red-600">{error}</p> : null}
     </div>
   );
