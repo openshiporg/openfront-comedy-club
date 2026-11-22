@@ -8,11 +8,11 @@ import { useShowTime } from './VenueTime';
 import { WaitlistForm } from './WaitlistForm';
 import { saleState } from '../../keystone/lib/saleWindow';
 import { MAX_GROUP_HOLD } from '../../keystone/lib/groupHold';
+import { btnPrimary } from './ui';
 
 type Tier = { id: string; name: string; priceCents: number; feeCents: number; capacity: number; sold: number; held: number; status: string; isTableTier: boolean; salesStartAt?: string | null; salesEndAt?: string | null };
 type Section = { name: string; tables: { id: string; label: string; seats: number; taken: boolean }[] };
 
-const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[var(--brand-accent)] px-5 text-sm font-semibold text-white hover:bg-[var(--brand-accent-hover)] disabled:opacity-50';
 const chip = (on: boolean, off?: boolean) => `min-h-11 min-w-12 rounded-full border px-2 py-2 text-sm ${on ? 'border-[var(--brand-accent)] bg-[var(--brand-accent)] text-white' : ''} ${off ? 'opacity-40' : ''}`;
 
 export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { showId: string; title: string; ageRestriction: string; tiers: Tier[]; sections: Section[] }) {
@@ -98,7 +98,7 @@ export function HoldForm({ showId, title, ageRestriction, tiers, sections }: { s
       {canMix ? <div><button type="button" className="text-sm underline" onClick={() => { setMix((v) => !v); setError(''); }}>{mix ? 'Back to a single ticket type' : 'Mix ticket types for a group'}</button></div> : null}
       <div>
       <button
-        type="button" className={btn} disabled={pending || (mix ? mixTotal < 1 : !tier || quantity < 1)}
+        type="button" className={btnPrimary} disabled={pending || (mix ? mixTotal < 1 : !tier || quantity < 1)}
         onClick={() => start(async () => {
           setError('');
           const r = await createHold(mix ? { showId, lines: mixLines } : { showId, tierId, quantity, tableIds: tableMode ? tableIds : undefined });

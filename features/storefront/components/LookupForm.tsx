@@ -5,9 +5,8 @@ import { lookupOrder } from '../lib/clientActions';
 import { cancelOrder } from '../lib/actions';
 import { price } from '../lib/format';
 import { useShowTime } from './VenueTime';
+import { btnPrimary, inputCls } from './ui';
 
-const input = 'h-11 w-full rounded-full border border-neutral-200 bg-background px-4 text-sm';
-const btn = 'inline-flex h-11 items-center justify-center rounded-md bg-[var(--brand-accent)] px-5 text-sm font-semibold text-white hover:bg-[var(--brand-accent-hover)] disabled:opacity-50';
 
 export function LookupForm() {
   const showTime = useShowTime();
@@ -15,9 +14,9 @@ export function LookupForm() {
   const [order, setOrder] = React.useState<any>(null); const [msg, setMsg] = React.useState(''); const [pending, start] = React.useTransition();
   return (
     <div className="space-y-4">
-      <label className="block text-sm">Email<input className={input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-      <label className="block text-sm">Order number<input className={input + ' font-mono uppercase'} value={number} onChange={(e) => setNumber(e.target.value)} /></label>
-      <button type="button" className={btn} disabled={pending || !email || !number} onClick={() => start(async () => { setMsg(''); const r = await lookupOrder(email, number); if (r.ok) setOrder(r.order); else { setOrder(null); setMsg(r.error); } })}>Find order</button>
+      <label className="block text-sm">Email<input className={inputCls} type="email" inputMode="email" autoCapitalize="none" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+      <label className="block text-sm">Order number<input className={inputCls + ' font-mono uppercase'} autoCapitalize="characters" autoCorrect="off" spellCheck={false} value={number} onChange={(e) => setNumber(e.target.value)} /></label>
+      <button type="button" className={btnPrimary} disabled={pending || !email || !number} onClick={() => start(async () => { setMsg(''); const r = await lookupOrder(email, number); if (r.ok) setOrder(r.order); else { setOrder(null); setMsg(r.error); } })}>Find order</button>
       {msg ? <p role="alert" className="text-sm text-red-600">{msg}</p> : null}
       {order ? (
         <div className="space-y-3 border-t pt-4">

@@ -18,7 +18,7 @@ export function Confirmation({ orderNumber }: { orderNumber: string }) {
   React.useEffect(() => {
     const secret = window.location.hash.slice(1) || sessionStorage.getItem(`order:${orderNumber}`) || '';
     setSecret(secret);
-    if (!secret) { setError('Open this page from your confirmation link, or use Find my order.'); return; }
+    if (!secret) { setError('This link is incomplete. Use Find my order with your email and order number.'); return; }
     (async () => {
       let r = await loadConfirmation(orderNumber, secret);
       if (r.ok && r.order.status === 'pending_payment') { await completeCheckout(orderNumber, secret); r = await loadConfirmation(orderNumber, secret); }

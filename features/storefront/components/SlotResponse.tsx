@@ -4,8 +4,8 @@ import * as React from 'react';
 import { answerSlot, loadSlotInvite } from '../lib/actions';
 import { price } from '../lib/format';
 import { useShowTime } from './VenueTime';
+import { btnOutline } from './ui';
 
-const btn = 'inline-flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium disabled:opacity-50';
 
 /** The emailed link carries the token in the fragment, so it never reaches a server log. */
 export function SlotResponse({ slotId }: { slotId: string }) {
@@ -17,7 +17,7 @@ export function SlotResponse({ slotId }: { slotId: string }) {
   const refresh = React.useCallback((t: string) => loadSlotInvite(slotId, t).then((r) => setState(r.ok ? { kind: 'ok', o: r.data } : { kind: 'error', message: r.error })), [slotId]);
   React.useEffect(() => {
     const t = window.location.hash.slice(1);
-    if (!t) { setState({ kind: 'error', message: 'This link is incomplete. Open it again from your email.' }); return; }
+    if (!t) { setState({ kind: 'error', message: 'This link is incomplete. Open the full link you were sent.' }); return; }
     setToken(t); refresh(t);
   }, [refresh]);
   if (state.kind === 'loading') return <p className="text-sm text-muted-foreground">Checking your link.</p>;
@@ -44,8 +44,8 @@ export function SlotResponse({ slotId }: { slotId: string }) {
       </dl>
       {o.canRespond ? (
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={pending} className={btn + ' bg-foreground text-background'} onClick={() => answer('confirm')}>Confirm slot</button>
-          <button type="button" disabled={pending} className={btn + ' bg-background'} onClick={() => answer('decline')}>Decline</button>
+          <button type="button" disabled={pending} className={btnOutline + ' bg-foreground text-background'} onClick={() => answer('confirm')}>Confirm slot</button>
+          <button type="button" disabled={pending} className={btnOutline + ' bg-background'} onClick={() => answer('decline')}>Decline</button>
         </div>
       ) : (
         <p role="status" className="font-mono text-xs uppercase tracking-wide">{o.status === 'confirmed' ? 'You confirmed this slot' : o.status === 'declined' ? 'You declined this slot' : `Slot ${String(o.status).replaceAll('_', ' ')}. Contact the venue to change it`}</p>

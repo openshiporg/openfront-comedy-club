@@ -12,7 +12,7 @@ export function WaitlistClaim({ holdKey }: { holdKey: string }) {
   const [state, setState] = React.useState<{ kind: 'loading' } | { kind: 'error'; message: string } | { kind: 'offer'; o: any }>({ kind: 'loading' });
   React.useEffect(() => {
     const token = window.location.hash.slice(1);
-    if (!token) { setState({ kind: 'error', message: 'This link is incomplete. Open it again from your email.' }); return; }
+    if (!token) { setState({ kind: 'error', message: 'This link is incomplete. Open the full link you were sent.' }); return; }
     claimWaitlistOffer(holdKey, token).then((r) => {
       if (!r.ok) { setState({ kind: 'error', message: 'This offer was not found.' }); return; }
       if (!r.data.live) { setState({ kind: 'error', message: 'This offer has expired and the seats were passed to the next party.' }); return; }

@@ -17,11 +17,11 @@ export function ShowFinder({ shows, days }: { shows: FinderShow[]; days: string[
       <h2 className={sectionTitle}>Find a show</h2>
       <div className={`${card} space-y-3 p-4`}>
         <div className="flex justify-end">
-          <div className="inline-flex rounded-full bg-neutral-100 p-1 text-xs" role="tablist">
-            {KINDS.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={kind === k} onClick={() => setKind(k)} className={`rounded-full px-3 py-1.5 ${kind === k ? 'bg-white font-medium shadow-sm' : 'text-neutral-500'}`}>{l}</button>)}
+          <div className="inline-flex rounded-full bg-neutral-100 p-1 text-sm" role="tablist">
+            {KINDS.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={kind === k} onClick={() => setKind(k)} className={`min-h-11 rounded-full px-4 ${kind === k ? 'bg-white font-medium shadow-sm' : 'text-neutral-500'}`}>{l}</button>)}
           </div>
         </div>
-        <select aria-label="Date" value={day} onChange={(e) => setDay(e.target.value)} className="h-11 w-full rounded-full border border-neutral-200 bg-white px-4 text-sm">
+        <select aria-label="Date" value={day} onChange={(e) => setDay(e.target.value)} className="h-11 w-full rounded-full border border-neutral-200 bg-white px-4 text-base">
           <option value="">Any date</option>
           {days.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>

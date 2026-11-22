@@ -13,7 +13,7 @@ export function HolderTicket({ ticketCode }: { ticketCode: string }) {
   const [token, setToken] = React.useState('');
   React.useEffect(() => {
     const t = window.location.hash.slice(1);
-    if (!t) { setState({ kind: 'error', message: 'This link is incomplete. Open it again from your email.' }); return; }
+    if (!t) { setState({ kind: 'error', message: 'This link is incomplete. Open the full link you were sent.' }); return; }
     setToken(t);
     loadHolderTicket(ticketCode, t).then((r) => setState(r.ok ? { kind: 'ok', t: r.data } : { kind: 'error', message: r.error === 'Not found' ? 'This ticket was not found.' : r.error }));
   }, [ticketCode]);

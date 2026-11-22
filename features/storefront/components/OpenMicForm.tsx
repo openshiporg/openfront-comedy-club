@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { micSignup } from '../lib/actions';
 import { useShowTime } from './VenueTime';
+import { inputCls } from './ui';
 
-const input = 'h-11 w-full rounded-full border border-neutral-200 bg-background px-4 text-sm';
 export function OpenMicForm({ shows }: { shows: { id: string; title: string; startsAt: string; signupOpensAt: string | null }[] }) {
   return <div className="space-y-8">{shows.map((s) => <One key={s.id} show={s} />)}</div>;
 }
@@ -18,8 +18,8 @@ function One({ show }: { show: { id: string; title: string; startsAt: string; si
       <h2 className="font-medium">{show.title} <span className="text-sm font-normal text-muted-foreground">{showTime(show.startsAt)}</span></h2>
       {closed ? <p className="text-sm text-muted-foreground">Signup opens {opens ? showTime(show.signupOpensAt!) : 'soon'}.</p> : (
         <>
-          <label className="block text-sm">Stage name<input className={input} value={name} onChange={(e) => setName(e.target.value)} /></label>
-          <label className="block text-sm">Email<input className={input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+          <label className="block text-sm">Stage name<input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} /></label>
+          <label className="block text-sm">Email<input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
           <button type="button" className="inline-flex h-11 items-center rounded-md bg-[var(--brand-accent)] px-5 text-sm font-semibold text-white hover:bg-[var(--brand-accent-hover)] disabled:opacity-50" disabled={pending || !name || !email} onClick={() => start(async () => { const r = await micSignup({ showId: show.id, name, email }); setMsg(r.ok ? 'You are on the list.' : r.error); })}>Sign up</button>
         </>
       )}
