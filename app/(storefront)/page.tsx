@@ -88,16 +88,6 @@ export default async function Home() {
           </section>
         ) : null}
         {shows.length ? <ShowFinder shows={finder} days={days} /> : null}
-        {shows.length ? (
-          <section>
-            <h2 className={sectionTitle}>On sale now{venue?.name ? ` at ${venue.name}` : ''}</h2>
-            <div className={`${card} grid grid-cols-3 divide-x divide-neutral-100 py-5 text-center`}>
-              <div><p className="text-2xl font-semibold">{shows.length}</p><p className="text-xs text-neutral-500">Shows on sale</p></div>
-              <div><p className="text-2xl font-semibold">{comedians.length}</p><p className="text-xs text-neutral-500">Comedians</p></div>
-              <div><p className="text-2xl font-semibold">{finder.filter((f) => f.kind === 'openmic').length}</p><p className="text-xs text-neutral-500">Open mics</p></div>
-            </div>
-          </section>
-        ) : null}
         {menu.length ? (
           <section>
             <h2 className={sectionTitle}>Food & drinks</h2>
@@ -146,17 +136,6 @@ export default async function Home() {
           <p className="mt-1 text-sm text-neutral-300">Sign up for an open mic slot.</p>
           <Link href="/open-mic" className={`${btnPrimary} mt-4`}>Open mic →</Link>
         </section>
-        {shows.length ? (
-          <section className="relative overflow-hidden rounded-3xl bg-neutral-950 text-white">
-            <Image src="/storefront/crowd.webp" alt="The crowd laughing at a show" fill sizes="(min-width: 1024px) 640px, 100vw" className="object-cover object-right" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-transparent" />
-            <div className="relative p-6 sm:p-8">
-              <h2 className="max-w-[12ch] text-2xl font-semibold tracking-tight">Ready for a good laugh?</h2>
-              <p className="mt-1 text-sm text-neutral-200">See what&apos;s on next{venue?.name ? ` at ${venue.name}` : ''}.</p>
-              <Link href="/#find" className={`${btnPrimary} mt-4`}>Browse shows →</Link>
-            </div>
-          </section>
-        ) : null}
       </div>
       <aside className="hidden space-y-4 xl:block">
         <div className="text-sm">
