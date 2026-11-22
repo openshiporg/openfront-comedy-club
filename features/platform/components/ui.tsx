@@ -78,3 +78,19 @@ export function Stat({ name, value }: { name: string; value: React.ReactNode }) 
 }
 
 export const Meta = ({ children }: { children: React.ReactNode }) => <span className="min-w-0 break-words text-xs text-muted-foreground">{children}</span>;
+
+/** A GET search box that keeps the other query params (like the current tab). */
+export function SearchBox({ q, placeholder, keep = {} }: { q?: string; placeholder: string; keep?: Record<string, string | undefined> }) {
+  return (
+    <form method="get" role="search" className="flex gap-2">
+      {Object.entries(keep).map(([k, v]) => v ? <input key={k} type="hidden" name={k} value={v} /> : null)}
+      <input name="q" defaultValue={q} aria-label={placeholder} placeholder={placeholder} autoComplete="off" className="h-11 min-w-0 flex-1 rounded-md border bg-background px-3 text-base sm:text-sm" />
+      <button type="submit" className="inline-flex h-11 items-center rounded-full border px-4 text-sm font-medium">Search</button>
+    </form>
+  );
+}
+
+/** "Show more" for a list that was cut at `shown`. */
+export function MoreLink({ href, shown, total }: { href: string; shown: number; total?: number }) {
+  return <p className="pt-3 text-sm text-muted-foreground">Showing {shown}{total ? ` of ${total}` : ''} · <Link className="inline-flex min-h-11 items-center underline underline-offset-4" href={href}>Show more</Link></p>;
+}
