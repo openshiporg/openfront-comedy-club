@@ -4,7 +4,7 @@ import * as React from 'react';
 import QRCode from 'qrcode';
 
 /** A scannable code for one ticket. It carries only the opaque scan token, which the door accepts like a typed ticket code. */
-export function TicketQr({ token, label }: { token: string; label: string }) {
+export function TicketQr({ token, label, className }: { token: string; label: string; className?: string }) {
   const [svg, setSvg] = React.useState('');
   React.useEffect(() => {
     let live = true;
@@ -16,5 +16,5 @@ export function TicketQr({ token, label }: { token: string; label: string }) {
   }, [token]);
   if (!svg) return null;
   // the SVG is produced locally by the encoder from a validated hex token, never from user-supplied markup
-  return <div role="img" aria-label={label} data-testid="ticket-qr" className="h-44 w-44 shrink-0 bg-white [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />;
+  return <div role="img" aria-label={label} data-testid="ticket-qr" className={`${className || 'h-44 w-44'} shrink-0 bg-white [&>svg]:block [&>svg]:h-full [&>svg]:w-full`} dangerouslySetInnerHTML={{ __html: svg }} />;
 }

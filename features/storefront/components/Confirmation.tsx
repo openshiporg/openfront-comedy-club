@@ -32,19 +32,21 @@ export function Confirmation({ orderNumber }: { orderNumber: string }) {
     <div className="space-y-6">
       <div>
         <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">{paid ? 'Confirmed' : order.status.replace('_', ' ')}</p>
-        <h1 className="mt-1 break-all font-mono text-2xl font-semibold sm:text-3xl" data-testid="order-number">{order.orderNumber}</h1>
-        <p className="mt-2 text-sm">{order.show.title} · {showTime(order.show.startsAt, 'date')}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{order.show.title}</h1>
+        <p className="mt-2 text-sm">{showTime(order.show.startsAt, 'date')}</p>
         <p className="text-sm text-muted-foreground">{[order.show.doorsAt ? `Doors ${showTime(order.show.doorsAt, 'time')}` : '', `Show ${showTime(order.show.startsAt, 'time')}`, order.show.room?.name, ageLabel(order.show.ageRestriction)].filter(Boolean).join(' · ')}</p>
+        <p className="mt-3 text-sm">Order number <span className="break-all font-mono font-medium" data-testid="order-number">{order.orderNumber}</span></p>
+        {paid ? <p className="mt-1 text-sm text-muted-foreground">Your tickets and this order number are on their way to your email.</p> : null}
       </div>
       <section>
         <h2 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">Tickets</h2>
-        <ul>
-          {order.tickets.map((t: any) => (
-            <li key={t.ticketCode} className="flex flex-wrap items-center justify-between gap-2 border-b py-3 last:border-b-0">
-              <span className="font-mono text-sm break-all">{t.ticketCode}</span>
-              <span className="font-mono text-xs uppercase tracking-wide">{t.status.replace('_', ' ')}</span>
-              {t.holderName && t.transferredFromCode ? <span className="w-full text-xs text-muted-foreground">Transferred to {t.holderName}</span> : null}
-              {t.status === 'valid' && paid && t.token ? <div className="w-full"><TicketQr token={t.token} label={`QR code for ticket ${t.ticketCode}`} /></div> : null}
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {order.tickets.map((t: any, i: number) => (
+            <li key={t.ticketCode} className="flex min-w-0 flex-col gap-2 rounded-2xl border border-neutral-200 p-3 has-[form]:col-span-full">
+              <span className="flex items-center justify-between gap-2 font-mono text-xs uppercase tracking-wide"><span>Ticket {i + 1}</span><span className="text-muted-foreground">{t.status.replace('_', ' ')}</span></span>
+              {t.status === 'valid' && paid && t.token ? <TicketQr token={t.token} label={`QR code for ticket ${t.ticketCode}`} className="aspect-square h-auto w-full" /> : null}
+              <span className="break-all font-mono text-xs">{t.ticketCode}</span>
+              {t.holderName && t.transferredFromCode ? <span className="text-xs text-muted-foreground">Transferred to {t.holderName}</span> : null}
               {t.status === 'valid' && paid && new Date() < new Date(order.show.doorsAt || order.show.startsAt) ? <TransferTicket orderNumber={orderNumber} secret={secret} ticketCode={t.ticketCode} onDone={() => load(secret)} /> : null}
             </li>
           ))}
@@ -57,7 +59,7 @@ export function Confirmation({ orderNumber }: { orderNumber: string }) {
         <div className="flex justify-between"><span>Tax</span><span>{price(order.taxCents)}</span></div>
         <div className="flex justify-between border-t pt-2 font-medium"><span>Total</span><span>{price(order.totalCents)}</span></div>
       </section>
-      <p className="text-sm text-muted-foreground">{paid ? 'Your tickets are also on their way to your email. ' : ''}Show the QR code or your ticket code at the door. Two-item minimum per guest applies at your table.</p>
+      <p className="text-sm text-muted-foreground">Show the QR code or your ticket code at the door. Two-item minimum per guest applies at your table.</p>
     </div>
   );
 }

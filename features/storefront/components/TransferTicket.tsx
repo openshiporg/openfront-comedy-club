@@ -11,7 +11,7 @@ export function TransferTicket({ orderNumber, secret, ticketCode, onDone }: { or
   const [form, setForm] = React.useState({ name: '', email: '' });
   const [error, setError] = React.useState('');
   const [pending, start] = React.useTransition();
-  if (!open) return <button type="button" className={btnOutline + ' h-11 bg-background'} onClick={() => setOpen(true)}>Transfer</button>;
+  if (!open) return <button type="button" className={btnOutline + ' h-11 w-full bg-background'} onClick={() => setOpen(true)}>Transfer</button>;
   return (
     <form className="w-full space-y-2 pt-1" onSubmit={(e) => { e.preventDefault(); start(async () => {
       setError(''); const r = await transferTicket({ orderNumber, orderSecret: secret, ticketCode, name: form.name, email: form.email });
