@@ -37,7 +37,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
             <Stat name="Talent cost" value={money(t.talentCents)} />
             <Stat name="Run fees" value={money(t.runFeeCents)} />
           </div>
-          <p className="text-xs text-muted-foreground">Revenue, talent cost and net count settled nights only; attendance counts every show. Talent cost is the per-night pay. A headliner run fee is paid once for the whole run, never inside a night, so it is its own line, subtracted in the period holding the run's last show. Net = tickets + food &amp; drink − talent cost − run fees.</p>
+          <details className="text-sm text-muted-foreground"><summary className="inline-flex min-h-11 cursor-pointer items-center">How these numbers are counted</summary><ul className="list-disc space-y-1 pb-2 pl-5"><li>Money counts settled nights only; attendance counts every show.</li><li>Talent cost is the per-night pay.</li><li>A headliner run fee is its own line, in the period of the run&apos;s last show.</li><li>Net = tickets + food &amp; drink − talent cost − run fees.</li></ul></details>
           <ExportReport from={from} to={to} />
           {report.runs.length ? (
             <Section title="Headliner runs">
