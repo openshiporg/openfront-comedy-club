@@ -8,9 +8,9 @@ const side = [['/', 'Home'], ['/#shows', 'Shows'], ['/comedians', 'Comedians'], 
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-white text-neutral-950">
-      <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
-        <Link href="/" className="flex min-h-11 min-w-0 shrink-0 items-center gap-2 text-base font-semibold tracking-tight"><StoreLogoMark /></Link>
-        <TopNav items={top} />
+      <header className="relative mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
+        <Link href="/" className="flex min-h-11 min-w-0 items-center gap-2 text-base font-semibold tracking-tight"><StoreLogoMark /></Link>
+        <TopNav items={top} mobileItems={side} />
       </header>
       <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-16 lg:grid-cols-[11rem_minmax(0,1fr)]">
         <aside className="hidden lg:block"><SideNav items={side} /></aside>
