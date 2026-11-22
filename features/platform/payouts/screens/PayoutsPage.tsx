@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { q, venueTimezone } from '../../lib/server';
+import { q, venueTimezone, canRead } from '../../lib/server';
 import { money, when } from '../../lib/format';
 import { Page, Tabs, Section, Row, Empty, Stat, Status, Meta } from '../../components/ui';
 import { CloseRun } from '../components/CloseRun';
@@ -7,12 +7,12 @@ import { PayoutActions } from '../components/PayoutActions';
 
 const TABS = ['draft', 'approved', 'paid', 'void'];
 export default async function PayoutsPage({ searchParams }: { searchParams?: Promise<{ tab?: string }> }) {
-  const tz = await venueTimezone();
+  const [tz, seesRuns] = await Promise.all([venueTimezone(), canRead('runs')]);
   const tab = ((await searchParams) || {}).tab || 'draft';
   const [{ comedianPayouts }, { showSettlements }, { runs }] = await Promise.all([
     q<any>(`query($s: ComedianPayoutStatusType!) { comedianPayouts(where: { status: { equals: $s } }, orderBy: { createdAt: desc }, take: 60) { id status amountCents method reference comedian { stageName } show { title startsAt } run { notes startAt } } }`, { s: tab }),
     q<any>(`{ showSettlements(orderBy: { createdAt: desc }, take: 20) { id status netCents ticketGrossCents feesCents refundsCents foodBeverageGrossCents minimumShortfallRevenueCents tipsCents talentCostCents show { title startsAt } } }`),
-    q<any>(`{ runs(orderBy: { startAt: desc }, take: 10) { id status runFeeCents startAt notes headliner { stageName } shows { status } } }`),
+    seesRuns ? q<any>(`{ runs(orderBy: { startAt: desc }, take: 10) { id status runFeeCents startAt notes headliner { stageName } shows { status } } }`) : { runs: [] },
   ]);
   return (
     <Page title="Payouts">
@@ -29,7 +29,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams?: Pro
           </Row>
         )) : <Empty>No payouts here.</Empty>}
       </div>
-      <Section title="Headliner runs">
+      {seesRuns ? <Section title="Headliner runs">
         {runs.length ? runs.map((r: any) => {
           const open = r.shows.filter((x: any) => !['settled', 'cancelled'].includes(x.status)).length;
           return (
@@ -39,7 +39,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams?: Pro
             </Row>
           );
         }) : <Empty>No runs.</Empty>}
-      </Section>
+      </Section> : null}
       <Section title="Nightly settlements">
         {showSettlements.length ? showSettlements.map((s: any) => (
           <div key={s.id} className="space-y-3 border-b py-4 last:border-b-0">

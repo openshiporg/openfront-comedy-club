@@ -19,8 +19,11 @@ export function visibleSidebarLists<T extends SidebarList>(lists: T[], user: Sid
 }
 
 /**
- * Lists a platform page queries at the top level. Each list's `ui.isHidden` follows its query access
+ * Lists a platform page cannot work without. Each list's `ui.isHidden` follows its query access
  * (features/keystone/models/index.ts), so the page is usable only when none of them is hidden.
+ * A list that only feeds one section of a page is not named here: the page leaves that section out
+ * for a role that cannot read it (see canReadList), so the bookkeeper still reaches Payouts and the
+ * bar still reaches the menu.
  */
 export const PLATFORM_PAGE_LISTS: Record<string, string[]> = {
   tonight: [],
@@ -29,8 +32,8 @@ export const PLATFORM_PAGE_LISTS: Record<string, string[]> = {
   customers: ['ticket-orders'],
   talent: ['comedians', 'shows'],
   'open-mic': ['shows', 'open-mic-signups'],
-  'floor-menu': ['rooms', 'menu-items'],
-  payouts: ['comedian-payouts', 'show-settlements', 'runs'],
+  'floor-menu': ['menu-items'],
+  payouts: ['comedian-payouts', 'show-settlements'],
   reports: ['comedian-payouts'],
   'promo-codes': ['promo-codes'],
   'payment-providers': ['payment-providers'],
@@ -43,6 +46,11 @@ export const PLATFORM_PAGE_PERMISSIONS: Record<string, string[]> = {
   approvals: ['canManageOrders', 'canManageChecks', 'canIssueRefunds'],
   // Door and floor staff use Tonight through the doorBoard read, which exposes only what the door needs.
   tonight: ['canManageDoor', 'canManageChecks', 'canManageShows'],
+}
+
+/** True when the session may read the list at this path. */
+export function canReadList(path: string, lists: SidebarList[]) {
+  return lists.some((list) => list.path === path && !list.isHidden)
 }
 
 export function canUsePlatformPage(slug: string, lists: SidebarList[], user: SidebarUser) {

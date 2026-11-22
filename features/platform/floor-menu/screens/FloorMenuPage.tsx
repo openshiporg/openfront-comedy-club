@@ -1,16 +1,17 @@
 import Link from 'next/link';
 import { LayoutEditor } from '../components/LayoutEditor';
-import { q } from '../../lib/server';
+import { q, canRead } from '../../lib/server';
 import { money } from '../../lib/format';
 import { Page, Section, Row, Status, Meta } from '../../components/ui';
 
 export default async function FloorMenuPage() {
+  const seesRooms = await canRead('rooms');
   const [{ rooms }, { menuItems }] = await Promise.all([
-    q<any>(`{ rooms(orderBy: { name: asc }) { id name capacity seatingMode active sections(orderBy: { sort: asc }) { id name tables(orderBy: { label: asc }) { id label seats x y shape } } } }`),
+    !seesRooms ? { rooms: [] } : q<any>(`{ rooms(orderBy: { name: asc }) { id name capacity seatingMode active sections(orderBy: { sort: asc }) { id name tables(orderBy: { label: asc }) { id label seats x y shape } } } }`),
     q<any>(`{ menuItems(orderBy: [{ category: asc }, { name: asc }], take: 200) { id name category priceCents countsTowardMinimum active } }`),
   ]);
   return (
-    <Page title="Floor & menu">
+    <Page title={seesRooms ? 'Floor & menu' : 'Menu'}>
       {rooms.map((r: any) => (
         <Section key={r.id} title={`${r.name} · ${r.capacity} seats · ${r.seatingMode}`} aside={<Link className="text-sm underline underline-offset-4" href={`/dashboard/rooms/${r.id}`}>Edit</Link>}>
           {r.sections.map((s: any) => (

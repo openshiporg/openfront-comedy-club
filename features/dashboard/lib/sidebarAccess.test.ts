@@ -18,3 +18,15 @@ test('Tonight stays closed for a role with no door, floor or show permission', (
 test('other pages still follow their lists', () => {
   assert.equal(canUsePlatformPage('shows', hiddenShows, role({ canManageDoor: true })), false);
 });
+
+test('Payouts opens for the bookkeeper, who cannot read headliner runs', () => {
+  const lists = [{ path: 'comedian-payouts' }, { path: 'show-settlements' }, { path: 'runs', isHidden: true }];
+  assert.equal(canUsePlatformPage('payouts', lists, role({ canManagePayouts: true })), true);
+  assert.equal(canUsePlatformPage('payouts', [{ path: 'comedian-payouts', isHidden: true }], role({})), false);
+});
+
+test('The menu opens for the bar, who cannot read rooms', () => {
+  const lists = [{ path: 'menu-items' }, { path: 'rooms', isHidden: true }];
+  assert.equal(canUsePlatformPage('floor-menu', lists, role({ canManageChecks: true })), true);
+  assert.equal(canUsePlatformPage('floor-menu', [{ path: 'menu-items', isHidden: true }], role({})), false);
+});
